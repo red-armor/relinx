@@ -1,0 +1,11 @@
+{
+  "name": "relinx",
+  "version": "1.0.0",
+  "description": "react state management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "liuyouchao111@gmail.com",
+  "license": "ISC"
+}
