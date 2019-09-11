@@ -1,3 +1,9 @@
-import useRelinx from './src/useRelinx'
+import Provider from './src/Provider'
+import createStore from './src/createStore'
+import useRelinx from './src/hooks/useRelinx'
 
-export { useRelinx }
+export {
+  Provider,
+  createStore,
+  useRelinx,
+}

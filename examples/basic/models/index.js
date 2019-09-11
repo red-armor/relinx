@@ -1,9 +1,9 @@
-import address from './address'
-import user from './user'
+import init from './init'
+import goods from './goods'
+import bottomBar from './bottomBar'
 
-import { combineModels } from 'relinx'
-
-export default combineModels({
-  address,
-  user,
-})
+export default {
+  init,
+  goods,
+  bottomBar,
+}

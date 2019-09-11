@@ -1,15 +1,10 @@
-import React from 'react'
-import { create } from 'domain';
+import { createContext } from 'react'
 
-const defaultChangedBits = (nextValue, oldValue) => {
-  return 0b0
+const calculateChangeBits = () => 0b00
+const defaultValue = {
+  value: {},
+  dispatch: () => {},
 }
+const context = createContext(defaultValue, calculateChangeBits)
 
-const createContext = (
-  initialValue,
-  calculateChangedBits = defaultChangedBits
-) => {
-  return React.createContext(initialValue, calculateChangedBits)
-}
-
-export default createContext
+export default context
