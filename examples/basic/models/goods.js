@@ -5,7 +5,6 @@ export default {
   },
   reducers: {
     addGoods(state, { goodsList }) {
-      console.log('goods : ', goodsList)
       return {
         listData: [].concat(state.listData, goodsList)
       }
