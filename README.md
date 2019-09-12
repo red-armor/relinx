@@ -8,5 +8,3 @@ another react state management using Hooks
 $ yarn
 $ yarn examples:basic
 ```
-
-go to `http://localhost:8080/`
