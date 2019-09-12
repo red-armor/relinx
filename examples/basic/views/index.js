@@ -1,0 +1,52 @@
+import React, { useEffect } from 'react'
+import BottomBar from './BottomBar'
+import GoodsView from './GoodsView'
+import { useRelinx } from 'relinx'
+
+const styles = {
+  body: {
+    width: '100%',
+    height: '100%',
+  },
+
+  simulator: {
+    paddingTop: 15,
+    paddingBottom: 50,
+    width: 375,
+    height: 667,
+    backgroundColor: '#fff',
+    marginTop: 50,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    borderRadius: 20,
+    position: 'relative',
+    border: '1px solid #000',
+    boxSizing: 'border-box',
+    display: 'flex',
+  },
+  goodsWrapper: {
+    overflowY: 'auto',
+    flex: 1,
+  }
+}
+
+export default () => {
+  const [_, dispatch] = useRelinx()
+
+  useEffect(() => {
+    dispatch({
+      type: 'init/getGoodsList',
+    })
+  }, [])
+
+  return (
+    <div style={styles.body}>
+      <div style={styles.simulator}>
+        <div style={styles.goodsWrapper}>
+          <GoodsView />
+        </div>
+        <BottomBar />
+      </div>
+    </div>
+  )
+}

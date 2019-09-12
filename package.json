@@ -1,0 +1,40 @@
+{
+  "name": "@xhs/relinx",
+  "version": "1.0.0",
+  "description": "Another redux state management using hooks",
+  "main": "index.js",
+  "scripts": {
+    "examples:basic": "DIR=basic EXT=js webpack-dev-server",
+    "flow-check": "flow check --show-all-errors"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@code.devops.xiaohongshu.com:fe/relinx.git"
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "state-management",
+    "reactive"
+  ],
+  "author": "youchaoliu@xiaohongshu.com",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.6",
+    "html-webpack-plugin": "^3.2.0",
+    "jest": "^24.9.0",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "ts-loader": "^6.0.4",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "webpack-dev-server": "^3.8.0"
+  }
+}
