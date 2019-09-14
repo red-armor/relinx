@@ -1,12 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { Provider, createStore } from 'relinx'
+import {
+  logger,
+  Provider,
+  createStore,
+  applyMiddleware,
+} from 'relinx'
 import models from './models'
 import App from './views'
 
 const store = createStore({
   models
-})
+}, applyMiddleware(logger))
 
 const Basic = () => {
   return (

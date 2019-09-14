@@ -6,8 +6,10 @@ export default {
   },
   effects: {
     getGoodsList: () => (dispatch, getState) => {
+      console.log('exx', getState)
       const { init: { page } } = getState()
       getGoods({ page }).then(result => {
+        console.log('result ----')
         dispatch({
           type: 'goods/addGoods',
           payload: {

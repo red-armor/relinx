@@ -34,17 +34,13 @@ const createProxy = obj => {
     get(target, property, receiver) {
 
       if (target[IS_HEADING]) {
-        console.log('trigger ----')
         count += 1
       }
-
-      console.log('sub : ', count, property)
 
       return Reflect.get(target, property, receiver)
     },
 
     set(target, property, newValue, receiver) {
-      console.log('set property : ', property)
       Reflect.set(target, property, newValue, receiver)
       return true
     }
