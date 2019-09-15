@@ -1,8 +1,17 @@
-export default ({ getState, dispatch }) => next => actions => {
-  console.log('action group : ', actions, {...getState().bottomBar})
+import print from './print'
 
+export default ({ getState }) => next => actions => {
+  const startTime = Date.now()
   const actionGroup = next(actions)
-  console.log('action group : ', actions, {...getState().bottomBar})
+  const endTime = Date.now()
+  print({
+    prevState: {},
+    nextState: {},
+    initialActions: actions,
+    actionGroup: [],
+    startTime,
+    endTime,
+  })
 
   return actionGroup
 }

@@ -18,8 +18,6 @@ const set =  function set (target, property, value, receiver) {
         subCount = 0
     }
 
-    console.log('subscribe : ', `${count}-${Date.now()}-${property}`)
-
     return Reflect.get(target, property, receiver)
   }
 const state = new Proxy({}, {
