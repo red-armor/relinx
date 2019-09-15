@@ -2,13 +2,15 @@ import print from './print'
 
 export default ({ getState }) => next => actions => {
   const startTime = Date.now()
+  const prevState = JSON.parse(JSON.stringify(getState()))
   const actionGroup = next(actions)
+  const nextState = JSON.parse(JSON.stringify(getState()))
   const endTime = Date.now()
+
   print({
-    prevState: {},
-    nextState: {},
+    prevState,
+    nextState,
     initialActions: actions,
-    actionGroup: [],
     startTime,
     endTime,
   })
