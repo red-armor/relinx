@@ -3,9 +3,9 @@ import context from '../context'
 import useReactiveState from '../reactive-state/useReactiveState'
 // import useForceUpdate from './useForceUpdate'
 
-export default () => {
+export default name => {
   const { value, dispatch } = useContext(context)
-  const state = useMemo(() => useReactiveState(value), [])
+  const state = useMemo(() => useReactiveState(value, name), [])
   const [data, setValue] = useState(0)
 
   useEffect(() => {

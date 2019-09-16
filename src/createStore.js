@@ -53,7 +53,8 @@ const combineReducers = reducers => state => (_, actions) => {
     const { storeKey, changedValue } = currentValue
     const keys = Object.keys(changedValue)
     keys.forEach(key => {
-      state[storeKey][key] = changedValue[key]
+      // 为了防止后面的ProxyState更改的同一个对象，把initialState中的值也改为了`Proxy`
+      state[storeKey][key] = JSON.parse(JSON.stringify(changedValue[key]))
     })
   })
   return changedValues
