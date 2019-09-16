@@ -50,7 +50,10 @@ export default config => ({
       isRoot = true
       if (nextActions.length > 1) {
         hasAnonymousRoot = true
-        parentNode = extra.tree = decorateToken({ type: ANONYMOUS })
+        parentNode = extra.tree = decorateToken({
+          type: ANONYMOUS,
+          actionType: 'action',
+        })
       } else {
         parentNode = extra.tree = {}
       }

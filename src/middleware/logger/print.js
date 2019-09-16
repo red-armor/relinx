@@ -1,8 +1,9 @@
 import { formatTime } from './utils'
 
 const colorLine = Function.apply.bind(console.log, null)
-const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null)
 const colorGroupEnd = console.groupEnd
+const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null)
+const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
 
 const colorLog = group => {
   const { text, styles } = group.reduce((acc, cur) => {
@@ -25,7 +26,9 @@ const renderTitle = props => {
   const { initialActions, startTime, endTime } = props
   let title
 
-  initialActions.forEach(({ type }) => {
+  const nextActions = [].concat(initialActions)
+
+  nextActions.forEach(({ type }) => {
     title = title ? `${title}__${type}` : type
   })
 
@@ -38,17 +41,23 @@ const renderTitle = props => {
   colorGroupCollapsed(colorLog(parts))
 }
 
-const renderSubAction = action => {
-  const { type, payload = ''} = action
+const renderSubAction = props => {
+  const { type, payload = '', actionType = 'action', flag, style } = props
   const parts = []
-  parts.push(['action', 'color: #eb2f96; font-weight: bold'])
-  parts.push([type, 'color: #722ed1; font-weight: bold'])
+  if (flag) {
+    parts.push([flag, 'color: #00474f; font-weight: bold'])
+  }
 
-  colorLine([...colorLog(parts), payload])
-}
+  if (type) {
+    parts.push([actionType, 'color: #eb2f96; font-weight: bold'])
+    parts.push([type, 'color: #722ed1; font-weight: bold'])
+  }
 
-const renderSubActions = actions => {
-  actions.forEach(action => renderSubAction(action))
+  if (style === 'line') {
+    colorLine([...colorLog(parts), payload])
+  } else {
+    colorGroupCollapsed([...colorLog(parts), payload])
+  }
 }
 
 const renderState = (state, isNextState) => {
@@ -74,27 +83,43 @@ const renderNextState = state => {
   renderState(state, true)
 }
 
+const paint = (tree, flag) => {
+  const { type, actions = {}, effects = {}, payload, actionType } = tree
+  const actionKeys = Object.keys(actions)
+  const effectKeys = Object.keys(effects)
+
+  if (!actionKeys.length && !effectKeys.length) {
+    renderSubAction({ type, payload, actionType, flag, style: 'line' })
+  } else {
+    renderSubAction({ type, payload, actionType, flag })
+  }
+
+  actionKeys.forEach(key => {
+    const action = actions[key]
+    paint(action)
+  })
+  effectKeys.forEach(key => {
+    const effect = effects[key]
+    paint(effect)
+  })
+
+  if (actionKeys.length || effectKeys.length) {
+    colorGroupEnd()
+  }
+}
+
 export default props => {
-  console.log('props : ', props)
   const {
     prevState = {},
     nextState = {},
-    initialActions = [],
+    prevTree,
+    nextTree,
   } = props
 
-  const nextActions = [].concat(initialActions)
-
-  if (nextState.length === 1) {
-    renderTitle(props)
-    renderPrevState(prevState)
-    renderSubAction(initialActions)
-    renderNextState(nextState)
-    colorGroupEnd()
-  } else {
-    renderTitle(props)
-    renderPrevState(prevState)
-    renderSubActions(nextActions)
-    renderNextState(nextState)
-    colorGroupEnd()
-  }
+  renderTitle(props)
+  paint(prevTree, 'prevTree')
+  renderPrevState(prevState)
+  paint(nextTree, 'nextTree')
+  renderNextState(nextState)
+  colorGroupEnd()
 }
