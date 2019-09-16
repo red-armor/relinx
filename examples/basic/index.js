@@ -5,13 +5,16 @@ import {
   Provider,
   createStore,
   applyMiddleware,
+  thunk,
 } from 'relinx'
 import models from './models'
 import App from './views'
 
 const store = createStore({
   models
-}, applyMiddleware(logger))
+}, applyMiddleware(logger, thunk({
+  extraSupported: true,
+})))
 
 const Basic = () => {
   return (

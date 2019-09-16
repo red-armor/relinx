@@ -1,10 +1,7 @@
-import thunk from './middleware/thunk'
 import compose from './utils/compose'
 
 export default function applyMiddleware(...middlewares) {
-  const nextMiddlewares = [...middlewares, thunk({
-    extraSupported: true,
-  })]
+  const nextMiddlewares = [...middlewares]
   return createStore => (...args) => {
     const store = createStore(...args)
     const { reducers, effects, initialState } = store

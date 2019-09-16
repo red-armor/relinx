@@ -1,14 +1,25 @@
-import Provider from './src/Provider'
-import applyMiddleware from './src/applyMiddleware'
-import createStore from './src/createStore'
-import useRelinx from './src/hooks/useRelinx'
+module.exports = {
+  get Provider() {
+    return require('./src/Provider').default
+  },
 
-import logger from './src/middleware/logger'
+  get applyMiddleware() {
+    return require('./src/applyMiddleware').default
+  },
 
-export {
-  Provider,
-  createStore,
-  useRelinx,
-  applyMiddleware,
-  logger,
+  get createStore() {
+    return require('./src/createStore').default
+  },
+
+  get useRelinx() {
+    return require('./src/hooks/useRelinx').default
+  },
+
+  get logger() {
+    return require('./src/middleware/logger').default
+  },
+
+  get thunk() {
+    return require('./src/middleware/thunk').default
+  }
 }
