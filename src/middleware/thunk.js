@@ -1,9 +1,70 @@
 import invariant from 'invariant'
 
-export default ({ getState, dispatch, reducers, effects}) => next => actions => {
+const ANONYMOUS = 'anonymous-group'
+
+const getNode = (tree, paths = []) => {
+  if (!paths.length) return tree
+  const [actionType, type] = paths.shift().split('\.')
+  const nextTree = tree[actionType][type]
+  return getNode(nextTree, paths)
+}
+
+const decorateToken = (props, base = {}) => {
+  base.actions = {}
+  base.effects = {}
+
+  const reservedKey = ['type', 'actionType', 'payload']
+
+  reservedKey.forEach(key => {
+    if (typeof props[key] !== 'undefined') {
+      base[key] = props[key]
+    }
+  })
+
+  return base
+}
+
+export default config => ({
+  getState,
+  dispatch,
+  reducers,
+  effects,
+}) => next => (actions, extra = {}) => {
   let nextActions = actions
   if (!Array.isArray(actions)) {
     nextActions = [nextActions]
+  }
+
+  const {
+    extraSupported,
+  } = config || {}
+
+  let tree = extra.tree
+  const parentStub = extra.parentStub || []
+  let parentNode
+  let isRoot = false
+  let hasAnonymousRoot = false
+
+  if (extraSupported) {
+    if (!extra.tree) {
+      isRoot = true
+      if (nextActions.length > 1) {
+        hasAnonymousRoot = true
+        parentNode = extra.tree = decorateToken({ type: ANONYMOUS })
+      } else {
+        parentNode = extra.tree = {}
+      }
+    } else {
+      parentNode = getNode(tree, parentStub)
+    }
+  }
+
+  const resolveEffectParentStub = type => {
+    if (isRoot && !hasAnonymousRoot) {
+      return []
+    }
+
+    return parentStub.length ? [...parentStub, `effects.${type}`] : [`effects.${type}`]
   }
 
   const actionGroup = []
@@ -16,6 +77,21 @@ export default ({ getState, dispatch, reducers, effects}) => next => actions => 
 
     if (currentActionReducersHandler) {
       actionGroup.push(action)
+      if (extraSupported) {
+        if (!parentNode.actions) {
+          parentNode = decorateToken({
+            type,
+            payload,
+            actionType: 'action'
+          }, parentNode)
+        } else {
+          parentNode.actions[type] = decorateToken({
+            type,
+            payload,
+            actionType: 'action',
+          })
+        }
+      }
     }
 
     const currentEffects = effects[storeKey] || {}
@@ -26,6 +102,22 @@ export default ({ getState, dispatch, reducers, effects}) => next => actions => 
         !actionGroup.length,
         'Effect action `${action}` should not be mixed with reducer actions'
       )
+
+      if (extraSupported) {
+        if (!parentNode.effects) {
+          parentNode = decorateToken({
+            type,
+            payload,
+            actionType: 'effect'
+          }, parentNode)
+        } else {
+          parentNode.effects[type] = decorateToken({
+            type,
+            payload,
+            actionType: 'effect',
+          })
+        }
+      }
 
       const nextDispatch = action => {
         const effectsActionGroup = []
@@ -43,7 +135,13 @@ export default ({ getState, dispatch, reducers, effects}) => next => actions => 
             type: nextType,
           })
         })
-        dispatch(effectsActionGroup)
+
+        if (extraSupported) {
+          extra.parentStub = resolveEffectParentStub(type)
+          dispatch(effectsActionGroup, extra)
+        } else {
+          dispatch(effectsActionGroup)
+        }
       }
 
       currentActionEffectsHandler(payload)(nextDispatch, getState)

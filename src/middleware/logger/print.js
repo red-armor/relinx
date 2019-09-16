@@ -23,16 +23,14 @@ const colorLog = group => {
 
 const renderTitle = props => {
   const { initialActions, startTime, endTime } = props
-  const nextActions = [].concat(initialActions)
   let title
-  if ([].concat(initialActions).length === 1) {
-    title = nextActions[0].type
-  } else {
-    title = 'group'
-  }
+
+  initialActions.forEach(({ type }) => {
+    title = title ? `${title}__${type}` : type
+  })
 
   const parts = []
-  parts.push(['action', 'color: gray; font-weight: lighter'])
+  parts.push(['action', 'color: #7cb305; font-weight: bold'])
   parts.push([title, 'color: inherit;'])
   parts.push([`@ ${formatTime(startTime)}`, 'color: gray; font-weight: lighter;'])
   parts.push([`(${endTime - startTime}ms)`, 'color: gray; font-weight: lighter;'])
@@ -41,28 +39,16 @@ const renderTitle = props => {
 }
 
 const renderSubAction = action => {
-  const { type, payload = {} } = action
+  const { type, payload = ''} = action
   const parts = []
-  parts.push(['action', 'color: gray; font-weight: lighter'])
-  parts.push([type, 'color: inherit;'])
+  parts.push(['action', 'color: #eb2f96; font-weight: bold'])
+  parts.push([type, 'color: #722ed1; font-weight: bold'])
 
-  colorGroupCollapsed(colorLog(parts))
-  renderPayload(payload)
-  colorGroupEnd()
+  colorLine([...colorLog(parts), payload])
 }
 
 const renderSubActions = actions => {
   actions.forEach(action => renderSubAction(action))
-}
-
-const renderPayload = payload => {
-  const parts = []
-
-  const title = 'payload'
-  const style = 'color: #4CAF50; font-weight: bold'
-
-  parts.push([title, style])
-  colorLine([...colorLog(parts), payload])
 }
 
 const renderState = (state, isNextState) => {
@@ -89,6 +75,7 @@ const renderNextState = state => {
 }
 
 export default props => {
+  console.log('props : ', props)
   const {
     prevState = {},
     nextState = {},

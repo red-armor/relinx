@@ -34,9 +34,19 @@ export default () => {
   const [_, dispatch] = useRelinx()
 
   useEffect(() => {
-    dispatch({
+    dispatch([{
+      type: 'init/updateOnline',
+    }, {
       type: 'init/getGoodsList',
-    })
+    }])
+
+    // dispatch([{
+    //   type: 'goods/incrementItemCount',
+    //   payload: { id: 1}
+    // }, {
+    //   type: 'goods/decrementItemCount',
+    //   payload: { id: 2}
+    // }])
   }, [])
 
   return (
