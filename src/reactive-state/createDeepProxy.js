@@ -35,6 +35,15 @@ export default obj => {
     return proxy
   }
 
+  // 约束当前字段不会触发`notify`操作
+  const reservedKeys = [
+    'subscriptions',
+    'parentStub',
+    'initialState',
+    IS_PROXY,
+    IS_HEADING,
+  ]
+
   // 白驹过隙，到此一游
   // 如何给经过处理的属性增加上游的信息
   const createProxy = obj => {
@@ -46,7 +55,11 @@ export default obj => {
       set(target, property, newValue, receiver) {
         const reactivePath = (target.parentStub || []).concat(property)
         const oldValue = Reflect.get(target, property)
-        subscriptions.notify(reactivePath, newValue, oldValue)
+
+        if (reservedKeys.indexOf(property) === -1) {
+          subscriptions.notify(reactivePath, newValue, oldValue)
+        }
+
         Reflect.set(target, property, newValue, receiver)
         return true
       }

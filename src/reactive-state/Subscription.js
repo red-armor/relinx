@@ -156,10 +156,7 @@ class store {
     }
 
     if (type === 'get') {
-      this.mountSubscriber({
-        subscriberKey,
-        ...rest,
-      })
+      this.mountSubscriber({ subscriberKey, ...rest })
     }
   }
 }

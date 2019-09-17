@@ -1,6 +1,11 @@
-export default ({
-  models,
-}) => {
+import invariant from 'invariant'
+
+export default function createStore(configs, enhancer) {
+  if (typeof enhancer === 'function') {
+    return enhancer(createStore)(configs)
+  }
+
+  const { models } = configs
   const keys = Object.keys(models)
   const globalState = {}
   const globalReducers = {}
@@ -24,22 +29,33 @@ export default ({
 const combineReducers = reducers => state => (_, actions) => {
   const nextActions = [].concat(actions)
 
-  return nextActions.reduce((acc, action) => {
+  const changedValues = nextActions.reduce((changedValueGroup, action) => {
     const { type, payload } = action
-    const [key, actionType] = type.split('/')
-    const usedReducer = reducers[key]
+    const [storeKey, actionType] = type.split('/')
+    const usedReducer = reducers[storeKey]
 
-    if(!usedReducer) {
-      throw new Error('Reducer missing for type `${type}`')
-    }
+    invariant(usedReducer, 'Reducer missing for type `${type}`')
 
-    const changedValue = usedReducer[actionType](state[key], payload)
+    const currentState = state[storeKey]
+    const changedValue = usedReducer[actionType](currentState, payload)
 
-    acc.push({
-      storeKey: key,
+    changedValueGroup.push({
+      storeKey: storeKey,
       changedValue,
     })
 
-    return acc
+    return changedValueGroup
   }, [])
+
+  // 为了在next(action)执行以后，数据源发生变化，所以将store的更新放置到这个地方；
+  // 而响应式的`proxyState`则是在Provider进行同步更新
+  changedValues.forEach(currentValue => {
+    const { storeKey, changedValue } = currentValue
+    const keys = Object.keys(changedValue)
+    keys.forEach(key => {
+      // 为了防止后面的ProxyState更改的同一个对象，把initialState中的值也改为了`Proxy`
+      state[storeKey][key] = JSON.parse(JSON.stringify(changedValue[key]))
+    })
+  })
+  return changedValues
 }
