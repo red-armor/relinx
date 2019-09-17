@@ -9,7 +9,10 @@ export default {
   reducers: {
     updateState: (_, { status}) => {
       return { status, }
-    }
+    },
+    updatePage: state => ({
+      page: state.page + 1,
+    })
   },
 
   effects: {
@@ -21,6 +24,9 @@ export default {
           payload: {
             goodsList: result,
           },
+        })
+        dispatch({
+          type: 'updatePage',
         })
       })
     },
