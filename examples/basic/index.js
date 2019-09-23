@@ -8,7 +8,9 @@ import {
   thunk,
 } from 'relinx'
 import models from './models'
-import App from './views'
+
+import Test from '../../src/reactive-state/test'
+// import App from './views'
 
 const store = createStore({
   models
@@ -17,11 +19,13 @@ const store = createStore({
 })))
 
 const Basic = () => {
-  return (
-    <Provider store={store}>
-      <App />
-    </Provider>
-  )
+  // return (
+  //   <Provider store={store}>
+  //     <App />
+  //   </Provider>
+  // )
+
+  return <Test />
 }
 
 ReactDOM.render(<Basic />, document.getElementById('app'))
