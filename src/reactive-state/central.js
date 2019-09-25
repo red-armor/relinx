@@ -86,6 +86,7 @@ class Central {
     this.propagateChange(newValue, oldValue, node)
     this.setPathValue(paths, newValue, currentState)
     this.pendingComputations.forEach(comp => comp.applyChange())
+    this.pendingComputations = []
   }
 
   addDepends(paths, comp) {
@@ -108,7 +109,6 @@ class Central {
     })
 
     if (!current.hit) {
-      console.log('path : ', paths.concat(property))
       this.addDepends(paths.concat(property), comp)
     }
 
@@ -118,7 +118,6 @@ class Central {
   flush() {
     const reversedStack = this.stack.slice().reverse()
     this.stack = []
-    console.log('reverse : ', reversedStack.slice())
     this.addDependsIfPossible(reversedStack)
     this.willFlush = false
   }

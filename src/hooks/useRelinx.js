@@ -1,21 +1,15 @@
-import { useContext, useEffect, useState, useMemo } from 'react'
+import { useContext, useState } from 'react'
 import context from '../context'
-import useReactiveState from '../reactive-state/useReactiveState'
-// import useForceUpdate from './useForceUpdate'
+
+import useTracker from '../reactive-state/useTracker'
 
 export default name => {
-  const { value, dispatch } = useContext(context)
-  const state = useMemo(() => useReactiveState(value, name), [])
-  const [data, setValue] = useState(0)
+  const { dispatch } = useContext(context)
+  const [value, setValue] = useState(0)
 
-  useEffect(() => {
-    const { unsubscribe } = state.subscribe(() => {
-      // useForceUpdate()
-      setValue(Math.floor(Math.random() * 100) + 1  )
-    })
-
-    return unsubscribe
-  }, [data])
+  const state = useTracker(() => {
+    setValue(value + 1)
+  }, name)
 
   return [state, dispatch]
 }

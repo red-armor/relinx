@@ -1,45 +1,31 @@
 import Computation from './Computation'
 import central from './central'
+import shouldWrappedByProxy from './shouldWrappedByProxy'
 
 // https://2ality.com/2016/11/proxying-builtins.html
 // https://exploringjs.com/es6/ch_proxies.html
-const shouldWrappedByProxy = obj => {
-  const type = Object.prototype.toString.call(obj)
 
-  const types = [
-    '[object Number]',
-    '[object String]',
-    '[object Date]',
-  ]
-
-  if (types.indexOf(type) !== -1) {
-    return false
-  }
-
-  return true
-}
-
+// 如果说存在的话，就返回相应的值，但是目前需要区分这个是否需要register
+// 是否需要提供一个时机进行设置`timeToRegister`
 // types could be wrapped by Proxy
 const createHandler = (initialState = {}, comp, paths = []) => ({
   get: (target, property, receiver) => {
-    const value = initialState[property] || {}
-    const type = Object.prototype.toString.call(value)
-    let nextValue
-
-    console.log('property : ', property, value, type)
-
-    if (type === '[object Object]') {
-      nextValue = { ...value }
+    let originalValue = Reflect.get(initialState, property, receiver)
+    if (target.hasOwnProperty(property) || typeof originalValue === 'undefined') {
+      central.register({ paths, comp, property })
     }
 
-    if (type === '[object Array]') {
-      nextValue = value.slice()
-    }
+    const type = Object.prototype.toString.call(originalValue)
+    if (shouldWrappedByProxy(originalValue)) {
+      let nextValue = originalValue
+      if (type === '[object Object]') {
+        nextValue = { ...originalValue }
+      }
 
-    central.register({ paths, comp, property })
+      if (type === '[object Array]') {
+        nextValue = [ ...originalValue ]
+      }
 
-    if (shouldWrappedByProxy(value)) {
-      console.log('wrapped proxy')
       const next = new Proxy(nextValue, createHandler(
         nextValue,
         comp,
@@ -49,18 +35,17 @@ const createHandler = (initialState = {}, comp, paths = []) => ({
     }
 
     return Reflect.get(target, property, receiver)
-  }
+  },
 })
 
-function useTracker(fn) {
-  const computation = new Computation(fn)
+function useTracker(fn, name) {
+  const computation = new Computation(fn, name)
   const initialState = central.getCurrent()
-  console.log('initial : ', initialState)
   setTimeout(() => central.flush(), 0)
+  // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖
+  // 所以一定要确保经过`createHeader`一系列操作以后，`initialState`要依旧只含`plain object`；
+  // 不能够被`Proxy`污染
   return new Proxy({}, createHandler(initialState, computation, []))
 }
 
 export default useTracker
-
-// 通过顶层的数据源进行数据更新，然后分流
-// notify value update

@@ -1,10 +1,11 @@
 let id = 0
 
 class Computation {
-  constructor(fn) {
+  constructor(fn, name) {
     this.autoRunFunction = fn
     this.onEffectCallback = []
     this.id = id++
+    this.name = name
     this.dirty = false
   }
 

@@ -41,8 +41,8 @@ const styles = {
 }
 
 export default props => {
-  const { data: { title, id }, index } = props
   const [state, dispatch] = useRelinx(`GoodsItem_${index}`)
+  const { data: { title, id }, index } = props
   const count = state.goods.itemCount[id] || 0
 
   const increment = useCallback(() => {

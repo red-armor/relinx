@@ -29,7 +29,6 @@ class Node {
   }
 
   unMountIfNecessary() {
-    console.log('this.shouldNodeUmmount() : ', this.shouldNodeUmmount())
     if (this.shouldNodeUmmount() && this.parent) {
       this.parent.removeNode(this)
     }

@@ -59,7 +59,6 @@ export default () => {
           <LoadMore />
         </div>
         <BottomBar />
-
       </div>
     </div>
   )
