@@ -5,8 +5,7 @@ import React, {
   useRef,
 } from 'react'
 import context from './context'
-import central from './reactive-state/central'
-import deepCopy from './reactive-state/utils/deepCopy'
+import central from './tracker/central'
 
 export default ({ store, children }) => {
   const { initialState, createReducer, createDispatch } = store

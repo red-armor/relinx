@@ -1,6 +1,6 @@
 import Computation from './Computation'
 import central from './central'
-import shouldWrappedByProxy from './shouldWrappedByProxy'
+import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 
 // https://2ality.com/2016/11/proxying-builtins.html
 // https://exploringjs.com/es6/ch_proxies.html

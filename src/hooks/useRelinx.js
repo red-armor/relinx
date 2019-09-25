@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react'
 import context from '../context'
 
-import useTracker from '../reactive-state/useTracker'
+import useTracker from '../tracker/useTracker'
 
 export default name => {
   const { dispatch } = useContext(context)

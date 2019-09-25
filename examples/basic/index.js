@@ -9,14 +9,7 @@ import {
 } from 'relinx'
 import models from './models'
 
-// import Test from '../../src/reactive-state/test'
 import App from './views'
-
-// const store = createStore({
-//   models
-// }, applyMiddleware(logger, thunk({
-//   extraSupported: true,
-// })))
 
 const store = createStore({
   models
@@ -30,8 +23,6 @@ const Basic = () => {
       <App />
     </Provider>
   )
-
-  // return <Test />
 }
 
 ReactDOM.render(<Basic />, document.getElementById('app'))
