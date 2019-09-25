@@ -8,11 +8,12 @@ import {
   thunk,
 } from 'relinx'
 import models from './models'
+
 import App from './views'
 
 const store = createStore({
   models
-}, applyMiddleware(logger, thunk({
+}, applyMiddleware(thunk({
   extraSupported: true,
 })))
 

@@ -2,37 +2,44 @@ import React, {
   useMemo,
   useReducer,
   useEffect,
+  useRef,
 } from 'react'
 import context from './context'
-import createDeepProxy from './reactive-state/createDeepProxy'
+import central from './tracker/central'
 
 export default ({ store, children }) => {
   const { initialState, createReducer, createDispatch } = store
+  // TODO: for log
+  // const nonReactiveInitialState = useMemo(() => deepCopy(initialState), [])
+  const nonReactiveInitialState = initialState
+  const initialized = useRef(false)
 
-  const proxyState = useMemo(() => createDeepProxy(initialState), [])
-  const combinedReducers = useMemo(() => createReducer(initialState), [])
+  if (!initialized.current) {
+    central.setBase(initialState)
+    initialized.current = true
+  }
 
+  const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [])
   const [value, setValue] = useReducer(combinedReducers, [{
     storeKey: '',
     changedValue: {},
   }])
 
-  const dispatch = useMemo(() => createDispatch(setValue))
+  const dispatch = useMemo(() => createDispatch(setValue), [])
 
   useEffect(() => {
     value.forEach(currentValue => {
       const { storeKey, changedValue } = currentValue
       const keys = Object.keys(changedValue)
       keys.forEach(key => {
-        proxyState[storeKey][key] = changedValue[key]
+        central.reconcileWithPaths([storeKey, key], changedValue[key])
       })
     })
   }, [value])
 
   const propagatedValue = useMemo(() => ({
     value: {
-      initialState,
-      subscriptions: proxyState.subscriptions,
+      initialState: nonReactiveInitialState,
     },
     dispatch,
   }), [])
