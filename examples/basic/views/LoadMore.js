@@ -20,6 +20,8 @@ export default () => {
     })
   }, [])
 
+  console.log('render LoadMore')
+
   return (
     <div style={styles.wrapper} onClick={handleClick}>
       获取更多

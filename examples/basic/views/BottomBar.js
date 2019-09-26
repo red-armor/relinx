@@ -26,6 +26,7 @@ const styles = {
 
 export default () => {
   const [state] = useRelinx('BottomBar')
+  console.log('render BottomBar')
   return (
     <div style={styles.wrapper}>
       <span style={styles.text}>number {state.bottomBar.count}</span>

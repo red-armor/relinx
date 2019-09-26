@@ -1,5 +1,7 @@
 let id = 0
 
+// TODO: computation with namespace
+
 class Computation {
   constructor(fn, name) {
     this.autoRunFunction = fn
