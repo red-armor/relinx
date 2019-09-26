@@ -37,10 +37,8 @@ export default ({ store, children }) => {
     })
   }, [value])
 
+  // context only need to pass `dispatch`, state value will get from isolate `useTracker` instance
   const propagatedValue = useMemo(() => ({
-    value: {
-      initialState: nonReactiveInitialState,
-    },
     dispatch,
   }), [])
 
