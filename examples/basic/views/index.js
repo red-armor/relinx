@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react'
+import { useRelinx } from 'relinx'
+
 import BottomBar from './BottomBar'
 import GoodsView from './GoodsView'
-import { useRelinx } from 'relinx'
+import LoadMore from './LoadMore'
 
 const styles = {
   body: {
@@ -54,6 +56,7 @@ export default () => {
       <div style={styles.simulator}>
         <div style={styles.goodsWrapper}>
           <GoodsView />
+          <LoadMore />
         </div>
         <BottomBar />
       </div>

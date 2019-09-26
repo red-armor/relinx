@@ -6,6 +6,8 @@ export default () => {
   const [state] = useRelinx('GoodsView')
   const { goods: { listData } } = state
 
+  console.log('render GoodsView')
+
   return listData.map((data, key) => (
     <GoodsItem
       key={key}
