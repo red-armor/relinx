@@ -80,6 +80,11 @@ class Central {
   }
 
   reconcileWithPaths(paths, newValue) {
+    // 因为目前this.flush()是放置到`setTimout`中的，所以会存在应该`listen`的`path`
+    // 此时此刻并没有被绑定到`deps`
+    if (this.willFlush) {
+      this.flush()
+    }
     const node = this.getPathNode(paths)
     const currentState = this.getCurrent()
     const oldValue = this.getPathValue(paths, currentState)
