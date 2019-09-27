@@ -8,6 +8,10 @@
   },
   "author": "liuyouchao111@gmail.com",
   "license": "ISC",
+  "files": [
+    "src",
+    "license"
+  ],
   "dependencies": {
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
