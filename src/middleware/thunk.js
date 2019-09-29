@@ -101,11 +101,6 @@ export default config => ({
     const currentActionEffectsHandler = currentEffects[actionType]
 
     if (currentActionEffectsHandler) {
-      invariant(
-        !actionGroup.length,
-        'Effect action `${action}` should not be mixed with reducer actions'
-      )
-
       if (extraSupported) {
         if (!parentNode.effects) {
           parentNode = decorateToken({
@@ -147,7 +142,12 @@ export default config => ({
         }
       }
 
-      currentActionEffectsHandler(payload)(nextDispatch, getState)
+      // 当`effects`和`reducer`共同存在时，如果说`effects`中dispatch的是一个同步的`action`
+      // 这个时候同样会出现`intermediate value`被覆盖的情况；所以在这里统一处理，将它放入下一个
+      // event loop
+      currentActionEffectsHandler(payload)((...args)=> {
+        setTimeout(() => nextDispatch(...args), 0)
+      }, getState)
     }
   })
 
