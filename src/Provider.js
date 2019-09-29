@@ -35,7 +35,6 @@ export default ({ store, children }) => {
         central.reconcileWithPaths([storeKey, key], changedValue[key])
       })
     })
-    console.log('central : ', central)
   }, [value])
 
   // Context only need to pass `dispatch`, state value could get from isolate `useTracker` instance
