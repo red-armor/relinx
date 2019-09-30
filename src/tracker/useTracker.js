@@ -45,7 +45,10 @@ function useTracker(fn, name) {
   // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖
   // 所以一定要确保经过`createHeader`一系列操作以后，`initialState`要依旧只含`plain object`；
   // 不能够被`Proxy`污染
-  return new Proxy({}, createHandler(initialState, computation, []))
+  return [
+    new Proxy({}, createHandler(initialState, computation, [])),
+    () => computation.markAsDirty()
+  ]
 }
 
 export default useTracker

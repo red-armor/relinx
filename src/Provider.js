@@ -19,14 +19,12 @@ export default ({ store, children }) => {
     initialized.current = true
   }
 
-  // `useMemo` applied with `shallowCompare`; Once `initialState` changed,
-  // `dispatch` and `combinedReducers` should update accordingly
-  const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [initialState])
+  const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [])
   const [value, setValue] = useReducer(combinedReducers, [{
     storeKey: '',
     changedValue: {},
   }])
-  const dispatch = useMemo(() => createDispatch(setValue), [initialState])
+  const dispatch = useMemo(() => createDispatch(setValue), [])
 
   useEffect(() => {
     value.forEach(currentValue => {
