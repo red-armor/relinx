@@ -1,6 +1,6 @@
 {
   "name": "relinx",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "react state management",
   "main": "index.js",
   "scripts": {
