@@ -27,13 +27,17 @@ export default ({ store, children }) => {
   const dispatch = useMemo(() => createDispatch(setValue), [])
 
   useEffect(() => {
-    value.forEach(currentValue => {
-      const { storeKey, changedValue } = currentValue
-      const keys = Object.keys(changedValue)
-      keys.forEach(key => {
-        central.reconcileWithPaths([storeKey, key], changedValue[key])
+    try {
+      value.forEach(currentValue => {
+        const { storeKey, changedValue = {}} = currentValue
+        const keys = Object.keys(changedValue)
+        keys.forEach(key => {
+          central.reconcileWithPaths([storeKey, key], changedValue[key])
+        })
       })
-    })
+    } catch(err) {
+      console.error(err)
+    }
   }, [value])
 
   // Context only need to pass `dispatch`, state value could get from isolate `useTracker` instance
