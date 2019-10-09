@@ -101,29 +101,37 @@ class Central {
   }
 
   addDependsIfPossible(state) {
-    const current = state.shift()
-    if (!current) return
-    const { paths, property, comp } = current
-    paths.forEach(key => {
-      const index = state.findIndex(({ property }) => property === key)
+    try {
+      if (!state.length) return
+      const current = state.shift()
+      if (!current) return
+      const { paths, property, comp } = current
+      paths.forEach(key => {
+        const index = state.findIndex(({ property }) => property === key)
 
-      if (index !== -1) {
-        const { hit = 0 } = state[index]
-        state[index].hit = hit + 1
+        if (index !== -1) {
+          const { hit = 0 } = state[index]
+          state[index].hit = hit + 1
+        }
+      })
+
+      if (!current.hit) {
+        this.addDepends(paths.concat(property), comp)
       }
-    })
 
-    if (!current.hit) {
-      this.addDepends(paths.concat(property), comp)
+      if (state.length) this.addDependsIfPossible(state)
+    } catch(err) {
+      console.log('err : ', err)
     }
-
-    if (state.length) this.addDependsIfPossible(state)
   }
 
   flush() {
     const reversedStack = this.stack.slice().reverse()
     this.stack = []
-    this.addDependsIfPossible(reversedStack)
+    if (reversedStack.length) {
+      this.addDependsIfPossible(reversedStack)
+    }
+
     this.willFlush = false
   }
 }

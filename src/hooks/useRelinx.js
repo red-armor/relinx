@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef } from 'react'
 import context from '../context'
 import useTracker from '../tracker/useTracker'
 
-export default name => {
+export default (name, reactivePaths) => {
   const { dispatch } = useContext(context)
   const [value, setValue] = useState(0)
   const state = useRef()
@@ -13,7 +13,7 @@ export default name => {
   // 2. reactive to central data change and propagate change to connected context
   const tracker = useTracker(() => {
     setValue(value + 1)
-  }, name)
+  }, name, reactivePaths)
 
   state.current = tracker[0]
   unsub.current = tracker[1]
