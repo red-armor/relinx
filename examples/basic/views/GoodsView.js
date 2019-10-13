@@ -8,7 +8,7 @@ export default () => {
 
   console.log('render GoodsView')
 
-  return listData.map((data, key) => (
+  return listData.getUnTrack().map((data, key) => (
     <GoodsItem
       key={key}
       data={data}

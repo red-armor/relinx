@@ -9,6 +9,7 @@ const styles = {
     fontSize: 16,
     lineHeight: '50px',
     backgroundColor: '#5cbd3c',
+    borderBottom: 'solid 1px #eee'
   }
 }
 
@@ -20,11 +21,22 @@ export default () => {
     })
   }, [])
 
+  const refresh = useCallback(() => {
+    dispatch({
+      type: 'init/refresh',
+    })
+  }, [])
+
   console.log('render LoadMore')
 
   return (
-    <div style={styles.wrapper} onClick={handleClick}>
-      获取更多
+    <div>
+      <div style={styles.wrapper} onClick={handleClick}>
+        获取更多
+      </div>
+      <div style={styles.wrapper} onClick={refresh}>
+        刷新
+      </div>
     </div>
   )
 }

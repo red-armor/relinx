@@ -30,6 +30,20 @@ export default {
         })
       })
     },
+    refresh: () => (dispatch, getState) => {
+      const { init: { page } } = getState()
+      getGoods({ page }).then(result => {
+        dispatch({
+          type: 'goods/resetGoods',
+          payload: {
+            goodsList: result,
+          },
+        })
+        dispatch({
+          type: 'updatePage',
+        })
+      })
+    },
     updateOnline: () => dispatch => {
       dispatch({
         type: 'updateState',

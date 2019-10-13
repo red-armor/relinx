@@ -9,6 +9,11 @@ export default {
         listData: [].concat(state.listData, goodsList)
       }
     },
+    resetGoods(state, { goodsList }) {
+      return {
+        listData: goodsList,
+      }
+    },
     incrementItemCount(state, { id }) {
       const { itemCount } = state
       const currentCount = itemCount[id] || 0
