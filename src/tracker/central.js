@@ -12,6 +12,8 @@ class Central {
     this.currentCentralKey = 'default'
     this.pendingComputations = []
     this.willFlush = false
+
+    this.hitMap = {}
   }
 
   getPathNode(paths) {
@@ -100,36 +102,45 @@ class Central {
     comp.addOnEffectCallback(removeDep)
   }
 
+  hitMapKey(paths) {
+    if (paths.length) return paths.join('_')
+    return ''
+  }
+
+  updateHitMap(paths) {
+    paths.reduce((prev, cur) => {
+      const nextPaths = [...prev, cur]
+      const hitKey = this.hitMapKey(nextPaths)
+      this.hitMap[hitKey] += 1
+      return nextPaths
+    }, [])
+  }
+
   addDependsIfPossible(state) {
-    try {
-      if (!state.length) return
-      const current = state.shift()
-      if (!current) return
+    const len = state.length
+    if (!state.length) return
+
+    for (let i = len - 1; i >= 0; i--) {
+      const current = state[i]
       const { paths, property, comp } = current
-      paths.forEach(key => {
-        const index = state.findIndex(({ property }) => property === key)
+      const mergedPaths = paths.concat(property)
+      const hitKey = this.hitMapKey(mergedPaths)
+      const hitValue = this.hitMap[hitKey] || 0
 
-        if (index !== -1) {
-          const { hit = 0 } = state[index]
-          state[index].hit = hit + 1
-        }
-      })
-
-      if (!current.hit) {
-        this.addDepends(paths.concat(property), comp)
+      if (!hitValue) {
+        this.addDepends(mergedPaths, comp)
       }
 
-      if (state.length) this.addDependsIfPossible(state)
-    } catch(err) {
-      console.log('err : ', err)
+      this.hitMap[hitKey] = Math.max(0, hitValue - 1)
     }
   }
 
   flush() {
-    const reversedStack = this.stack.slice().reverse()
+    const focusedStack = this.stack
     this.stack = []
-    if (reversedStack.length) {
-      this.addDependsIfPossible(reversedStack)
+    this.hitMap = {}
+    if (focusedStack.length) {
+      this.addDependsIfPossible(focusedStack)
     }
 
     this.willFlush = false

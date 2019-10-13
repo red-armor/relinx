@@ -1,4 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+
+
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const { DIR, EXT = 'ts' } = process.env;
@@ -33,6 +35,8 @@ module.exports = {
     alias: {
       'relinx': __dirname,
     },
+    // fix npm link error `https://github.com/webpack/webpack/issues/811`
+    symlinks: false,
   },
   devServer: {
     port: process.env.PORT || '8080',

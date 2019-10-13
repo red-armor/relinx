@@ -11,6 +11,7 @@ import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
   get: (target, property, receiver) => {
     let originalValue = Reflect.get(initialState, property, receiver)
+    const type = Object.prototype.toString.call(originalValue)
 
     // 支持指定关心的路径
     if (reactivePath.length > 0) {
@@ -46,7 +47,6 @@ const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
       central.register({ paths, comp, property })
     }
 
-    const type = Object.prototype.toString.call(originalValue)
     if (shouldWrappedByProxy(originalValue)) {
       let nextValue = originalValue
       if (type === '[object Object]') {

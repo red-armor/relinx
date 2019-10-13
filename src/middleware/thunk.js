@@ -146,7 +146,7 @@ export default config => ({
       // 这个时候同样会出现`intermediate value`被覆盖的情况；所以在这里统一处理，将它放入下一个
       // event loop
       currentActionEffectsHandler(payload)((...args)=> {
-        setTimeout(() => nextDispatch(...args), 0)
+        Promise.resolve().then(() => nextDispatch(...args), 0)
       }, getState)
     }
   })
