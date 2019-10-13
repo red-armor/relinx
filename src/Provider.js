@@ -6,6 +6,9 @@ import React, {
 } from 'react'
 import context from './context'
 import central from './tracker/central'
+import infoLog from './utils/infoLog'
+
+const DEBUG = false
 
 export default ({ store, children }) => {
   const { initialState, createReducer, createDispatch } = store
@@ -24,7 +27,17 @@ export default ({ store, children }) => {
     storeKey: '',
     changedValue: {},
   }])
-  const dispatch = useMemo(() => createDispatch(setValue), [])
+
+  let setState = setValue
+
+  if (DEBUG) {
+    setState = (...args) => {
+      infoLog('Dispatch Action ', ...args)
+      setValue(...args)
+    }
+  }
+
+  const dispatch = useMemo(() => createDispatch(setState), [])
 
   useEffect(() => {
     try {
@@ -40,7 +53,12 @@ export default ({ store, children }) => {
     }
   }, [value])
 
-  // Context only need to pass `dispatch`, state value could get from isolate `useTracker` instance
+  if (DEBUG) {
+    infoLog('central : ', central)
+  }
+
+  // Context only need to pass `dispatch`, state value could get
+  // from isolate `useTracker` instance
   const propagatedValue = useMemo(() => ({
     dispatch,
   }), [])

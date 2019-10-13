@@ -11,6 +11,18 @@ import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
   get: (target, property, receiver) => {
     let originalValue = Reflect.get(initialState, property, receiver)
+
+    // 比如将data作为props往下传递的时候，`reactive`对于子组件而言没有存在的意义；所以这里面
+    // 返回一个`unProxy`对象
+    if (property === 'getUnTrack') {
+      if (Array.isArray(target)) {
+        const len = target.length
+        for (let i = 0; i < len; i++) {
+          central.register({ paths, comp, property: i })
+        }
+      }
+      return () => initialState
+    }
     const type = Object.prototype.toString.call(originalValue)
 
     // 支持指定关心的路径
@@ -48,17 +60,20 @@ const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
     }
 
     if (shouldWrappedByProxy(originalValue)) {
-      let nextValue = originalValue
+      let nextValue
+      let unobservable = originalValue
       if (type === '[object Object]') {
-        nextValue = { ...originalValue }
+        nextValue = { ...unobservable }
       }
 
       if (type === '[object Array]') {
-        nextValue = [ ...originalValue ]
+        nextValue = [ ...unobservable ]
       }
 
+      // 只要`useTracker`触发，就会执行`createHandler`操作，所以也就会有新的
+      // Proxy对象创建
       const next = new Proxy(nextValue, createHandler(
-        nextValue,
+        unobservable,
         comp,
         paths.concat(property),
         reactivePath

@@ -1,8 +1,6 @@
 import Node from './Node'
-
-const shallowEqual = (a, b) => {
-  return a === b
-}
+import shallowEqual from './utils/shallowEqual'
+import { isMutable, isTypeEqual } from './utils/ifType'
 
 class Central {
   constructor() {
@@ -29,6 +27,7 @@ class Central {
     return paths.reduce((acc, cur) => acc[cur], obj)
   }
 
+  // 通过paths更新对应的`currentState`需要更新的数据
   setPathValue(paths, newValue, obj) {
     paths.reduce((acc, cur, index) => {
       if (index === paths.length - 1) acc[cur] = newValue
@@ -64,20 +63,24 @@ class Central {
 
   propagateChange(newValue, oldValue, node) {
     if (!shallowEqual(newValue, oldValue)) {
-      node.depends.forEach(comp => {
-        comp.markAsDirty()
-        this.pendingComputations.push(comp)
-      })
-      const values = node.values
-      const keys = Object.keys(values)
+      // Update `mutable` object in `fine-grained` style
+      if (isTypeEqual(newValue, oldValue) && isMutable(newValue)) {
+        const values = node.values
+        const keys = Object.keys(values)
 
-      keys.forEach(key => {
-        const nextNode = values[key]
-        if (!nextNode) return
-        const nextNewValue = newValue[key]
-        const nextOldValue = oldValue[key]
-        this.propagateChange(nextNewValue, nextOldValue, nextNode)
-      })
+        keys.forEach(key => {
+          const nextNode = values[key]
+          if (!nextNode) return
+          const nextNewValue = newValue[key]
+          const nextOldValue = oldValue[key]
+          this.propagateChange(nextNewValue, nextOldValue, nextNode)
+        })
+      } else {
+        node.depends.forEach(comp => {
+          comp.markAsDirty()
+          this.pendingComputations.push(comp)
+        })
+      }
     }
   }
 
@@ -92,6 +95,8 @@ class Central {
     const oldValue = this.getPathValue(paths, currentState)
     this.propagateChange(newValue, oldValue, node)
     this.setPathValue(paths, newValue, currentState)
+
+    // 触发autoRunFunction函数进行调用，从而进行数据层的更新
     this.pendingComputations.forEach(comp => comp.applyChange())
     this.pendingComputations = []
   }
