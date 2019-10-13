@@ -10,7 +10,8 @@
   "license": "ISC",
   "files": [
     "src",
-    "license"
+    "license",
+    "README-zh_CN.md"
   ],
   "devDependencies": {
     "@babel/core": "^7.5.5",
