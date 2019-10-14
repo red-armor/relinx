@@ -8,6 +8,8 @@ export default (name, reactivePaths) => {
   const state = useRef()
   const unsub = useRef(() => {})
 
+  // console.log('reactivePaths : ', reactivePaths)
+
   // Every `useTracker` will has an isolated state manager; It has two functionality:
   // 1. register reactive `path`
   // 2. reactive to central data change and propagate change to connected context

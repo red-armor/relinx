@@ -2,14 +2,18 @@ import Computation from './Computation'
 import central from './central'
 import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 
+let count = 0
+
 // https://2ality.com/2016/11/proxying-builtins.html
 // https://exploringjs.com/es6/ch_proxies.html
 
 // 如果说存在的话，就返回相应的值，但是目前需要区分这个是否需要register
 // 是否需要提供一个时机进行设置`timeToRegister`
 // types could be wrapped by Proxy
-const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
+const createHandler = (initialState = {}, comp, paths = [], reactivePath, id) => ({
   get: (target, property, receiver) => {
+    console.log('get property : ', property, comp)
+    debugger
     let originalValue = Reflect.get(initialState, property, receiver)
 
     // 支持指定关心的路径
@@ -40,10 +44,12 @@ const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
       }
 
       if (matched) {
-        central.register({ paths, comp, property })
+        console.log('registb: ', paths, property)
+        central.register({ paths, comp, property, id })
       }
     } else if (target.hasOwnProperty(property)) {
-      central.register({ paths, comp, property })
+      console.log('regist x : ', paths, property)
+      central.register({ paths, comp, property, id })
     }
 
     const type = Object.prototype.toString.call(originalValue)
@@ -61,7 +67,8 @@ const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
         nextValue,
         comp,
         paths.concat(property),
-        reactivePath
+        reactivePath,
+        id,
       ))
       Reflect.set(target, property, next, receiver)
     }
@@ -71,6 +78,7 @@ const createHandler = (initialState = {}, comp, paths = [], reactivePath) => ({
 })
 
 function useTracker(fn, name, reactivePath = []) {
+  count++
   const computation = new Computation(fn, name)
   const initialState = central.getCurrent()
   // Promise.resolve().then(() => central.flush())
@@ -78,8 +86,13 @@ function useTracker(fn, name, reactivePath = []) {
   // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖
   // 所以一定要确保经过`createHeader`一系列操作以后，`initialState`要依旧只含`plain object`；
   // 不能够被`Proxy`污染
+
+  // console.log('reactive : ', reactivePath)
+
+  console.log('create -', count)
+
   return [
-    new Proxy({}, createHandler(initialState, computation, [], reactivePath)),
+    new Proxy({}, createHandler(initialState, computation, [], reactivePath, `${count}`)),
     () => computation.markAsDirty()
   ]
 }

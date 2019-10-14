@@ -12,6 +12,8 @@ class Central {
     this.currentCentralKey = 'default'
     this.pendingComputations = []
     this.willFlush = false
+    this.timeHandler = null
+    this.lastTrackId = undefined
   }
 
   getPathNode(paths) {
@@ -35,15 +37,33 @@ class Central {
   }
 
   requireFlush() {
-    setTimeout(() => this.flush(), 0)
+    // debugger
+    console.log('require --')
+    this.timeHandler = setTimeout(() => {
+      this.flush()
+      clearTimeout(this.timeHandler)
+    }, 0)
   }
 
   register(options) {
+    const { id } = options
+
+    if (typeof this.lastTrackId === 'undefined') {
+      this.lastTrackId = id
+    }
+
+    this.stack.push(options)
+
+    if (id !== this.lastTrackId) {
+      // console.log('hit ', id, this.lastTrackId)
+      this.lastTrackId = id
+      this.flush()
+    }
+
     if (!this.willFlush) {
       this.requireFlush()
       this.willFlush = true
     }
-    this.stack.push(options)
   }
 
   setBase(value, key = 'default') {
@@ -126,7 +146,15 @@ class Central {
   }
 
   flush() {
+    if (this.timeHandler) {
+      console.log('clear ', this.timeHandler)
+      clearTimeout(this.timeHandler)
+      this.timeHandler = null
+    }
+
     const reversedStack = this.stack.slice().reverse()
+    console.log('trigger flush : ', reversedStack.slice())
+
     this.stack = []
     if (reversedStack.length) {
       this.addDependsIfPossible(reversedStack)

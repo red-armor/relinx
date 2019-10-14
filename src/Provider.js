@@ -31,6 +31,7 @@ export default ({ store, children }) => {
       value.forEach(currentValue => {
         const { storeKey, changedValue = {}} = currentValue
         const keys = Object.keys(changedValue)
+        console.log('change ---', value)
         keys.forEach(key => {
           central.reconcileWithPaths([storeKey, key], changedValue[key])
         })
@@ -39,6 +40,8 @@ export default ({ store, children }) => {
       console.error(err)
     }
   }, [value])
+
+  console.log('center : ', central.node)
 
   // Context only need to pass `dispatch`, state value could get from isolate `useTracker` instance
   const propagatedValue = useMemo(() => ({
