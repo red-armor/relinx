@@ -4,7 +4,7 @@ const ANONYMOUS = 'anonymous-group'
 
 const getNode = (tree, paths = []) => {
   if (!paths.length) return tree
-  const [actionType, type] = paths.shift().split('\.')
+  const [actionType, type] = paths.shift().split('.')
   const nextTree = tree[actionType][type]
   return getNode(nextTree, paths)
 }
@@ -39,7 +39,7 @@ export default config => ({
     extraSupported,
   } = config || {}
 
-  let tree = extra.tree
+  const tree = extra.tree
   const parentStub = extra.parentStub || []
   let parentNode
   let isRoot = false
@@ -50,13 +50,14 @@ export default config => ({
       isRoot = true
       if (nextActions.length > 1) {
         hasAnonymousRoot = true
-        parentNode = extra.tree = decorateToken({
+        extra.tree = decorateToken({
           type: ANONYMOUS,
           actionType: 'action',
         })
       } else {
-        parentNode = extra.tree = {}
+        extra.tree = {}
       }
+      parentNode = extra.tree
     } else {
       parentNode = getNode(tree, parentStub)
     }
@@ -85,7 +86,7 @@ export default config => ({
           parentNode = decorateToken({
             type,
             payload,
-            actionType: 'action'
+            actionType: 'action',
           }, parentNode)
         } else {
           parentNode.actions[type] = decorateToken({
@@ -101,17 +102,12 @@ export default config => ({
     const currentActionEffectsHandler = currentEffects[actionType]
 
     if (currentActionEffectsHandler) {
-      invariant(
-        !actionGroup.length,
-        'Effect action `${action}` should not be mixed with reducer actions'
-      )
-
       if (extraSupported) {
         if (!parentNode.effects) {
           parentNode = decorateToken({
             type,
             payload,
-            actionType: 'effect'
+            actionType: 'effect',
           }, parentNode)
         } else {
           parentNode.effects[type] = decorateToken({
@@ -122,10 +118,10 @@ export default config => ({
         }
       }
 
-      const nextDispatch = action => {
+      const nextDispatch = actions => {
         const effectsActionGroup = []
 
-        const nextActions = [].concat(action)
+        const nextActions = [].concat(actions)
 
         nextActions.forEach(action => {
           let { type: nextType } = action
@@ -147,7 +143,12 @@ export default config => ({
         }
       }
 
-      currentActionEffectsHandler(payload)(nextDispatch, getState)
+      // 当`effects`和`reducer`共同存在时，如果说`effects`中dispatch的是一个同步的`action`
+      // 这个时候同样会出现`intermediate value`被覆盖的情况；所以在这里统一处理，将它放入下一个
+      // event loop
+      currentActionEffectsHandler(payload)((...args) => {
+        Promise.resolve().then(() => nextDispatch(...args), 0)
+      }, getState)
     }
   })
 

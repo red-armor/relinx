@@ -29,7 +29,10 @@ export default () => {
   console.log('render BottomBar')
   return (
     <div style={styles.wrapper}>
-      <span style={styles.text}>number {state.bottomBar.count}</span>
+      <span style={styles.text}>
+number
+        {state.bottomBar.count}
+      </span>
     </div>
   )
 }

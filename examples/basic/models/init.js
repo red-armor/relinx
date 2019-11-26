@@ -7,12 +7,10 @@ export default {
   },
 
   reducers: {
-    updateState: (_, { status}) => {
-      return { status, }
-    },
+    updateState: (_, { status }) => ({ status }),
     updatePage: state => ({
       page: state.page + 1,
-    })
+    }),
   },
 
   effects: {
@@ -35,6 +33,6 @@ export default {
         type: 'updateState',
         payload: { status: 'online' },
       })
-    }
-  }
+    },
+  },
 }

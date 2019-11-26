@@ -31,7 +31,7 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx'],
     alias: {
-      'relinx': __dirname,
+      relinx: __dirname,
     },
   },
   devServer: {

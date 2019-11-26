@@ -147,7 +147,7 @@ dispatch([{
 ```js
 const Item = props => {
 	const { isItemsSelected, itemIndex } = props
-  
+
   return (
     <div>
     	{isItemsSelected[itemIndex] ? <Selected /> : <Unselected />}

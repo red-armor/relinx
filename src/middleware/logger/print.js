@@ -6,20 +6,20 @@ const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null)
 const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
 
 const colorLog = group => {
-  const { text, styles } = group.reduce((acc, cur) => {
+  const { text: t, styles: s } = group.reduce((acc, cur) => {
     const { text, styles } = acc
     const [subText, subStyle] = cur
 
     return {
       text: `${text}%c ${subText}`,
-      styles: [].concat(styles, subStyle)
+      styles: [].concat(styles, subStyle),
     }
   }, {
     text: '',
     styles: [],
   })
 
-  return [text, ...styles]
+  return [t, ...s]
 }
 
 const renderTitle = props => {
@@ -42,7 +42,9 @@ const renderTitle = props => {
 }
 
 const renderSubAction = props => {
-  const { type, payload = '', actionType = 'action', flag, style } = props
+  const {
+    type, payload = '', actionType = 'action', flag, style,
+  } = props
   const parts = []
   if (flag) {
     parts.push([flag, 'color: #00474f; font-weight: bold'])
@@ -84,14 +86,20 @@ const renderNextState = state => {
 }
 
 const paint = (tree, flag) => {
-  const { type, actions = {}, effects = {}, payload, actionType } = tree
+  const {
+    type, actions = {}, effects = {}, payload, actionType,
+  } = tree
   const actionKeys = Object.keys(actions)
   const effectKeys = Object.keys(effects)
 
   if (!actionKeys.length && !effectKeys.length) {
-    renderSubAction({ type, payload, actionType, flag, style: 'line' })
+    renderSubAction({
+      type, payload, actionType, flag, style: 'line',
+    })
   } else {
-    renderSubAction({ type, payload, actionType, flag })
+    renderSubAction({
+      type, payload, actionType, flag,
+    })
   }
 
   actionKeys.forEach(key => {

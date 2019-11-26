@@ -12,17 +12,15 @@ import models from './models'
 import App from './views'
 
 const store = createStore({
-  models
+  models,
 }, applyMiddleware(thunk({
   extraSupported: true,
 })))
 
-const Basic = () => {
-  return (
-    <Provider store={store}>
-      <App />
-    </Provider>
-  )
-}
+const Basic = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+)
 
 ReactDOM.render(<Basic />, document.getElementById('app'))

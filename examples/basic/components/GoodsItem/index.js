@@ -37,7 +37,7 @@ const styles = {
     width: 15,
     display: 'inline-block',
     textAlign: 'center',
-  }
+  },
 }
 
 export default props => {
@@ -51,14 +51,14 @@ export default props => {
   const increment = useCallback(() => {
     dispatch({
       type: 'goods/increment',
-      payload: { id }
+      payload: { id },
     })
   }, [])
 
   const decrement = useCallback(() => {
     dispatch({
       type: 'goods/decrement',
-      payload: { id }
+      payload: { id },
     })
   }, [])
 
