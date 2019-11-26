@@ -6,7 +6,7 @@ export default {
   reducers: {
     addGoods(state, { goodsList }) {
       return {
-        listData: [].concat(state.listData, goodsList)
+        listData: [].concat(state.listData, goodsList),
       }
     },
     incrementItemCount(state, { id }) {
@@ -28,13 +28,13 @@ export default {
           [id]: currentCount - 1,
         },
       }
-    }
+    },
   },
   effects: {
     increment: ({ id }) => dispatch => {
-       dispatch([{
+      dispatch([{
         type: 'incrementItemCount',
-        payload: { id }
+        payload: { id },
       }, {
         type: 'bottomBar/incrementTotalCount',
       }])
@@ -42,10 +42,10 @@ export default {
     decrement: ({ id }) => dispatch => {
       dispatch([{
         type: 'decrementItemCount',
-        payload: { id }
+        payload: { id },
       }, {
         type: 'bottomBar/decrementTotalCount',
       }])
-    }
-  }
+    },
+  },
 }

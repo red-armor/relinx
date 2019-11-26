@@ -9,7 +9,7 @@ const styles = {
     fontSize: 16,
     lineHeight: '50px',
     backgroundColor: '#5cbd3c',
-  }
+  },
 }
 
 export default () => {

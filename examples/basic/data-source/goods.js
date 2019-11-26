@@ -15,10 +15,8 @@ export const goodsDataGenerator = ({ page }) => {
   return results
 }
 
-export const getGoods = ({ page }) => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(goodsDataGenerator({ page }))
-    }, 300)
-  })
-}
+export const getGoods = ({ page }) => new Promise(resolve => {
+  setTimeout(() => {
+    resolve(goodsDataGenerator({ page }))
+  }, 300)
+})

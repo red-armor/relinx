@@ -12,7 +12,7 @@ export default ({ getState }) => next => (actions, extra = {}) => {
 
   const nextState = JSON.parse(JSON.stringify(getState()))
   const endTime = Date.now()
-  let nextTree = JSON.parse(JSON.stringify(extra.tree))
+  const nextTree = JSON.parse(JSON.stringify(extra.tree))
 
   print({
     prevState,

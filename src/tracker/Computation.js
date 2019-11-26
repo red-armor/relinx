@@ -6,7 +6,7 @@ class Computation {
   constructor(fn, name) {
     this.autoRunFunction = fn
     this.onEffectCallback = []
-    this.id = id++
+    this.id = id++ // eslint-disable-line
     this.name = name
     this.dirty = false
   }

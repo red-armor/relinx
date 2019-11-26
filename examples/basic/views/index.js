@@ -29,7 +29,7 @@ const styles = {
   goodsWrapper: {
     overflowY: 'auto',
     flex: 1,
-  }
+  },
 }
 
 export default () => {

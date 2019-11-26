@@ -21,5 +21,5 @@ module.exports = {
 
   get thunk() {
     return require('./src/middleware/thunk').default
-  }
+  },
 }

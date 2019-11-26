@@ -1,10 +1,12 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react'
+import React, {
+  useRef, useEffect, useState, useMemo,
+} from 'react'
 import useTracker from './useTracker'
 import central from './central'
 
 central.setBase({
-  a: {c: {f: 4}},
-  b: [2,3]
+  a: { c: { f: 4 } },
+  b: [2, 3],
 })
 
 const A = () => {
@@ -21,7 +23,12 @@ const A = () => {
 
   const a = state.a
 
-  return <div>a: {counter.current}</div>
+  return (
+    <div>
+a:
+      {counter.current}
+    </div>
+  )
 }
 
 const B = () => {
@@ -38,7 +45,12 @@ const B = () => {
 
   const b = state.b
 
-  return <div>b: {counter.current}</div>
+  return (
+    <div>
+b:
+      {counter.current}
+    </div>
+  )
 }
 
 const C = () => {
@@ -54,7 +66,12 @@ const C = () => {
   })
 
   const c = state.a.c
-  return <div>c: {counter.current}</div>
+  return (
+    <div>
+c:
+      {counter.current}
+    </div>
+  )
 }
 
 const D = () => {
@@ -70,7 +87,12 @@ const D = () => {
   })
 
   const d = state.a.c.f
-  return <div>d: {counter.current}</div>
+  return (
+    <div>
+d:
+      {counter.current}
+    </div>
+  )
 }
 
 export default () => {
