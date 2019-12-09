@@ -15,11 +15,19 @@ module.exports = {
     return require('./src/hooks/useRelinx').default
   },
 
+  get useDispatch() {
+    return require('./src/hooks/useDispatch').default
+  },
+
   get logger() {
     return require('./src/middleware/logger').default
   },
 
   get thunk() {
     return require('./src/middleware/thunk').default
+  },
+
+  get observe() {
+    return require('./src/observe').default
   },
 }

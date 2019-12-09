@@ -1,5 +1,3 @@
-import invariant from 'invariant'
-
 const ANONYMOUS = 'anonymous-group'
 
 const getNode = (tree, paths = []) => {

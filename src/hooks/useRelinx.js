@@ -1,31 +1,33 @@
-import {
-  useContext, useState, useEffect, useRef,
-} from 'react'
+import { useContext, useRef } from 'react'
+import invariant from 'invariant'
 import context from '../context'
 import useTracker from '../tracker/useTracker'
+import toString from '../utils/toString'
 
-export default (name, reactivePaths) => {
-  const { dispatch } = useContext(context)
-  const [value, setValue] = useState(0)
+export default storeName => {
+  const { dispatch, computation, namespace } = useContext(context)
+  invariant(
+    typeof storeName === 'string' && storeName !== '',
+    '`storeName` is required to request data source'
+  )
+
   const state = useRef()
-  const unsub = useRef(() => {})
+
+  if (!computation) {
+    throw new Error('`observe` function is required to be wrapper function')
+  }
 
   // Every `useTracker` will has an isolated state manager; It has two functionality:
   // 1. register reactive `path`
   // 2. reactive to central data change and propagate change to connected context
-  const tracker = useTracker(() => {
-    setValue(value + 1)
-  }, name, reactivePaths)
-
+  const tracker = useTracker(computation, namespace)
   state.current = tracker[0]
-  unsub.current = tracker[1]
 
-  // When it comes to `unmount`, computation's listener should be clear.
-  // Note that use `unsub.current` to get the latest created computation
-  useEffect(() => () => unsub.current(), [])
+  invariant(
+    toString(state.current[storeName]) === '[object Object]',
+    'Maybe you are using non-defined store; `storeName` should '
+    + 'matched with exported value from `models/index.js` file'
+  )
 
-  // The following style is in-corrent; `unsub.current` is the original closure callback;
-  // useEffect(() => unsub.current, [])
-
-  return [state.current, dispatch]
+  return [state.current[storeName], dispatch]
 }

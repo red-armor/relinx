@@ -3,17 +3,26 @@ let id = 0
 // TODO: computation with namespace
 
 class Computation {
-  constructor(fn, name) {
-    this.autoRunFunction = fn
+  constructor({
+    autoRun,
+    name,
+    autoRunUpdated,
+  }) {
+    this.autoRunFunction = autoRun
     this.onEffectCallback = []
     this.id = id++ // eslint-disable-line
     this.name = name
     this.dirty = false
+    this.autoRunUpdated = autoRunUpdated
+  }
+
+  clear() {
+    this.onEffectCallback.forEach(callback => callback())
+    this.onEffectCallback = []
   }
 
   markAsDirty() {
-    this.onEffectCallback.forEach(callback => callback())
-    this.onEffectCallback = []
+    this.clear()
     this.dirty = true
   }
 

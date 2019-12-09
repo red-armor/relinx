@@ -10,16 +10,16 @@ import infoLog from './utils/infoLog'
 
 const DEBUG = false
 
-export default ({ store, children }) => {
+export default ({ store, children, namespace = 'default' }) => {
   const { initialState, createReducer, createDispatch } = store
   // TODO: for log
   // const nonReactiveInitialState = useMemo(() => deepCopy(initialState), [])
   const nonReactiveInitialState = initialState
-  const initialized = useRef(false)
+  const initialized = useRef({})
 
-  if (!initialized.current) {
-    central.setBase(initialState)
-    initialized.current = true
+  if (!initialized.current[namespace]) {
+    central.setBase(initialState, namespace)
+    initialized.current[namespace] = true
   }
 
   const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [])
@@ -45,11 +45,11 @@ export default ({ store, children }) => {
         const { storeKey, changedValue = {} } = currentValue
         const keys = Object.keys(changedValue)
         keys.forEach(key => {
-          central.reconcileWithPaths([storeKey, key], changedValue[key])
+          central.reconcileWithPaths([storeKey, key], changedValue[key], namespace)
         })
       })
     } catch (err) {
-      console.error(err)
+      console.error(err) // eslint-disable-line
     }
   }, [value])
 
@@ -60,6 +60,8 @@ export default ({ store, children }) => {
   // Context only need to pass `dispatch`, state value could get
   // from isolate `useTracker` instance
   const propagatedValue = useMemo(() => ({
+    computation: null,
+    namespace,
     dispatch,
   }), [])
 

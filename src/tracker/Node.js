@@ -22,6 +22,18 @@ class Node {
     }
   }
 
+  clear() {
+    const keys = Object.keys(this.values)
+
+    keys.forEach(key => {
+      const node = this.values[key]
+      if (node) {
+        node.depends.forEach(comp => comp.clear())
+        node.clear()
+      }
+    })
+  }
+
   removeNode(node) {
     const property = node.property
     delete this.values[property]
@@ -29,12 +41,12 @@ class Node {
   }
 
   unMountIfNecessary() {
-    if (this.shouldNodeUmmount() && this.parent) {
+    if (this.shouldNodeUnmount() && this.parent) {
       this.parent.removeNode(this)
     }
   }
 
-  shouldNodeUmmount() {
+  shouldNodeUnmount() {
     return !this.depends.size && !Object.keys(this.values).length
   }
 }

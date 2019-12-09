@@ -1,6 +1,11 @@
 import Node from './Node'
 import shallowEqual from './utils/shallowEqual'
 import { isMutable, isTypeEqual } from './utils/ifType'
+import infoLog from '../utils/infoLog'
+
+const DEBUG = false
+const REGISTER_DEBUG = false
+const RECONCILE_PATHS_DEBUG = false
 
 class Central {
   constructor() {
@@ -10,8 +15,13 @@ class Central {
     this.currentCentralKey = 'default'
     this.pendingComputations = []
     this.willFlush = false
+    this.currentComputation = null
 
     this.hitMap = {}
+  }
+
+  setCurrentComputation(computation) {
+    this.currentComputation = computation
   }
 
   getPathValue(paths, obj) {
@@ -35,30 +45,19 @@ class Central {
     }, this.node)
   }
 
-  requireFlush() {
-    setTimeout(() => this.flush(), 0)
-  }
-
   register(options) {
-    if (!this.willFlush) {
-      this.requireFlush()
-      this.willFlush = true
+    if (REGISTER_DEBUG) {
+      infoLog('register : ', options.paths, options.comp, options.property)
     }
     this.stack.push(options)
   }
 
-  setBase(value, key = 'default') {
-    this.use(key)
-    this.collection[this.currentCentralKey] = value
+  setBase(value, namespace) {
+    this.collection[namespace] = value
   }
 
-  use(key) {
-    if (key !== this.currentCentralKey) this.currentCentralKey = key
-  }
-
-  getCurrent() {
-    const key = this.currentCentralKey || 'default'
-    return this.collection[key]
+  getCurrent(namespace) {
+    return this.collection[namespace]
   }
 
   propagateChange(newValue, oldValue, node) {
@@ -80,19 +79,26 @@ class Central {
           comp.markAsDirty()
           this.pendingComputations.push(comp)
         })
+        if (DEBUG) {
+          infoLog('updated node: ', node)
+        }
+        node.clear()
       }
     }
   }
 
-  reconcileWithPaths(paths, newValue) {
+  reconcileWithPaths(paths, newValue, namespace) {
     // 因为目前this.flush()是放置到`setTimout`中的，所以会存在应该`listen`的`path`
     // 此时此刻并没有被绑定到`deps`
-    if (this.willFlush) {
-      this.flush()
-    }
+    // if (this.willFlush) {
+    //   this.flush()
+    // }
     const node = this.getPathNode(paths)
-    const currentState = this.getCurrent()
+    const currentState = this.getCurrent(namespace)
     const oldValue = this.getPathValue(paths, currentState)
+    if (RECONCILE_PATHS_DEBUG) {
+      infoLog('reconcile paths : ', paths)
+    }
     this.propagateChange(newValue, oldValue, node)
     this.setPathValue(paths, newValue, currentState)
 
@@ -147,8 +153,6 @@ class Central {
     if (focusedStack.length) {
       this.addDependsIfPossible(focusedStack)
     }
-
-    this.willFlush = false
   }
 }
 
