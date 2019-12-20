@@ -22,7 +22,7 @@ const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
     // 按照正常的方式，如果这一层不做拦截的话，即使`Component` rerun，它依旧是拿不到
     // 最新的`value`；因为它使用到的`item`是上游传的，现在粒度化的控制，造成了上游
     // 是不进行没必要的render的
-    if (currentComputation.autoRunUpdated) {
+    if (currentComputation && currentComputation.autoRunUpdated) {
       const currentState = central.getCurrent(namespace)
       originalValue = getPathValue(paths.concat(property), currentState)
     }
@@ -44,6 +44,11 @@ const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
     }
     const type = toString(originalValue)
 
+    // TODO：存在一个问题，如果说是一个空对象`a = {}`，假如在代码层面直接使用a.b的话；
+    // 现在register是不会将b绑定的，突然一个时间点`set(a, {b: 1})`相应的组件也不会发生变化；
+    // 所以，这个需要思考是否可以通过`Reflect.get()来协助`
+    // if (nextTarget.hasOwnProperty(property)
+    // || (!nextTarget.hasOwnProperty(property) && typeof originalValue === 'undefined')) {
     if (nextTarget.hasOwnProperty(property)) { // eslint-disable-line
       central.register({
         paths,

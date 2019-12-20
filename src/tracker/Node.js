@@ -2,6 +2,8 @@ class Node {
   constructor(parent, property) {
     this.parent = parent
     this.property = property
+    const parentProperty = parent ? parent.chainPath : ''
+    this.chainPath = parentProperty && parentProperty !== '' ? `${parentProperty}.${property}` : property
     this.depends = new Set()
     this.values = {}
   }
