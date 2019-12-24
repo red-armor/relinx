@@ -1,5 +1,4 @@
 import React, {
-  memo,
   useContext,
   useState,
   useRef,
@@ -10,13 +9,17 @@ import Computation from './tracker/Computation'
 import context from './context'
 import central from './tracker/central'
 import infoLog from './utils/infoLog'
-import shallowEqual from './tracker/utils/shallowEqual'
+// import shallowEqual from './tracker/utils/shallowEqual'
 
 const DEBUG = false
 let pathNumber = 0
 
 export default WrappedComponent => props => {
-  const { computation: beforeComputation, pathNumber: pn, ...rest } = useContext(context)
+  const {
+    computation: beforeComputation,
+    pathNumber: pn,
+    ...rest
+  } = useContext(context)
 
   const [state, setState] = useState(0)
   const autoRunUpdated = useRef(false)
@@ -27,6 +30,10 @@ export default WrappedComponent => props => {
   const componentName = WrappedComponent.displayName
     || WrappedComponent.name
     || 'ObservedComponent'
+
+  if (beforeComputation && beforeComputation.autoRunUpdated && !autoRunUpdated.current) {
+    autoRunUpdated.current = true
+  }
 
   const newComputation = new Computation({
     autoRun: () => {
@@ -68,6 +75,10 @@ export default WrappedComponent => props => {
   const ResetComputationHelper = () => {
     central.flush()
     central.resetCurrentComputation(beforeComputation)
+
+    if (autoRunUpdated.current) {
+      autoRunUpdated.current = false
+    }
     return null
   }
 
@@ -86,9 +97,6 @@ export default WrappedComponent => props => {
 
   useEffect(() => {
     central.flush()
-    if (autoRunUpdated.current) {
-      autoRunUpdated.current = false
-    }
   })
 
   return (

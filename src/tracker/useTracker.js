@@ -12,7 +12,12 @@ const getPathValue = (paths, obj) => (
 // 如果说存在的话，就返回相应的值，但是目前需要区分这个是否需要register
 // 是否需要提供一个时机进行设置`timeToRegister`
 // types could be wrapped by Proxy
-const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
+const createHandler = ({
+  initialState = {},
+  comp,
+  paths = [],
+  namespace,
+}) => ({
   get: (target, property, receiver) => {
     const currentComputation = central.currentComputation
     const nextTarget = target
@@ -22,7 +27,7 @@ const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
     // 按照正常的方式，如果这一层不做拦截的话，即使`Component` rerun，它依旧是拿不到
     // 最新的`value`；因为它使用到的`item`是上游传的，现在粒度化的控制，造成了上游
     // 是不进行没必要的render的
-    if (currentComputation && currentComputation.autoRunUpdated) {
+    if (currentComputation && currentComputation.autoRunUpdated && currentComputation !== comp) {
       const currentState = central.getCurrent(namespace)
       originalValue = getPathValue(paths.concat(property), currentState)
     }
@@ -48,7 +53,9 @@ const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
     // 现在register是不会将b绑定的，突然一个时间点`set(a, {b: 1})`相应的组件也不会发生变化；
     // 所以，这个需要思考是否可以通过`Reflect.get()来协助`
     // if (nextTarget.hasOwnProperty(property)
-    // || (!nextTarget.hasOwnProperty(property) && typeof originalValue === 'undefined')) {
+    //   || (!nextTarget.hasOwnProperty(property)
+    //   && typeof originalValue === 'undefined'
+    // )) {
     if (nextTarget.hasOwnProperty(property)) { // eslint-disable-line
       central.register({
         paths,
@@ -70,12 +77,12 @@ const createHandler = (initialState = {}, comp, paths = [], namespace) => ({
 
       // 只要`useTracker`触发，就会执行`createHandler`操作，所以也就会有新的
       // Proxy对象创建
-      return new Proxy(nextValue, createHandler(
-        unobservable,
+      return new Proxy(nextValue, createHandler({
+        initialState: unobservable,
         comp,
-        paths.concat(property),
+        paths: paths.concat(property),
         namespace,
-      ))
+      }))
     }
     return originalValue
   },
@@ -88,7 +95,12 @@ function useTracker(computation, namespace) {
   // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖
   // 所以一定要确保经过`createHeader`一系列操作以后，`initialState`要依旧只含`plain object`；
   // 不能够被`Proxy`污染
-  return [new Proxy({}, createHandler(initialState, computation, [], namespace))]
+  return [new Proxy({}, createHandler({
+    initialState,
+    comp: computation,
+    paths: [],
+    namespace,
+  }))]
 }
 
 export default useTracker
