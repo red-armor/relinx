@@ -1,9 +1,9 @@
 import { formatTime } from './utils'
 
-const colorLine = Function.apply.bind(console.log, null)
-const colorGroupEnd = console.groupEnd
-const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null)
-const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
+const colorLine = Function.apply.bind(console.log, null) // eslint-disable-line
+const colorGroupEnd = console.groupEnd // eslint-disable-line
+const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null) // eslint-disable-line
+// const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
 
 const colorLog = group => {
   const { text: t, styles: s } = group.reduce((acc, cur) => {

@@ -7,6 +7,7 @@ class Computation {
     autoRun,
     name,
     autoRunUpdated,
+    pathNumber,
   }) {
     this.autoRunFunction = autoRun
     this.onEffectCallback = []
@@ -14,6 +15,7 @@ class Computation {
     this.name = name
     this.dirty = false
     this.autoRunUpdated = autoRunUpdated
+    this.pathNumber = pathNumber
   }
 
   clear() {

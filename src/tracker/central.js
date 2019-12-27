@@ -1,6 +1,6 @@
 import Node from './Node'
 import shallowEqual from './utils/shallowEqual'
-import { isMutable, isTypeEqual } from './utils/ifType'
+import { isMutable, isTypeEqual, hasEmptyItem } from './utils/ifType'
 import infoLog from '../utils/infoLog'
 
 const DEBUG = false
@@ -22,6 +22,26 @@ class Central {
 
   setCurrentComputation(computation) {
     this.currentComputation = computation
+  }
+
+  resetCurrentComputation(beforeComputation) {
+    // if (this.currentComputation) {
+    //   const beforeComputation = this.currentComputation.beforeComputation
+    //   if (beforeComputation === this.currentComputation.beforeComputation) {
+    //     this.currentComputation = null
+    //   } else if (beforeComputation) {
+    //     this.currentComputation = beforeComputation
+    //   }
+    // }
+
+    // if (this.currentComputation) {
+    //   const beforeComputation = this.currentComputation.beforeComputation
+    //   if (beforeComputation) {
+    //     this.currentComputation = beforeComputation
+    //   }
+    // }
+
+    this.currentComputation = beforeComputation
   }
 
   getPathValue(paths, obj) {
@@ -46,8 +66,8 @@ class Central {
   }
 
   register(options) {
-    if (REGISTER_DEBUG) {
-      infoLog('register : ', options.paths, options.comp, options.property)
+    if (REGISTER_DEBUG && options.property === 'quantity') {
+      infoLog('register : ', options.paths, options.comp.name, options.property)
     }
     this.stack.push(options)
   }
@@ -60,10 +80,36 @@ class Central {
     return this.collection[namespace]
   }
 
+  /**
+   *
+   * @param {any} newValue
+   * @param {any} oldValue
+   * @param {any} node
+   */
   propagateChange(newValue, oldValue, node) {
     if (!shallowEqual(newValue, oldValue)) {
+      const isSameTypeMutation = isTypeEqual(newValue, oldValue) && isMutable(newValue)
+
+      if (!isSameTypeMutation || hasEmptyItem(newValue, oldValue)) {
+        node.depends.forEach(comp => {
+          comp.markAsDirty()
+          this.pendingComputations.push(comp)
+        })
+        if (DEBUG) {
+          if (hasEmptyItem(newValue, oldValue)) {
+            infoLog('update node with empty item ', node, newValue, oldValue)
+          } else {
+            infoLog('updated node: ', node)
+          }
+        }
+        node.clear()
+        return
+      }
+
       // Update `mutable` object in `fine-grained` style
-      if (isTypeEqual(newValue, oldValue) && isMutable(newValue)) {
+      // TODO：这里只判断它的property值是否发生了变化，对于本身从null => {}；这种情况，有可能存在
+      // autoRun丢失的问题
+      if (isSameTypeMutation) {
         const values = node.values
         const keys = Object.keys(values)
 
@@ -74,15 +120,6 @@ class Central {
           const nextOldValue = oldValue[key]
           this.propagateChange(nextNewValue, nextOldValue, nextNode)
         })
-      } else {
-        node.depends.forEach(comp => {
-          comp.markAsDirty()
-          this.pendingComputations.push(comp)
-        })
-        if (DEBUG) {
-          infoLog('updated node: ', node)
-        }
-        node.clear()
       }
     }
   }
@@ -93,6 +130,7 @@ class Central {
     // if (this.willFlush) {
     //   this.flush()
     // }
+    this.pendingComputations = []
     const node = this.getPathNode(paths)
     const currentState = this.getCurrent(namespace)
     const oldValue = this.getPathValue(paths, currentState)
@@ -102,9 +140,7 @@ class Central {
     this.propagateChange(newValue, oldValue, node)
     this.setPathValue(paths, newValue, currentState)
 
-    // 触发autoRunFunction函数进行调用，从而进行数据层的更新
-    this.pendingComputations.forEach(comp => comp.applyChange())
-    this.pendingComputations = []
+    return this.pendingComputations
   }
 
   addDepends(paths, comp) {
