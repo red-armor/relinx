@@ -1,12 +1,17 @@
 import central from './central'
 import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 import toString from '../utils/toString'
+import isPlainObject from '../utils/isPlainObject'
 
 // https://2ality.com/2016/11/proxying-builtins.html
 // https://exploringjs.com/es6/ch_proxies.html
 
 const getPathValue = (paths, obj) => (
-  paths.reduce((acc, property) => Reflect.get(acc, property), obj)
+  paths.reduce((acc, property) => {
+    // Reflect.get requires the first argument be an object, or will cause `TypeError`
+    if (!isPlainObject(acc)) return acc
+    return Reflect.get(acc, property)
+  }, obj)
 )
 
 // 如果说存在的话，就返回相应的值，但是目前需要区分这个是否需要register

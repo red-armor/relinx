@@ -25,7 +25,8 @@ export default storeName => {
 
   invariant(
     toString(state.current[storeName]) === '[object Object]',
-    'Maybe you are using non-defined store; `storeName` should '
+    'Maybe you are using non-defined store;'
+    + `\`storeName\` ${storeName} should`
     + 'matched with exported value from `models/index.js` file'
   )
 
