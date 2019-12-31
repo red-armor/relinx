@@ -1,33 +1,19 @@
-module.exports = {
-  get Provider() {
-    return require('./src/Provider').default
-  },
+import Provider from './src/Provider'
+import applyMiddleware from './src/applyMiddleware'
+import createStore from './src/createStore'
+import useRelinx from './src/hooks/useRelinx'
+import useDispatch from './src/hooks/useDispatch'
+import logger from './src/middleware/logger'
+import thunk from './src/middleware/thunk'
+import observe from './src/observe'
 
-  get applyMiddleware() {
-    return require('./src/applyMiddleware').default
-  },
-
-  get createStore() {
-    return require('./src/createStore').default
-  },
-
-  get useRelinx() {
-    return require('./src/hooks/useRelinx').default
-  },
-
-  get useDispatch() {
-    return require('./src/hooks/useDispatch').default
-  },
-
-  get logger() {
-    return require('./src/middleware/logger').default
-  },
-
-  get thunk() {
-    return require('./src/middleware/thunk').default
-  },
-
-  get observe() {
-    return require('./src/observe').default
-  },
+export {
+  Provider,
+  applyMiddleware,
+  createStore,
+  useRelinx,
+  useDispatch,
+  logger,
+  thunk,
+  observe,
 }

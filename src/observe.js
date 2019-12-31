@@ -9,7 +9,6 @@ import Computation from './tracker/Computation'
 import context from './context'
 import central from './tracker/central'
 import infoLog from './utils/infoLog'
-// import shallowEqual from './tracker/utils/shallowEqual'
 
 const DEBUG = false
 let pathNumber = 0
@@ -50,7 +49,7 @@ export default WrappedComponent => props => {
     // the computation it replace. once current computation finished, the
     // current computation context will be handle to `beforeComponent`
     // beforeComputation: currentComputation,
-    name: WrappedComponent.name,
+    name: componentName,
     autoRunUpdated: autoRunUpdated.current,
   })
   central.setCurrentComputation(newComputation)

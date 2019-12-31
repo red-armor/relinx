@@ -1,5 +1,3 @@
-export const Timer = performance || Date
-
 const padding = (value, paddingCount = 2) => `00${value}`.slice(-paddingCount)
 
 export const formatTime = d => {

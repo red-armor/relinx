@@ -38,6 +38,14 @@ class Computation {
   addOnEffectCallback(fn) {
     this.onEffectCallback.push(fn)
   }
+
+  getValue() {
+    return {
+      id: this.id,
+      name: this.name,
+      pathNumber: this.pathNumber,
+    }
+  }
 }
 
 export default Computation
