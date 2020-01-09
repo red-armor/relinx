@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { useRelinx } from 'relinx'
+import { useDispatch, observe } from 'relinx'
 
 const styles = {
   container: {
@@ -40,25 +40,23 @@ const styles = {
   },
 }
 
-export default props => {
+const GoodsItem = props => {
   const { index } = props
-  const [state, dispatch] = useRelinx(`GoodsItem_${index}`)
+  const [dispatch] = useDispatch()
 
-  const { data: { title, id } } = props
-  const count = state.goods.itemCount[id] || 0
-  console.log(`render GoodsItem_${index}`)
+  const { data: { title, id, count } } = props
 
   const increment = useCallback(() => {
     dispatch({
       type: 'goods/increment',
-      payload: { id },
+      payload: { id, index },
     })
   }, [])
 
   const decrement = useCallback(() => {
     dispatch({
       type: 'goods/decrement',
-      payload: { id },
+      payload: { id, index },
     })
   }, [])
 
@@ -73,3 +71,5 @@ export default props => {
     </div>
   )
 }
+
+export default observe(GoodsItem)

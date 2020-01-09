@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useRelinx } from 'relinx'
+import { observe, useDispatch } from 'relinx'
 
 import BottomBar from './BottomBar'
 import GoodsView from './GoodsView'
@@ -32,8 +32,8 @@ const styles = {
   },
 }
 
-export default () => {
-  const [_, dispatch] = useRelinx()
+const Main = () => {
+  const [dispatch] = useDispatch()
 
   useEffect(() => {
     dispatch([{
@@ -42,13 +42,6 @@ export default () => {
       type: 'init/getGoodsList',
     }])
 
-    // dispatch([{
-    //   type: 'goods/incrementItemCount',
-    //   payload: { id: 1}
-    // }, {
-    //   type: 'goods/decrementItemCount',
-    //   payload: { id: 2}
-    // }])
   }, [])
 
   return (
@@ -63,3 +56,5 @@ export default () => {
     </div>
   )
 }
+
+export default observe(Main)

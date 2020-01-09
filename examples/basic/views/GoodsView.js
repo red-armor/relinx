@@ -1,12 +1,10 @@
 import React from 'react'
-import { useRelinx } from 'relinx'
+import { useRelinx, observe } from 'relinx'
 import GoodsItem from '../components/GoodsItem'
 
-export default () => {
-  const [state] = useRelinx('GoodsView')
-  const { goods: { listData } } = state
-
-  console.log('render GoodsView')
+const GoodsView = () => {
+  const [state] = useRelinx('goods')
+  const { listData } = state
 
   return listData.map((data, key) => (
     <GoodsItem
@@ -16,3 +14,5 @@ export default () => {
     />
   ))
 }
+
+export default observe(GoodsView)

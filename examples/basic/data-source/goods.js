@@ -8,6 +8,7 @@ export const goodsDataGenerator = ({ page }) => {
     results.push({
       id: index,
       title: `goods-${index}`,
+      count: Math.floor(Math.random() * 10) + 1,
       description: `category-${index}`,
     })
   }

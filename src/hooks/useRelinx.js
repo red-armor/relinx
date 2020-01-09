@@ -23,6 +23,8 @@ export default storeName => {
   state.current = tracker[0]
   const stateValue = state.current[storeName]
 
+  console.log('state : ', stateValue, storeName)
+
   // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
   invariant(
     !!stateValue,
