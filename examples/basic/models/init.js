@@ -1,6 +1,6 @@
 import { getGoods } from '../data-source/goods'
 
-export default {
+export default () => ({
   state: {
     page: 0,
     status: 'offline',
@@ -35,4 +35,4 @@ export default {
       })
     },
   },
-}
+})

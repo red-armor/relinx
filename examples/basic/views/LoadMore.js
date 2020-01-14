@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { useRelinx } from 'relinx'
+import { observe, useDispatch } from 'relinx'
 
 const styles = {
   wrapper: {
@@ -12,8 +12,8 @@ const styles = {
   },
 }
 
-export default () => {
-  const [_, dispatch] = useRelinx()
+const LoadMore = () => {
+  const [dispatch] = useDispatch()
   const handleClick = useCallback(() => {
     dispatch({
       type: 'init/getGoodsList',
@@ -28,3 +28,5 @@ export default () => {
     </div>
   )
 }
+
+export default observe(LoadMore)

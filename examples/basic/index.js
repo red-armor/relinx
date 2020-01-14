@@ -7,14 +7,14 @@ import {
   applyMiddleware,
   thunk,
 } from 'relinx'
-import models from './models'
+import Models from './models'
 
 import App from './views'
 
 const store = createStore({
-  models,
+  models: new Models(),
 }, applyMiddleware(thunk({
-  extraSupported: true,
+  // extraSupported: true,
 })))
 
 const Basic = () => (

@@ -1,5 +1,5 @@
 import React from 'react'
-import { useRelinx } from 'relinx'
+import { useRelinx, observe } from 'relinx'
 
 const styles = {
   wrapper: {
@@ -24,15 +24,17 @@ const styles = {
   },
 }
 
-export default () => {
-  const [state] = useRelinx('BottomBar')
-  console.log('render BottomBar')
+const BottomBar = () => {
+  const [state] = useRelinx('bottomBar')
+  const { count } = state
+
   return (
     <div style={styles.wrapper}>
       <span style={styles.text}>
-number
-        {state.bottomBar.count}
+        {`number ${count}`}
       </span>
     </div>
   )
 }
+
+export default observe(BottomBar)

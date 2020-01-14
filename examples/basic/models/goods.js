@@ -1,4 +1,4 @@
-export default {
+export default () => ({
   state: {
     listData: [],
     itemCount: {},
@@ -9,43 +9,47 @@ export default {
         listData: [].concat(state.listData, goodsList),
       }
     },
-    incrementItemCount(state, { id }) {
-      const { itemCount } = state
-      const currentCount = itemCount[id] || 0
+    incrementItemCount(state, { id, index }) {
+      const { listData } = state
+      const item = listData[index]
+      const next = [...listData]
+      next[index] = {
+        ...item,
+        count: item.count + 1
+      }
       return {
-        itemCount: {
-          ...itemCount,
-          [id]: currentCount + 1,
-        },
+        listData: next
       }
     },
-    decrementItemCount(state, { id }) {
-      const { itemCount } = state
-      const currentCount = itemCount[id] || 0
+    decrementItemCount(state, { id, index }) {
+      const { listData } = state
+      const item = listData[index]
+      const next = [...listData]
+      next[index] = {
+        ...item,
+        count: Math.max(item.count - 1, 1),
+      }
       return {
-        itemCount: {
-          ...itemCount,
-          [id]: currentCount - 1,
-        },
+        listData: next
       }
     },
   },
   effects: {
-    increment: ({ id }) => dispatch => {
+    increment: ({ id, index }) => dispatch => {
       dispatch([{
         type: 'incrementItemCount',
-        payload: { id },
+        payload: { id, index },
       }, {
         type: 'bottomBar/incrementTotalCount',
       }])
     },
-    decrement: ({ id }) => dispatch => {
+    decrement: ({ id, index }) => dispatch => {
       dispatch([{
         type: 'decrementItemCount',
-        payload: { id },
+        payload: { id, index },
       }, {
         type: 'bottomBar/decrementTotalCount',
       }])
     },
   },
-}
+})
