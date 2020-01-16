@@ -25,12 +25,9 @@ export default ({ store, children, namespace = 'default' }) => {
   }
 
   const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [])
-  const [value, setValue] = useReducer(combinedReducers, [{
-    storeKey: '',
-    changedValue: {},
-  }])
-
+  const [value, setValue] = useReducer(combinedReducers, [])
   let setState = setValue
+  const dispatch = useMemo(() => createDispatch(setState), [])
 
   if (DEBUG) {
     // 打印出来actions中的reducers方法；对于在effects中的actions都会单独再打印出来
@@ -41,8 +38,6 @@ export default ({ store, children, namespace = 'default' }) => {
       setValue(...args)
     }
   }
-
-  const dispatch = useMemo(() => createDispatch(setState), [])
 
   useEffect(() => {
     try {

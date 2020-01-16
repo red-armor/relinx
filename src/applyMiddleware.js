@@ -1,7 +1,7 @@
 import compose from './utils/compose'
 
-export default function applyMiddleware(...middlewares) {
-  const nextMiddlewares = [...middlewares]
+export default function applyMiddleware(...middleware) {
+  const nextMiddleware = [...middleware]
   return createStore => (...args) => {
     const store = createStore(...args)
     const { reducers, effects, initialState } = store
@@ -13,7 +13,7 @@ export default function applyMiddleware(...middlewares) {
       effects,
     }
 
-    const chain = nextMiddlewares.map(middleware => middleware(api))
+    const chain = nextMiddleware.map(middleware => middleware(api))
     const createDispatch = setValue => {
       store.dispatch = compose(...chain)(setValue)
       return store.dispatch

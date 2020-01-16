@@ -31,7 +31,6 @@ class Central {
 
   getCurrentState(namespace) {
     const application = this.applications.get(namespace)
-    console.log('application : ', namespace, this.applications, application)
     return application.state
   }
 
