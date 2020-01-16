@@ -1,4 +1,4 @@
-import central from './central'
+import central from '../central'
 import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 import toString from '../utils/toString'
 import isPlainObject from '../utils/isPlainObject'
@@ -33,7 +33,7 @@ const createHandler = ({
     // 最新的`value`；因为它使用到的`item`是上游传的，现在粒度化的控制，造成了上游
     // 是不进行没必要的render的
     if (currentComputation && currentComputation.autoRunUpdated && currentComputation !== comp) {
-      const currentState = central.getCurrent(namespace)
+      const currentState = central.getCurrentState(namespace)
       originalValue = getPathValue(paths.concat(property), currentState)
     }
 
@@ -94,7 +94,7 @@ const createHandler = ({
 })
 
 function useTracker(computation, namespace) {
-  const initialState = central.getCurrent(namespace)
+  const initialState = central.getCurrentState(namespace)
   // Promise.resolve().then(() => central.flush())
   // setTimeout(() => central.flush(), 0)
   // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖

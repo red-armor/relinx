@@ -5,7 +5,7 @@ import React, {
   useRef,
 } from 'react'
 import context from './context'
-import central from './tracker/central'
+import central from './central'
 import infoLog from './utils/infoLog'
 import mergeAutoRunActions from './utils/mergeAutoRunActions'
 
@@ -13,13 +13,13 @@ const DEBUG = false
 
 export default ({ store, children, namespace = 'default' }) => {
   const { initialState, createReducer, createDispatch } = store
-  // TODO: for log
-  // const nonReactiveInitialState = useMemo(() => deepCopy(initialState), [])
   const nonReactiveInitialState = initialState
   const initialized = useRef({})
 
   if (!initialized.current[namespace]) {
-    central.setBase(initialState, namespace)
+    central.addApplication({
+      initialState, namespace
+    })
     initialized.current[namespace] = true
   }
 

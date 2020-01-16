@@ -25,22 +25,6 @@ class Central {
   }
 
   resetCurrentComputation(beforeComputation) {
-    // if (this.currentComputation) {
-    //   const beforeComputation = this.currentComputation.beforeComputation
-    //   if (beforeComputation === this.currentComputation.beforeComputation) {
-    //     this.currentComputation = null
-    //   } else if (beforeComputation) {
-    //     this.currentComputation = beforeComputation
-    //   }
-    // }
-
-    // if (this.currentComputation) {
-    //   const beforeComputation = this.currentComputation.beforeComputation
-    //   if (beforeComputation) {
-    //     this.currentComputation = beforeComputation
-    //   }
-    // }
-
     this.currentComputation = beforeComputation
   }
 
@@ -125,7 +109,7 @@ class Central {
   }
 
   reconcileWithPaths(paths, newValue, namespace) {
-    // 因为目前this.flush()是放置到`setTimout`中的，所以会存在应该`listen`的`path`
+    // 因为目前this.flush()是放置到`setTimeout`中的，所以会存在应该`listen`的`path`
     // 此时此刻并没有被绑定到`deps`
     // if (this.willFlush) {
     //   this.flush()
@@ -152,15 +136,6 @@ class Central {
   hitMapKey(paths) {
     if (paths.length) return paths.join('_')
     return ''
-  }
-
-  updateHitMap(paths) {
-    paths.reduce((prev, cur) => {
-      const nextPaths = [...prev, cur]
-      const hitKey = this.hitMapKey(nextPaths)
-      this.hitMap[hitKey] += 1
-      return nextPaths
-    }, [])
   }
 
   addDependsIfPossible(state) {

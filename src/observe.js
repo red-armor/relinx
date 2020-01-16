@@ -7,7 +7,7 @@ import React, {
 
 import Computation from './tracker/Computation'
 import context from './context'
-import central from './tracker/central'
+import central from './central'
 import infoLog from './utils/infoLog'
 
 const DEBUG = false

@@ -1,7 +1,5 @@
 let id = 0
 
-// TODO: computation with namespace
-
 class Computation {
   constructor({
     autoRun,
@@ -23,11 +21,17 @@ class Computation {
     this.onEffectCallback = []
   }
 
+  /**
+   * First, clean up computation from connected node. then prepare to execute `autoFunction`
+   */
   markAsDirty() {
     this.clear()
     this.dirty = true
   }
 
+  /**
+   * Execute autoRunFunction and reset `dirty` to false.
+   */
   applyChange() {
     if (this.dirty) {
       this.autoRunFunction()
@@ -35,6 +39,11 @@ class Computation {
     }
   }
 
+  /**
+   *
+   * @param {Function} fn. Basically, `computation` will serve as `node` deps, when `computation`
+   * is unmounted, it should be clean up from the connected node.
+   */
   addOnEffectCallback(fn) {
     this.onEffectCallback.push(fn)
   }
