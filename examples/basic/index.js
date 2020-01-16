@@ -13,9 +13,7 @@ import App from './views'
 
 const store = createStore({
   models: new Models(),
-}, applyMiddleware(thunk({
-  // extraSupported: true,
-})))
+}, applyMiddleware(thunk))
 
 const Basic = () => (
   <Provider store={store}>

@@ -6,15 +6,18 @@ export default ({
 }) => next => (actions, storeKey) => {
   if (typeof actions === 'function') {
     const nextDispatch = (...args) => {
-      const action = args[0]
-      const { type, payload } = action
-      const parts = [storeKey].concat(type.split('/')).slice(1)
-      dispatch({
-        type: parts.join('/')
-        payload,
+      const nextArgs = [].concat(...args)
+      const actions = nextArgs.map(action => {
+        const { type, payload } = action
+        const parts = [storeKey].concat(type.split('/')).slice(-2)
+        return {
+          type: parts.join('/'),
+          payload,
+        }
       })
+      dispatch(actions)
     }
-    return actions(getState, nextDispatch)
+    return actions(nextDispatch, getState)
   }
 
   const nextActions = [].concat(actions)
@@ -23,7 +26,7 @@ export default ({
 
   nextActions.filter(action => {
     // filter object with `type`
-    if (Object.prototype.toString.call(action) === [object Object]) {
+    if (Object.prototype.toString.call(action) === '[object Object]') {
       const { type } = action
       return !!type
     }
@@ -40,7 +43,8 @@ export default ({
       }
 
       const currentEffects = effects[storeKey]
-      if (currentReducers[actionType]) {
+
+      if (currentEffects[actionType]) {
         return effectActions.push(action)
       }
     } catch (info) {
