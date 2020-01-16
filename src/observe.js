@@ -18,6 +18,7 @@ export default WrappedComponent => {
     const {
       computation: beforeComputation,
       pathNumber: pn,
+      namespace,
       ...rest
     } = useContext(context)
 
@@ -69,7 +70,7 @@ export default WrappedComponent => {
      * -------------------------------------------------------------------
     */
     const ResetComputationHelper = () => {
-      central.flush()
+      central.flush(namespace)
       central.resetCurrentComputation(beforeComputation)
 
       if (autoRunUpdated.current) {
@@ -89,16 +90,17 @@ export default WrappedComponent => {
     // Note that use `unsub.current` to get the latest created computation
     useEffect(() => () => { newComputation.clear() })
 
-    central.flush()
+    central.flush(namespace)
 
     useEffect(() => {
-      central.flush()
+      central.flush(namespace)
     })
 
     return (
       <context.Provider
         value={{
           ...rest,
+          namespace,
           pathNumber: newPathNumber,
           computation: newComputation,
         }}

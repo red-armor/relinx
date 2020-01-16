@@ -1,16 +1,29 @@
 import invariant from 'invariant'
 import Node from './Node'
+import shallowEqual from '../utils/shallowEqual'
+import { isMutable, isTypeEqual, hasEmptyItem } from '../utils/ifType'
+import infoLog from '../utils/infoLog'
+
+const REGISTER_DEBUG = false
+const RECONCILE_PATHS_DEBUG = false
+const DEBUG = false
 
 class Application {
-  constructor(currentState, dispatch) {
-    this.currentState = currentState
+  constructor(state, dispatch) {
+    this.state = state
     this.dispatch = dispatch
     this.node = new Node()
     this.pendingComputations = []
+
+    this.stack = []
   }
 
   setDispatch(dispatch) {
     this.dispatch = dispatch
+  }
+
+  getPathValue(paths, obj) {
+    return paths.reduce((acc, cur) => acc[cur], obj)
   }
 
   getPathNode(paths) {
@@ -28,12 +41,16 @@ class Application {
     comp.addOnEffectCallback(removeDep)
   }
 
-  // 通过paths更新对应的`currentState`需要更新的数据
+  // 通过paths更新对应的`state`需要更新的数据
   setPathValue(paths, newValue, obj) {
     paths.reduce((acc, cur, index) => {
       if (index === paths.length - 1) acc[cur] = newValue
       return acc[cur]
     }, obj)
+  }
+
+  register(options) {
+    this.stack.push(options)
   }
 
   /**
@@ -83,17 +100,49 @@ class Application {
   reconcileWithPaths(paths, newValue) {
     this.pendingComputations = []
     const node = this.getPathNode(paths)
-    const currentState = this.currentState
-    const oldValue = this.getPathValue(paths, currentState)
+    const state = this.state
+    const oldValue = this.getPathValue(paths, state)
     if (RECONCILE_PATHS_DEBUG) {
       infoLog('reconcile paths : ', paths)
     }
     this.propagateChange(newValue, oldValue, node)
-    this.setPathValue(paths, newValue, currentState)
+    this.setPathValue(paths, newValue, state)
 
     return this.pendingComputations
   }
 
+  hitMapKey(paths) {
+    if (paths.length) return paths.join('_')
+    return ''
+  }
+
+  addDependsIfPossible(state) {
+    const len = state.length
+    if (!state.length) return
+
+    for (let i = len - 1; i >= 0; i--) {
+      const current = state[i]
+      const { paths, property, comp, namespace } = current
+      const mergedPaths = paths.concat(property)
+      const hitKey = this.hitMapKey(mergedPaths)
+      const hitValue = this.hitMap[hitKey] || 0
+
+      if (!hitValue) {
+        this.addDepends(mergedPaths, comp, namespace)
+      }
+
+      this.hitMap[hitKey] = Math.max(0, hitValue - 1)
+    }
+  }
+
+  flush() {
+    const focusedStack = this.stack
+    this.stack = []
+    this.hitMap = {}
+    if (focusedStack.length) {
+      this.addDependsIfPossible(focusedStack)
+    }
+  }
 }
 
 export default Application

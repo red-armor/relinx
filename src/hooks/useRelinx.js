@@ -23,13 +23,12 @@ export default storeName => {
   state.current = tracker[0]
   const stateValue = state.current[storeName]
 
-  console.log('state : ', stateValue, storeName)
-
   // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
   invariant(
     !!stateValue,
-    `${+`Maybe you are using non-defined store under namespace ${namespace}.\n`
-    }In ${computation ? computation.name || computation.pathNumber : 'root'} component, \`storeName\` ${storeName} should `
+    `Maybe you are using non-defined store under namespace ${namespace}.\n`
+    + `In ${computation ? computation.name || computation.pathNumber : 'root'}`
+    + `component, \`storeName\` ${storeName} should `
     + 'match with exported value from `models/index.js` file.'
   )
 

@@ -47,6 +47,7 @@ const createHandler = ({
             paths,
             comp: central.currentComputation || comp,
             property: i,
+            namespace,
           })
         }
       }
@@ -66,6 +67,7 @@ const createHandler = ({
         paths,
         comp: central.currentComputation || comp,
         property,
+        namespace,
       })
     }
 

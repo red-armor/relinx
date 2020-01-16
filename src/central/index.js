@@ -7,14 +7,14 @@ class Central {
     this.stack = []
   }
 
-  addApplication({ namespace, dispatch, initialValue }) {
+  addApplication({ namespace, dispatch, initialState }) {
     invariant(
       !this.applications.has(namespace),
       `Namespace duplicate issue. ${namespace} has been occupied by other application, ` +
       'please choose a new one'
     )
 
-    this.applications.set(namespace, new Application(initialValue, dispatch))
+    this.applications.set(namespace, new Application(initialState, dispatch))
 
     return () => {
       this.applications.delete[namespace]
@@ -31,7 +31,13 @@ class Central {
 
   getCurrentState(namespace) {
     const application = this.applications.get(namespace)
-    return application.initialValue
+    console.log('application : ', namespace, this.applications, application)
+    return application.state
+  }
+
+  register({ namespace, ...rest}) {
+    const application = this.applications.get(namespace)
+    application.register(rest)
   }
 
   /**
@@ -58,37 +64,15 @@ class Central {
     application.addDepends(paths, comp)
   }
 
-  hitMapKey(paths) {
-    if (paths.length) return paths.join('_')
-    return ''
-  }
-
-  addDependsIfPossible(state) {
-    const len = state.length
-    if (!state.length) return
-
-    for (let i = len - 1; i >= 0; i--) {
-      const current = state[i]
-      const { paths, property, comp, namespace } = current
-      const mergedPaths = paths.concat(property)
-      const hitKey = this.hitMapKey(mergedPaths)
-      const hitValue = this.hitMap[hitKey] || 0
-
-      if (!hitValue) {
-        this.addDepends(mergedPaths, comp, namespace)
-      }
-
-      this.hitMap[hitKey] = Math.max(0, hitValue - 1)
-    }
-  }
-
-  flush() {
-    const focusedStack = this.stack
-    this.stack = []
-    this.hitMap = {}
-    if (focusedStack.length) {
-      this.addDependsIfPossible(focusedStack)
-    }
+  flush(namespace) {
+    const application = this.applications.get(namespace)
+    application.flush()
+    // const focusedStack = this.stack
+    // this.stack = []
+    // this.hitMap = {}
+    // if (focusedStack.length) {
+    //   this.addDependsIfPossible(focusedStack)
+    // }
   }
 }
 
