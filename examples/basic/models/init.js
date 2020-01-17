@@ -17,16 +17,14 @@ export default () => ({
     getGoodsList: () => (dispatch, getState) => {
       const { init: { page } } = getState()
       getGoods({ page }).then(result => {
-        console.log('result', result)
-        dispatch({
+        dispatch([{
           type: 'goods/addGoods',
           payload: {
             goodsList: result,
           },
-        })
-        dispatch({
+        }, {
           type: 'updatePage',
-        })
+        }])
       })
     },
     updateOnline: () => dispatch => {

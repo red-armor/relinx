@@ -42,22 +42,28 @@ export default ({ store, children, namespace = 'default' }) => {
   useEffect(() => {
     try {
       let autoRunComputations = []
-      value.forEach(currentValue => {
-        const { storeKey, changedValue = {} } = currentValue
-        const keys = Object.keys(changedValue)
-        keys.forEach(key => {
-          const newComputations = central.reconcileWithPaths(
-            [storeKey, key],
-            changedValue[key],
-            namespace
-          )
-          autoRunComputations = autoRunComputations.concat(newComputations)
+      if (value.length) {
+        value.forEach(currentValue => {
+          const { storeKey, changedValue = {} } = currentValue
+          const keys = Object.keys(changedValue)
+          keys.forEach(key => {
+            const newComputations = central.reconcileWithPaths(
+              [storeKey, key],
+              changedValue[key],
+              namespace
+            )
+            autoRunComputations = autoRunComputations.concat(newComputations)
+          })
         })
-      })
 
-      // 触发autoRunFunction函数进行调用，从而进行数据层的更新
-      const autoRunLeft = mergeAutoRunActions(autoRunComputations)
-      autoRunLeft.forEach(comp => comp.applyChange())
+        // 触发autoRunFunction函数进行调用，从而进行数据层的更新
+        const autoRunLeft = mergeAutoRunActions(autoRunComputations)
+        autoRunLeft.forEach(comp => comp.applyChange())
+
+        dispatch({
+          type: '@init/logger',
+        })
+      }
     } catch (err) {
       console.error(err) // eslint-disable-line
     }

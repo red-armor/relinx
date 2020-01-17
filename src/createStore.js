@@ -5,6 +5,9 @@ const combineReducers = reducers => state => (_, actions) => {
 
   const changedValues = nextActions.reduce((changedValueGroup, action) => {
     const { type, payload } = action
+
+    if (type.startsWith('@init')) return changedValueGroup
+
     const [storeKey, actionType] = type.split('/')
     const usedReducer = reducers[storeKey]
 
@@ -32,7 +35,8 @@ const combineReducers = reducers => state => (_, actions) => {
   //     state[storeKey][key] = JSON.parse(JSON.stringify(changedValue[key]))
   //   })
   // })
-  return changedValues
+  if (changedValues.length) return changedValues
+  return []
 }
 
 export default function createStore(configs, enhancer) {

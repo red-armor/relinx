@@ -52,7 +52,8 @@ class Central {
 
   getApplication(namespace) {
     const application = this.applications.get(namespace)
-    if (!application) throw new Error(
+    invariant(
+      application,
       `this.applications ${this.applications} do not have value with key ${namespace}`
     )
     return application
@@ -66,12 +67,6 @@ class Central {
   flush(namespace) {
     const application = this.applications.get(namespace)
     application.flush()
-    // const focusedStack = this.stack
-    // this.stack = []
-    // this.hitMap = {}
-    // if (focusedStack.length) {
-    //   this.addDependsIfPossible(focusedStack)
-    // }
   }
 }
 

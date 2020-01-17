@@ -10,10 +10,14 @@ export default ({
       const actions = nextArgs.map(action => {
         const { type, payload } = action
         const parts = [storeKey].concat(type.split('/')).slice(-2)
-        return {
+        const nextAction = {
           type: parts.join('/'),
-          payload,
         }
+        if (payload) {
+          nextAction.payload = payload
+        }
+
+        return nextAction
       })
       dispatch(actions)
     }
@@ -38,21 +42,24 @@ export default ({
       const actionType = parts[1]
       const currentReducers = reducers[storeKey] || {}
 
-      if (currentReducers[actionType]) {
-        return reducerActions.push(action)
-      }
-
       const currentEffects = effects[storeKey]
 
-      if (currentEffects[actionType]) {
+      if (currentEffects && currentEffects[actionType]) {
         return effectActions.push(action)
       }
+
+      // if (currentReducers[actionType]) {
+        return reducerActions.push(action)
+      // }
     } catch (info) {
+      console.error(info)
       // info process action fails
     }
   })
 
-  next(reducerActions)
+  if (reducerActions.length) {
+    next(reducerActions)
+  }
 
   effectActions.forEach(action => {
     const { type, payload } = action
