@@ -26,7 +26,7 @@ const renderTitle = props => {
   const { initialActions, startTime, endTime } = props
   let title
 
-  const nextActions = [].concat(initialActions).slice(0,2)
+  const nextActions = [].concat(initialActions).slice(0, 2)
 
   nextActions.forEach(({ type }) => {
     title = title ? `${title}__${type}` : type
@@ -95,18 +95,6 @@ const renderNextState = state => {
   renderState(state, true)
 }
 
-const paintActions = actions => {
-  const nextActions = actions.filter(({ type }) => !type.startsWith('@init'))
-
-  nextActions.forEach(action => {
-    paint(action)
-  })
-
-  if (nextActions.length) {
-    colorGroupEnd()
-  }
-}
-
 const paint = (tree, flag) => {
   const {
     type, actions = {}, effects = {}, payload, actionType,
@@ -134,6 +122,16 @@ const paint = (tree, flag) => {
   })
 
   if (actionKeys.length || effectKeys.length) {
+    colorGroupEnd()
+  }
+}
+
+const paintActions = actions => {
+  const nextActions = actions.filter(({ type }) => !type.startsWith('@init'))
+
+  nextActions.forEach(action => paint(action))
+
+  if (nextActions.length) {
     colorGroupEnd()
   }
 }

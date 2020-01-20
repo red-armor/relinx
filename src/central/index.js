@@ -10,15 +10,13 @@ class Central {
   addApplication({ namespace, dispatch, initialState }) {
     invariant(
       !this.applications.has(namespace),
-      `Namespace duplicate issue. ${namespace} has been occupied by other application, ` +
-      'please choose a new one'
+      `Namespace duplicate issue. ${namespace} has been occupied by other application, `
+      + 'please choose a new one'
     )
 
     this.applications.set(namespace, new Application(initialState, dispatch))
 
-    return () => {
-      this.applications.delete[namespace]
-    }
+    return () => this.applications.delete[namespace]
   }
 
   setCurrentComputation(computation) {
@@ -34,7 +32,7 @@ class Central {
     return application.state
   }
 
-  register({ namespace, ...rest}) {
+  register({ namespace, ...rest }) {
     const application = this.applications.get(namespace)
     application.register(rest)
   }

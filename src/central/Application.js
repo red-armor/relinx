@@ -122,7 +122,9 @@ class Application {
 
     for (let i = len - 1; i >= 0; i--) {
       const current = state[i]
-      const { paths, property, comp, namespace } = current
+      const {
+        paths, property, comp, namespace,
+      } = current
       const mergedPaths = paths.concat(property)
       const hitKey = this.hitMapKey(mergedPaths)
       const hitValue = this.hitMap[hitKey] || 0

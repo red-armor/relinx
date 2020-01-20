@@ -34,6 +34,8 @@ export default ({
       const { type } = action
       return !!type
     }
+
+    return false
   }).forEach(action => {
     try {
       const { type, payload } = action
@@ -49,10 +51,10 @@ export default ({
       }
 
       // if (currentReducers[actionType]) {
-        return reducerActions.push(action)
+      return reducerActions.push(action)
       // }
     } catch (info) {
-      console.error(info)
+      // console.error(info)
       // info process action fails
     }
   })

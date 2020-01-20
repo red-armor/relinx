@@ -19,7 +19,7 @@ export default ({ store, children, namespace = 'default' }) => {
   if (!initialized.current[namespace]) {
     central.addApplication({
       initialState,
-      namespace
+      namespace,
     })
     initialized.current[namespace] = true
   }
