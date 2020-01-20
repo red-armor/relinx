@@ -1,7 +1,6 @@
 export default () => ({
   state: {
     listData: [],
-    itemCount: {},
   },
   reducers: {
     addGoods(state, { goodsList }) {

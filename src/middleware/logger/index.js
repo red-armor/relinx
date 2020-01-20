@@ -7,7 +7,7 @@ import print from './print'
 
 export default ({ getState }) => next => actions => {
   const startTime = Date.now()
-  const prevState = getState()
+  const prevState = JSON.parse(JSON.stringify(getState()))
 
   next(actions)
 
