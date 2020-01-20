@@ -1,24 +1,21 @@
+// export default ({ getState }) => next => action => {
+//   console.log('action : ', action)
+//   next(action)
+// }
+
 import print from './print'
 
-export default ({ getState }) => next => (actions, extra = {}) => {
+export default ({ getState }) => next => actions => {
   const startTime = Date.now()
-  const prevState = JSON.parse(JSON.stringify(getState()))
-  let prevTree = {}
-  if (extra.tree) {
-    prevTree = JSON.parse(JSON.stringify(extra.tree))
-  }
+  const prevState = getState()
 
-  next(actions, extra)
+  next(actions)
 
-  const nextState = JSON.parse(JSON.stringify(getState()))
   const endTime = Date.now()
-  const nextTree = JSON.parse(JSON.stringify(extra.tree))
 
   print({
+    actions,
     prevState,
-    nextState,
-    prevTree,
-    nextTree,
     initialActions: actions,
     startTime,
     endTime,

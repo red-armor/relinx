@@ -26,14 +26,24 @@ const renderTitle = props => {
   const { initialActions, startTime, endTime } = props
   let title
 
-  const nextActions = [].concat(initialActions)
+  const nextActions = [].concat(initialActions).slice(0,2)
 
   nextActions.forEach(({ type }) => {
     title = title ? `${title}__${type}` : type
   })
 
+  if (initialActions.length > 2) {
+    title = `${title}...`
+  }
+
+  let actionColor = 'color: #7cb305; font-weight: bold'
+
+  if (title.startsWith('@init')) {
+    actionColor = 'color: #ff4d4f; font-weight: bold'
+  }
+
   const parts = []
-  parts.push(['action', 'color: #7cb305; font-weight: bold'])
+  parts.push(['action', actionColor])
   parts.push([title, 'color: inherit;'])
   parts.push([`@ ${formatTime(startTime)}`, 'color: gray; font-weight: lighter;'])
   parts.push([`(${endTime - startTime}ms)`, 'color: gray; font-weight: lighter;'])
@@ -65,8 +75,8 @@ const renderSubAction = props => {
 const renderState = (state, isNextState) => {
   const parts = []
 
-  let title = 'prevState'
-  let style = 'color: #9E9E9E; font-weight: bold'
+  let title = 'currentState'
+  let style = 'color: #4CAF50; font-weight: bold'
 
   if (isNextState) {
     title = 'nextState'
@@ -83,6 +93,18 @@ const renderPrevState = state => {
 
 const renderNextState = state => {
   renderState(state, true)
+}
+
+const paintActions = actions => {
+  const nextActions = actions.filter(({ type }) => !type.startsWith('@init'))
+
+  nextActions.forEach(action => {
+    paint(action)
+  })
+
+  if (nextActions.length) {
+    colorGroupEnd()
+  }
 }
 
 const paint = (tree, flag) => {
@@ -120,14 +142,11 @@ export default props => {
   const {
     prevState = {},
     nextState = {},
-    prevTree,
-    nextTree,
+    actions,
   } = props
 
   renderTitle(props)
-  paint(prevTree, 'prevTree')
   renderPrevState(prevState)
-  paint(nextTree, 'nextTree')
-  renderNextState(nextState)
+  paintActions(actions)
   colorGroupEnd()
 }
