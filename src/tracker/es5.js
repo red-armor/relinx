@@ -1,40 +1,25 @@
-const isObject = o => o ? (typeof o === 'object' || typeof o === 'function') : false
-const hasSymbol = typeof Symbol !== "undefined"
+import {
+  isObject,
+  TRACKER,
+  each,
+  Type,
+  shallowCopy,
+  emptyFunction,
+  isTrackable,
+} from './commons'
 
-export const TRACKER = hasSymbol ? Symbol("tracker") : "__tracker__"
+export function createES5Tracker(target, config) {
+  const {
+    accessPath = [],
+    parentTrack,
+  } = config || {}
 
-function each(obj, iter) {
-  if (Array.isArray(obj)) {
-    obj.forEach((entry, index) => iter(index, entry, obj))
-  } else if (isObject(obj)) {
-    Reflect.ownKeys(obj).forEach(key => iter(key, obj[key], obj))
-  }
-}
-
-const Type = {
-  Object: 'object',
-  Array: 'array',
-}
-
-const ownKeys = o => Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o))
-
-function shallowCopy(o) {
-  if (Array.isArray(o)) return o.slice()
-  const value = Object.create(Object.getPrototypeOf(o))
-  ownKeys(o).forEach(key => {
-    value[key] = o[key]
-  })
-
-  return value
-}
-
-export function createES5Tracker(target) {
-  let assertRevokable = state => {
-    assertRevokable = state => {
+  let assertRevokable = tracker => {
+    assertRevokable = tracker => {
       throw new Error(
         "Cannot use a proxy that has been revoked. Did you pass an object " +
         "from inside an immer function to an async process? " +
-				JSON.stringify(latest(state))
+				JSON.stringify(latest(tracker))
       )
     }
   }
@@ -44,24 +29,51 @@ export function createES5Tracker(target) {
   }
 
   const proxy = shallowCopy(target)
-  const state = {
+  const tracker = {
     type: Array.isArray(target) ? Type.Array : Type.Object,
-    value: shallowCopy(target),
+    base: target,
+    proxy: {},
+    paths: [],
+    accessPath,
+    revoke: emptyFunction,
+    parentTrack,
+    reportAccessPath: emptyFunction,
+    setRemarkable: emptyFunction,
   }
 
-  createHiddenProperty(proxy, TRACKER, state)
-  each(target, key => proxyProperty(target, proxy, key))
+  tracker.reportAccessPath = function(path) {
+    const tracker = proxy[TRACKER]
+    tracker.paths.push(path)
+    const parentTrack = tracker.parentTrack
+    if (parentTrack) {
+      parentTrack.reportAccessPath(path)
+    }
+  }
 
-  function proxyProperty(base, proxy, prop) {
-    const baseDesc = Object.getOwnPropertyDescriptor(base, prop)
+  createHiddenProperty(proxy, TRACKER, tracker)
+
+  each(target, prop => {
+    const desc = Object.getOwnPropertyDescriptor(target, prop)
+    const enumerable = desc.enumerable
+    proxyProperty(proxy, prop, enumerable)
+  })
+
+  function proxyProperty(proxy, prop, enumerable) {
     const desc = {
-      enumerable: baseDesc.enumerable,
+      enumerable: enumerable,
       get() {
-        return this[TRACKER].value[prop] || base[prop]
-      },
-      set(value) {
-        return (this[TRACKER].value[prop] = value)
-      },
+        const { base, proxy, accessPath, reportAccessPath } = this[TRACKER]
+        const value = base[prop]
+        const nextAccessPath = accessPath.concat(prop)
+        reportAccessPath(nextAccessPath)
+
+        if (proxy[prop]) return proxy[prop]
+        if (isTrackable(value)) return (proxy[prop] = createES5Tracker(value, {
+          accessPath: nextAccessPath,
+          parentTrack: this[TRACKER],
+        }))
+        return value
+      }
     }
 
     Object.defineProperty(proxy, prop, desc)

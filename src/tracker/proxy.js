@@ -4,11 +4,11 @@ import {
   emptyFunction,
 } from './commons'
 
-export function createTracker(base, configs = {}) {
+export function createTracker(base, config) {
   const {
     accessPath = [],
     parentTrack,
-  } = configs
+  } = config || {}
 
   let tracker = {
     base,
@@ -53,10 +53,10 @@ export function createTracker(base, configs = {}) {
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed) return Reflect.get(target, prop, receiver)
       if (!hasOwnProperty(target.base, prop)) return Reflect.get(target.base, prop, receiver)
-      if (hasOwnProperty(target.proxy, prop)) return target.proxy[prop]
-      const value = target.base[prop]
       const accessPath = target.accessPath.concat(prop)
       target.reportAccessPath(accessPath)
+      if (hasOwnProperty(target.proxy, prop)) return target.proxy[prop]
+      const value = target.base[prop]
       if (!isTrackable(value)) return value
 
       return (target.proxy[prop] = createTracker(value, {

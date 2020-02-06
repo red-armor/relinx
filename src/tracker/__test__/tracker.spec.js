@@ -45,7 +45,7 @@ describe('create object tracker', () => {
     const d = tracker.c.d
 
     expect(tracker.paths).toEqual([
-      ['a'], ['b'], ['c'], ['c', 'd']
+      ['a'], ['b'], ['c'], ['c'], ['c', 'd']
     ])
   })
 
@@ -84,8 +84,10 @@ describe('create object tracker', () => {
     const { d } = c
     const cd = tracker.c.d
 
+    console.log('tracker.paths ', tracker.paths)
+
     expect(tracker.paths).toEqual([
-      ['a'], ['b'], ['c'], ['c', 'd'], ['c', 'd']
+      ['a'], ['b'], ['c'], ['c', 'd'], ['c'], ['c', 'd']
     ])
   })
 
@@ -122,6 +124,23 @@ describe('create object tracker', () => {
 
     expect(tracker.paths).toEqual([
       ['c'], ['c', 'h']
+    ])
+  })
+
+  test('with intermediate value and use it', () => {
+    const base = {
+      a: 1,
+      b: 2,
+      c: { d: 3, f: { h: 4 }}
+    }
+
+    const tracker = createTracker(base)
+    const f = tracker.c.f
+    const h = f.h
+    const x = f
+
+    expect(tracker.paths).toEqual([
+      ['c'], ['c', 'f'], ['c', 'f', 'h']
     ])
   })
 })

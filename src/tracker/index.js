@@ -1,5 +1,5 @@
 // import canIUseProxy from './utils/canIUseProxy'
-import { canIUseProxy } from './commons'
+import { canIUseProxy, TRACKER } from './commons'
 import { createES5Tracker } from './es5'
 import { createTracker } from './proxy'
 import { generateRemarkablePaths } from './path'
@@ -23,14 +23,5 @@ const Tracker = ({
 }
 
 Tracker.isProxySupported = canIUseProxy()
-
-const base = [4, 5, 6]
-
-const tracker = createTracker(base)
-for (let i = 0; i < tracker.length; i++) {
-  const a = tracker[i]
-}
-const remarkable = generateRemarkablePaths(tracker.paths)
-console.log('remarkable ', remarkable, tracker)
 
 export default Tracker
