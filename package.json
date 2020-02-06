@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
-    "flow-check": "flow check --show-all-errors"
+    "flow-check": "flow check --show-all-errors",
+    "test": "jest"
   },
   "config": {
     "commitizen": {

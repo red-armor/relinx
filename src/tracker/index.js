@@ -40,5 +40,6 @@ console.log('tracker value ', tracker)
 console.log('nest value ',  tracker.c.d)
 console.log('nest value ', tracker.c.d)
 console.log('tracker : ', tracker)
+// tracker.revoke()
 
 export default Tracker
