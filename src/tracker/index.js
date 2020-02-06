@@ -24,4 +24,13 @@ const Tracker = ({
 
 Tracker.isProxySupported = canIUseProxy()
 
+const base = [4, 5, 6]
+
+const tracker = createTracker(base)
+for (let i = 0; i < tracker.length; i++) {
+  const a = tracker[i]
+}
+const remarkable = generateRemarkablePaths(tracker.paths)
+console.log('remarkable ', remarkable, tracker)
+
 export default Tracker

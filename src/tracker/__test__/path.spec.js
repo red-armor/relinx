@@ -94,4 +94,27 @@ describe('generate array remarkable path', () => {
     const remarkable = generateRemarkablePaths(tracker.paths)
     expect(remarkable).toEqual([['0', 'a', 'b', '0', 'c']])
   })
+
+  test('call `map` function', () => {
+    const base = [4, 5, 6]
+
+    const tracker = createTracker(base)
+    const len = tracker.length
+    for (let i = 0; i < len; i++) {
+      const a = tracker[i]
+    }
+    const remarkable = generateRemarkablePaths(tracker.paths)
+    expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
+  })
+
+  test('remarkable path will remove duplicate path', () => {
+    const base = [4, 5, 6]
+
+    const tracker = createTracker(base)
+    for (let i = 0; i < tracker.length; i++) {
+      const a = tracker[i]
+    }
+    const remarkable = generateRemarkablePaths(tracker.paths)
+    expect(remarkable).toEqual([['length'], ['2'], ['1'], ['0']])
+  })
 })

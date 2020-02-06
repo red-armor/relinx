@@ -1,7 +1,7 @@
 const isObject = o => o ? (typeof o === 'object' || typeof o === 'function') : false
 const hasSymbol = typeof Symbol !== "undefined"
 
-export const STATE = hasSymbol ? Symbol("state") : "__state__"
+export const TRACKER = hasSymbol ? Symbol("tracker") : "__tracker__"
 
 function each(obj, iter) {
   if (Array.isArray(obj)) {
@@ -49,7 +49,7 @@ export function createES5Tracker(target) {
     value: shallowCopy(target),
   }
 
-  createHiddenProperty(proxy, STATE, state)
+  createHiddenProperty(proxy, TRACKER, state)
   each(target, key => proxyProperty(target, proxy, key))
 
   function proxyProperty(base, proxy, prop) {
@@ -57,10 +57,10 @@ export function createES5Tracker(target) {
     const desc = {
       enumerable: baseDesc.enumerable,
       get() {
-        return this[STATE].value[prop] || base[prop]
+        return this[TRACKER].value[prop] || base[prop]
       },
       set(value) {
-        return (this[STATE].value[prop] = value)
+        return (this[TRACKER].value[prop] = value)
       },
     }
 

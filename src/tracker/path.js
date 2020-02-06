@@ -26,7 +26,10 @@ export const generateRemarkablePaths = paths => {
       }
 
       if (!count) {
-        remarkablePaths.push(path.slice())
+        const p = path.slice()
+        const str = joinPath(p)
+        const found = remarkablePaths.find(path => joinPath(path) === str)
+        if (!found) remarkablePaths.push(p)
         isConsecutive = true
         path.pop()
       } else {
