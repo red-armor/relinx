@@ -57,7 +57,6 @@ export function createES5Tracker(target) {
     const desc = {
       enumerable: baseDesc.enumerable,
       get() {
-        console.log('register ', prop)
         return this[STATE].value[prop] || base[prop]
       },
       set(value) {
