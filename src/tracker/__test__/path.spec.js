@@ -76,3 +76,22 @@ describe('generate remarkable', () => {
     expect(remarkable).toEqual([['c', 'f'], ['c', 'f', 'h']])
   })
 })
+
+describe('generate array remarkable path', () => {
+  test('access index', () => {
+    const base = [4, 5, 6]
+
+    const tracker = createTracker(base)
+    const a = tracker[0]
+    const remarkable = generateRemarkablePaths(tracker.paths)
+    expect(remarkable).toEqual([['0']])
+  })
+
+  test('access nested array', () => {
+    const base = [{ a: { b: [{ c: 1 }]}}]
+    const tracker = createTracker(base)
+    const c = tracker[0].a.b[0].c
+    const remarkable = generateRemarkablePaths(tracker.paths)
+    expect(remarkable).toEqual([['0', 'a', 'b', '0', 'c']])
+  })
+})

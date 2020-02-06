@@ -1,6 +1,6 @@
 import { createTracker } from '../proxy'
 
-describe('create tracker', () => {
+describe('create object tracker', () => {
   test("access property", () => {
     const base = {
       a: 1,
@@ -123,5 +123,23 @@ describe('create tracker', () => {
     expect(tracker.paths).toEqual([
       ['c'], ['c', 'h']
     ])
+  })
+})
+
+describe('create array object', () => {
+  test('access index', () => {
+    const base = [4, 5, 6]
+
+    const tracker = createTracker(base)
+
+    expect(tracker[0]).toBe(4)
+    expect(tracker[1]).toBe(5)
+    expect(tracker[2]).toBe(6)
+  })
+
+  test('access nested array', () => {
+    const base = [{ a: { b: [{ c: 1 }]}}]
+    const tracker = createTracker(base)
+    expect(tracker[0].a.b[0].c).toBe(1)
   })
 })
