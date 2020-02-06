@@ -28,7 +28,7 @@ function shallowCopy(o) {
   return value
 }
 
-function ProxyPolyfill(target) {
+export function createES5Tracker(target) {
   let assertRevokable = state => {
     assertRevokable = state => {
       throw new Error(
@@ -42,8 +42,6 @@ function ProxyPolyfill(target) {
   if (!isObject(target)) {
     throw new TypeError('Cannot create proxy with a non-object as target or handler')
   }
-
-  if (!new.target) { throw 'Proxy must be called with new' }
 
   const proxy = shallowCopy(target)
   const state = {
@@ -76,9 +74,6 @@ function ProxyPolyfill(target) {
 
     const handler = (func, context, invokeLength) => (...args) => {
       assertRevokable()
-
-      if (invokeLength) console.log('register length')
-
       return func.call(context, ...args)
     }
 
@@ -120,8 +115,8 @@ function ProxyPolyfill(target) {
   return proxy
 }
 
-ProxyPolyfill.revocable = (target, handler) => {
-  const proxy = new ProxyPolyfill(target, handler)
+createES5Tracker.revocable = (target, handler) => {
+  const proxy = createES5Tracker(target, handler)
   return { proxy, revoke: proxy.assertRevokable() }
 }
 
@@ -132,5 +127,3 @@ const createHiddenProperty = (target, prop, value) => {
     writable: true,
   })
 }
-
-export default ProxyPolyfill

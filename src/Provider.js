@@ -8,7 +8,6 @@ import context from './context'
 import central from './central'
 import infoLog from './utils/infoLog'
 import mergeAutoRunActions from './utils/mergeAutoRunActions'
-import test from './es5/test'
 
 const DEBUG = false
 

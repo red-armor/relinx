@@ -28,6 +28,12 @@ export default WrappedComponent => {
     const currentPathNumber = ++pathNumber // eslint-disable-line
     const newPathNumber = `${parentPathNumber}.${currentPathNumber}`
 
+    let revokeFn = () => {}
+
+    const bubbleRevokeFn = (revoke) => {
+      revokeFn = revoke
+    }
+
     if (beforeComputation && beforeComputation.autoRunUpdated && !autoRunUpdated.current) {
       autoRunUpdated.current = true
     }
@@ -76,6 +82,7 @@ export default WrappedComponent => {
       if (autoRunUpdated.current) {
         autoRunUpdated.current = false
       }
+      if (typeof revokeFn === 'function') revokeFn()
       return null
     }
 
@@ -96,15 +103,16 @@ export default WrappedComponent => {
       central.flush(namespace)
     })
 
+    const contextValue = {
+      ...rest,
+      namespace,
+      pathNumber: newPathNumber,
+      computation: newComputation,
+      bubbleRevokeFn,
+    }
+
     return (
-      <context.Provider
-        value={{
-          ...rest,
-          namespace,
-          pathNumber: newPathNumber,
-          computation: newComputation,
-        }}
-      >
+      <context.Provider value={contextValue}>
         <React.Fragment>
           {/* <MemoWrapped /> */}
           <WrappedComponent {...props} />

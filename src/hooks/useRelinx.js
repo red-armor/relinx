@@ -3,8 +3,16 @@ import invariant from 'invariant'
 import context from '../context'
 import useTracker from '../tracker/useTracker'
 
+import Tracker from '../tracker'
+
 export default storeName => {
-  const { dispatch, computation, namespace } = useContext(context)
+  const {
+    dispatch,
+    computation,
+    namespace,
+    bubbleRevokeFn,
+  } = useContext(context)
+
   invariant(
     typeof storeName === 'string' && storeName !== '',
     '`storeName` is required to request data source'
@@ -22,6 +30,12 @@ export default storeName => {
   const tracker = useTracker(computation, namespace)
   state.current = tracker[0]
   const stateValue = state.current[storeName]
+
+  const { proxy, revoke } = new Tracker({
+    base: {},
+  })
+
+  bubbleRevokeFn(revoke)
 
   // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
   invariant(

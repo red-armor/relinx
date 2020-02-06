@@ -1,30 +1,4 @@
-import central from '../central'
-import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
-import toString from '../utils/toString'
-import isPlainObject from '../utils/isPlainObject'
-
-import test from './es5/test'
-
-// https://2ality.com/2016/11/proxying-builtins.html
-// https://exploringjs.com/es6/ch_proxies.html
-
-const getPathValue = (paths, obj) => (
-  paths.reduce((acc, property) => {
-    // Reflect.get requires the first argument be an object, or will cause `TypeError`
-    if (!isPlainObject(acc)) return acc
-    return Reflect.get(acc, property)
-  }, obj)
-)
-
-// 如果说存在的话，就返回相应的值，但是目前需要区分这个是否需要register
-// 是否需要提供一个时机进行设置`timeToRegister`
-// types could be wrapped by Proxy
-const createHandler = ({
-  initialState = {},
-  comp,
-  paths = [],
-  namespace,
-}) => ({
+const handler = {
   get: (target, property, receiver) => {
     const currentComputation = central.currentComputation
     const nextTarget = target
@@ -94,22 +68,14 @@ const createHandler = ({
       }))
     }
     return originalValue
-  },
-})
-
-function useTracker(computation, namespace) {
-  const initialState = central.getCurrentState(namespace)
-  // Promise.resolve().then(() => central.flush())
-  // setTimeout(() => central.flush(), 0)
-  // 如果说这里面的target使用`initialState`的话，`initialState`相当于被各种覆盖
-  // 所以一定要确保经过`createHeader`一系列操作以后，`initialState`要依旧只含`plain object`；
-  // 不能够被`Proxy`污染
-  return [new Proxy({}, createHandler({
-    initialState,
-    comp: computation,
-    paths: [],
-    namespace,
-  }))]
+  }
 }
 
-export default useTracker
+const getLiteralValue = () => {
+
+}
+
+export function createTracker(target) {
+  const { proxy, revoke } = Proxy.revocable(target, handler)
+  return { proxy, revoke }
+}
