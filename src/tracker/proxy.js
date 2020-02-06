@@ -18,15 +18,25 @@ export function createTracker(base, configs = {}) {
     revoke: emptyFunction,
     parentTrack,
     reportAccessPath: emptyFunction,
+    setRemarkable: emptyFunction,
   }
 
-   tracker.reportAccessPath = path => {
+  tracker.reportAccessPath = path => {
     tracker.paths.push(path)
 
     const parentTrack = tracker.parentTrack
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
     }
+  }
+
+  tracker.setRemarkable = function() {
+    const parentTrack = this.parentTrack
+    if (parentTrack) {
+      parentTrack.reportAccessPath(this.accessPath)
+      return true
+    }
+    return false
   }
 
   if (Array.isArray(base)) {

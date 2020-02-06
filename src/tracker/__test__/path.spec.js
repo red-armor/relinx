@@ -58,4 +58,21 @@ describe('generate remarkable', () => {
 
     expect(remarkable).toEqual([['c', 'f', 'h']])
   })
+
+  test('with intermediate value and `setRemarkable`', () => {
+    const base = {
+      a: 1,
+      b: 2,
+      c: { d: 3, f: { h: 4 }}
+    }
+
+    const tracker = createTracker(base)
+    const f = tracker.c.f
+    const h = f.h
+    const x = f
+
+    f.setRemarkable()
+    const remarkable = generateRemarkablePaths(tracker.paths)
+    expect(remarkable).toEqual([['c', 'f'], ['c', 'f', 'h']])
+  })
 })
