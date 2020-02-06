@@ -31,11 +31,11 @@ export default storeName => {
   state.current = tracker[0]
   const stateValue = state.current[storeName]
 
-  const { proxy, revoke } = new Tracker({
-    base: {},
-  })
+  // const { proxy, revoke } = new Tracker({
+  //   base: {},
+  // })
 
-  bubbleRevokeFn(revoke)
+  // bubbleRevokeFn(revoke)
 
   // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
   invariant(

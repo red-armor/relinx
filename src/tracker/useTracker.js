@@ -3,7 +3,7 @@ import shouldWrappedByProxy from './utils/shouldWrappedByProxy'
 import toString from '../utils/toString'
 import isPlainObject from '../utils/isPlainObject'
 
-import test from './es5/test'
+// import test from './es5/test'
 
 // https://2ality.com/2016/11/proxying-builtins.html
 // https://exploringjs.com/es6/ch_proxies.html
