@@ -6,7 +6,7 @@
   "scripts": {
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
-    "test": "jest"
+    "test": "jest --collect-coverage"
   },
   "config": {
     "commitizen": {

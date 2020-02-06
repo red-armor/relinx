@@ -5,14 +5,29 @@ describe('create tracker', () => {
     const base = {
       a: 1,
       b: 2,
-      c: { d: 3 }
+      c: 3,
     }
 
     const tracker = createTracker(base)
 
     expect(tracker.a).toBe(1)
     expect(tracker.b).toBe(2)
-    expect(tracker.c.d).toBe(3)
+    expect(tracker.c).toBe(3)
+  })
+
+  test('access nested property', () => {
+    const base = {
+      a: 1,
+      b: 2,
+      c: { d: 4, f: { h: 5 }},
+    }
+
+    const tracker = createTracker(base)
+
+    expect(tracker.a).toBe(1)
+    expect(tracker.b).toBe(2)
+    expect(tracker.c.d).toBe(4)
+    expect(tracker.c.f.h).toBe(5)
   })
 
   test("accessPath", () => {
@@ -91,6 +106,22 @@ describe('create tracker', () => {
 
     expect(tracker.paths).toEqual([
       ['a'], ['b'], ['c'], ['c', 'd'], ['c', 'h']
+    ])
+  })
+
+  test("accessPath: parent value only be access once", () => {
+    const base = {
+      a: 1,
+      b: 2,
+      c: { d: 3, h: 5 },
+      e: { f: 4 },
+    }
+
+    const tracker = createTracker(base)
+    const h = tracker.c.h
+
+    expect(tracker.paths).toEqual([
+      ['c'], ['c', 'h']
     ])
   })
 })
