@@ -7,6 +7,7 @@ import {
   emptyFunction,
   isTrackable,
 } from './commons'
+import { generateRemarkablePaths } from './path'
 
 export function createES5Tracker(target, config) {
   const {
@@ -14,12 +15,12 @@ export function createES5Tracker(target, config) {
     parentTrack,
   } = config || {}
 
+  let isRevoked = false
   let assertRevokable = tracker => {
-    assertRevokable = tracker => {
+    if (isRevoked) {
       throw new Error(
         "Cannot use a proxy that has been revoked. Did you pass an object " +
-        "from inside an immer function to an async process? " +
-				JSON.stringify(latest(tracker))
+        "to an async process? "
       )
     }
   }
@@ -35,10 +36,11 @@ export function createES5Tracker(target, config) {
     proxy: {},
     paths: [],
     accessPath,
-    revoke: emptyFunction,
+    revoke: () => { isRevoked = true },
     parentTrack,
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
+    getRemarkablePaths: emptyFunction,
   }
 
   tracker.reportAccessPath = function(path) {
@@ -60,7 +62,16 @@ export function createES5Tracker(target, config) {
     return false
   }
 
+  tracker.getRemarkablePaths = function() {
+    const tracker = proxy[TRACKER]
+    const { revoke, paths } = tracker
+    revoke()
+    return generateRemarkablePaths(paths)
+  }
+
   createHiddenProperty(proxy, TRACKER, tracker)
+  createHiddenProperty(proxy, 'getRemarkablePaths', tracker.getRemarkablePaths)
+  createHiddenProperty(proxy, 'setRemarkable', tracker.setRemarkable)
 
   each(target, prop => {
     const desc = Object.getOwnPropertyDescriptor(target, prop)
@@ -72,6 +83,7 @@ export function createES5Tracker(target, config) {
     const desc = {
       enumerable: enumerable,
       get() {
+        assertRevokable()
         const { base, proxy, accessPath, reportAccessPath } = this[TRACKER]
         const value = base[prop]
 

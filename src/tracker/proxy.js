@@ -3,6 +3,7 @@ import {
   isTrackable,
   emptyFunction,
 } from './commons'
+import { generateRemarkablePaths } from './path'
 
 export function createTracker(base, config) {
   const {
@@ -19,6 +20,7 @@ export function createTracker(base, config) {
     parentTrack,
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
+    getRemarkablePaths: emptyFunction,
   }
 
   tracker.reportAccessPath = path => {
@@ -37,6 +39,12 @@ export function createTracker(base, config) {
       return true
     }
     return false
+  }
+
+  tracker.getRemarkablePaths = function() {
+    const { revoke, paths } = proxy
+    revoke()
+    return generateRemarkablePaths(paths)
   }
 
   const internalProps = Object.getOwnPropertyNames(tracker)
@@ -77,7 +85,7 @@ export function createTracker(base, config) {
   }
 
   const { proxy, revoke } = Proxy.revocable(tracker, handler)
-  tracker.revoke = revoke
+  proxy.revoke = revoke
 
   return proxy
 }

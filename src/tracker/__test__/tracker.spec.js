@@ -7,8 +7,9 @@ testTracker(false)
 
 function testTracker(useProxy) {
   const fn = useProxy ? createTracker : createES5Tracker
+  const decorateDesc = (text, useProxy) => useProxy ? `proxy: ${text}` : `es5: ${text}`
 
-  describe('create object tracker', () => {
+  describe(`${decorateDesc('create object tracker', useProxy)}`, () => {
     test("access property", () => {
       const base = {
         a: 1,
@@ -23,7 +24,7 @@ function testTracker(useProxy) {
       expect(tracker.c).toBe(3)
     })
 
-    test('access nested property', () => {
+    test(`${decorateDesc('access nested property', useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -45,7 +46,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("access object base value", () => {
+    test(`${decorateDesc("access object base value", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -61,7 +62,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("accessPath", () => {
+    test(`${decorateDesc("accessPath", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -86,7 +87,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("accessPath: with spread value", () => {
+    test(`${decorateDesc("accessPath: with spread value", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -111,7 +112,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("accessPath: intermediate trackable value access should be tracked", () => {
+    test(`${decorateDesc("accessPath: intermediate trackable value access should be tracked", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -138,7 +139,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("accessPath: parent value only be access once", () => {
+    test(`${decorateDesc("accessPath: parent value only be access once", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -164,7 +165,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test("accessPath: parent value only be access once", () => {
+    test(`${decorateDesc("accessPath: parent value only be access once", useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -186,7 +187,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test('with intermediate value and use it', () => {
+    test(`${decorateDesc('with intermediate value and use it', useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -208,10 +209,44 @@ function testTracker(useProxy) {
         ])
       }
     })
+
+    test(`${decorateDesc('getRemarkablePaths', useProxy)}`, () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const f = tracker.c.f
+      const h = f.h
+      const x = f
+
+      const remarkable = tracker.getRemarkablePaths()
+      expect(remarkable).toEqual([['c', 'f', 'h']])
+    })
+
+    test(`${decorateDesc('`revoke` is called after getRemarkablePaths', useProxy)}`, () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const f = tracker.c.f
+      const h = f.h
+      const x = f
+
+      tracker.getRemarkablePaths()
+      expect(() => {
+        const b = tracker.b
+      }).toThrowError()
+    })
   })
 
   describe('create array object', () => {
-    test("access array base value", () => {
+    test(`${decorateDesc("access array base value", useProxy)}`, () => {
       const base = [{
         a: 1,
         b: 2,
@@ -227,7 +262,7 @@ function testTracker(useProxy) {
       }
     })
 
-    test('access index', () => {
+    test(`${decorateDesc('access index', useProxy)}`, () => {
       const base = [4, 5, 6]
 
       const tracker = fn(base)
@@ -237,7 +272,7 @@ function testTracker(useProxy) {
       expect(tracker[2]).toBe(6)
     })
 
-    test('access nested array', () => {
+    test(`${decorateDesc('access nested array', useProxy)}`, () => {
       const base = [{ a: { b: [{ c: 1 }]}}]
       const tracker = fn(base)
       expect(tracker[0].a.b[0].c).toBe(1)

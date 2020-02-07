@@ -169,7 +169,6 @@ function testTracker(useProxy) {
       } else {
         remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
       }
-      console.log('next ', remarkable)
       expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
     })
 
@@ -177,9 +176,7 @@ function testTracker(useProxy) {
       const base = [4, 5, 6]
 
       const tracker = fn(base)
-      tracker.forEach(item => {
-        //
-      })
+      tracker.forEach(item => {})
 
       let remarkable
       if (useProxy) {
@@ -187,7 +184,6 @@ function testTracker(useProxy) {
       } else {
         remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
       }
-      console.log('next ', remarkable)
       expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
     })
   })

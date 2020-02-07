@@ -13,7 +13,8 @@ const Tracker = ({
   autoRunFunc,
   useProxy = true,
 }) => {
-  const verifiedUseProxy = Tracker.isProxySupported && useProxy
+  const verifiedUseProxy = canIUseProxy() && useProxy
+  console.log('can i use ', canIUseProxy)
 
   if (verifiedUseProxy) {
     return createTracker(base)
