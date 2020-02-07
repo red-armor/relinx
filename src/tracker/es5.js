@@ -127,34 +127,19 @@ export function createES5Tracker(target, config) {
     keys.forEach(key => {
       const func = descriptors[key]
       if (typeof func === 'function') {
-        if (key === 'concat') createHiddenProperty(proxy, key, handler(func, proxy, false))
-        if (key === 'copyWith') createHiddenProperty(proxy, key, handler(func, proxy, false))
-        if (key === 'fill') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'find') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'findIndex') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'lastIndexOf') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'pop') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'push') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'reverse') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'shift') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'unshift') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'slice') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'sort') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'splice') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'includes') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'indexOf') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'join') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'keys') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'entries') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'forEach') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'filter') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'flat') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'flatMap') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'map') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'every') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'some') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'reduce') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'reduceRight') createHiddenProperty(proxy, key, handler(func, proxy))
+        const notRemarkLengthPropKeys = ['concat', 'copyWith']
+        const remarkLengthPropKeys = [
+          'concat', 'copyWith', 'fill', 'find', 'findIndex', 'lastIndexOf',
+          'pop', 'push', 'reverse', 'shift', 'unshift', 'slice',
+          'sort', 'splice', 'includes', 'indexOf', 'join', 'keys',
+          'entries', 'forEach', 'filter', 'flat', 'flatMap', 'map',
+          'every', 'some', 'reduce', 'reduceRight',
+        ]
+        if (notRemarkLengthPropKeys.indexOf(key) !== -1) {
+          createHiddenProperty(proxy, key, handler(func, proxy, false))
+        } else if (remarkLengthPropKeys.indexOf(key) !== -1) {
+          createHiddenProperty(proxy, key, handler(func, proxy))
+        }
       }
     })
   }
