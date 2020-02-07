@@ -9,14 +9,14 @@ import {
 } from './commons'
 import { generateRemarkablePaths } from './path'
 
-export function createES5Tracker(target, config) {
+export function createES5Tracker(target, config, context) {
   const {
     accessPath = [],
     parentTrack,
   } = config || {}
 
   let isRevoked = false
-  let assertRevokable = tracker => {
+  let assertRevokable = () => {
     if (isRevoked) {
       throw new Error(
         "Cannot use a proxy that has been revoked. Did you pass an object " +
@@ -41,6 +41,11 @@ export function createES5Tracker(target, config) {
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
     getRemarkablePaths: emptyFunction,
+
+    parent: null,
+    children: [],
+    prevSibling: null,
+    nextSibling: null,
   }
 
   tracker.reportAccessPath = function(path) {
@@ -96,7 +101,7 @@ export function createES5Tracker(target, config) {
         if (isTrackable(value)) return (proxy[prop] = createES5Tracker(value, {
           accessPath: nextAccessPath,
           parentTrack: this[TRACKER],
-        }))
+        }, context))
         return value
       }
     }
@@ -145,11 +150,6 @@ export function createES5Tracker(target, config) {
   }
 
   return proxy
-}
-
-createES5Tracker.revocable = (target, handler) => {
-  const proxy = createES5Tracker(target, handler)
-  return { proxy, revoke: proxy.assertRevokable() }
 }
 
 const createHiddenProperty = (target, prop, value) => {

@@ -4,8 +4,20 @@ import {
   emptyFunction,
 } from './commons'
 import { generateRemarkablePaths } from './path'
+import { trackerNode } from './context'
 
-export function createTracker(base, config) {
+const peek = (tracker, accessPath) => {
+  const value = accessPath.reduce((value, cur) => {
+    value.isPeekValue = true
+    const v = value[cur]
+    value.isPeekValue = false
+    return v
+  }, tracker)
+
+  return value
+}
+
+export function createTracker(base, config, contextTrackerNode) {
   const {
     accessPath = [],
     parentTrack,
@@ -21,6 +33,13 @@ export function createTracker(base, config) {
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
     getRemarkablePaths: emptyFunction,
+
+    parent: null,
+    children: [],
+    prevSibling: null,
+    nextSibling: null,
+    relink: emptyFunction,
+    isPeekValue: false,
   }
 
   tracker.reportAccessPath = path => {
@@ -30,6 +49,15 @@ export function createTracker(base, config) {
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
     }
+  }
+
+  tracker.relink = (prop, value) => {
+    proxy.base[prop] = value
+    proxy.proxy[prop] = createTracker(value, {
+      accessPath,
+      parentTrack: proxy,
+    }, contextTrackerNode)
+    console.log('orox ', proxy)
   }
 
   tracker.setRemarkable = function() {
@@ -70,7 +98,16 @@ export function createTracker(base, config) {
         return Reflect.get(target.base, prop, receiver)
       }
       const accessPath = target.accessPath.concat(prop)
-      target.reportAccessPath(accessPath)
+
+      if (!tracker.isPeekValue) {
+        if (trackerNode && contextTrackerNode.id !== trackerNode.id) {
+          trackerNode.tracker.paths.push(accessPath)
+          return peek(contextTrackerNode.tracker, accessPath)
+        } else {
+          target.reportAccessPath(accessPath)
+        }
+      }
+
       if (hasOwnProperty(target.proxy, prop)) {
         return target.proxy[prop]
       }
@@ -80,7 +117,7 @@ export function createTracker(base, config) {
       return (target.proxy[prop] = createTracker(value, {
         accessPath,
         parentTrack: target,
-      }))
+      }, contextTrackerNode))
     }
   }
 
