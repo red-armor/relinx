@@ -43,7 +43,13 @@ export function createTracker(base, config) {
 
   // Should be placed after get `internalProps`
   if (Array.isArray(base)) {
-    tracker = [tracker]
+    // if `base` is array, it will be export as one length array `tracker`;
+    // One length array will has only one item processed when invoke `map`, `forEach` ets.
+    const len = base.length
+    // why `fill(null)` ? `map`, `forEach` and other prototype functions will
+    // ignore `undefined` value when iterate...
+    const after = len > 1 ? new Array(len - 1).fill(null) : []
+    tracker = [tracker].concat(after)
   }
 
   const handler = {
@@ -52,10 +58,14 @@ export function createTracker(base, config) {
       if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed) return Reflect.get(target, prop, receiver)
-      if (!hasOwnProperty(target.base, prop)) return Reflect.get(target.base, prop, receiver)
+      if (!hasOwnProperty(target.base, prop)) {
+        return Reflect.get(target.base, prop, receiver)
+      }
       const accessPath = target.accessPath.concat(prop)
       target.reportAccessPath(accessPath)
-      if (hasOwnProperty(target.proxy, prop)) return target.proxy[prop]
+      if (hasOwnProperty(target.proxy, prop)) {
+        return target.proxy[prop]
+      }
       const value = target.base[prop]
       if (!isTrackable(value)) return value
 

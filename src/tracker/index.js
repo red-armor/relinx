@@ -22,6 +22,4 @@ const Tracker = ({
   return createES5Tracker(base)
 }
 
-Tracker.isProxySupported = canIUseProxy()
-
 export default Tracker

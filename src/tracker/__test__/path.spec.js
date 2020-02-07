@@ -1,120 +1,195 @@
 import { createTracker } from '../proxy'
+import { createES5Tracker } from '../es5'
 import { generateRemarkablePaths } from '../path'
+import { TRACKER } from '../commons'
 
-describe('generate remarkable', () => {
-  test('has no intermediate value', () => {
-    const base = {
-      a: 1,
-      b: 2,
-      c: { d: 3, f: { h: 4 }}
-    }
+testTracker(true)
+testTracker(false)
 
-    const tracker = createTracker(base)
-    const h = tracker.c.f.h
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['c', 'f', 'h']])
+function testTracker(useProxy) {
+  const fn = useProxy ? createTracker : createES5Tracker
+
+  describe('generate remarkable', () => {
+    test('has no intermediate value', () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const h = tracker.c.f.h
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['c', 'f', 'h']])
+    })
+
+    test('with spread value', () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const { h } = tracker.c.f
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['c', 'f', 'h']])
+    })
+
+    test('with intermediate value', () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const f = tracker.c.f
+      const h = f.h
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['c', 'f', 'h']])
+    })
+
+    test('with intermediate value and use it', () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const f = tracker.c.f
+      const h = f.h
+      const x = f
+
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['c', 'f', 'h']])
+    })
+
+    test('with intermediate value and `setRemarkable`', () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: { d: 3, f: { h: 4 }}
+      }
+
+      const tracker = fn(base)
+      const f = tracker.c.f
+      const h = f.h
+      const x = f
+
+      let remarkable
+      if (useProxy) {
+        f.setRemarkable()
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        f[TRACKER].setRemarkable()
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['c', 'f'], ['c', 'f', 'h']])
+    })
   })
 
-  test('with spread value', () => {
-    const base = {
-      a: 1,
-      b: 2,
-      c: { d: 3, f: { h: 4 }}
-    }
+  describe('generate array remarkable path', () => {
+    test('access index', () => {
+      const base = [4, 5, 6]
 
-    const tracker = createTracker(base)
-    const { h } = tracker.c.f
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['c', 'f', 'h']])
+      const tracker = fn(base)
+      const a = tracker[0]
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['0']])
+    })
+
+    test('access nested array', () => {
+      const base = [{ a: { b: [{ c: 1 }]}}]
+      const tracker = fn(base)
+      const c = tracker[0].a.b[0].c
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      expect(remarkable).toEqual([['0', 'a', 'b', '0', 'c']])
+    })
+
+    // test('call `for` function', () => {
+    //   const base = [4, 5, 6]
+
+    //   const tracker = fn(base)
+    //   const len = tracker.length
+    //   for (let i = 0; i < len; i++) {
+    //     const a = tracker[i]
+    //   }
+    //   let remarkable
+    //   if (useProxy) {
+    //     remarkable = generateRemarkablePaths(tracker.paths)
+    //   } else {
+    //     remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+    //   }
+    //   expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
+    // })
+
+    test('call `map` function', () => {
+      const base = [4, 5, 6]
+
+      const tracker = fn(base)
+      tracker.map(item => {
+        //
+      })
+
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      console.log('next ', remarkable)
+      expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
+    })
+
+    test('call `forEach` function', () => {
+      const base = [4, 5, 6]
+
+      const tracker = fn(base)
+      tracker.forEach(item => {
+        //
+      })
+
+      let remarkable
+      if (useProxy) {
+        remarkable = generateRemarkablePaths(tracker.paths)
+      } else {
+        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+      }
+      console.log('next ', remarkable)
+      expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
+    })
   })
+}
 
-  test('with intermediate value', () => {
-    const base = {
-      a: 1,
-      b: 2,
-      c: { d: 3, f: { h: 4 }}
-    }
-
-    const tracker = createTracker(base)
-    const f = tracker.c.f
-    const h = f.h
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['c', 'f', 'h']])
-  })
-
-  test('with intermediate value and use it', () => {
-    const base = {
-      a: 1,
-      b: 2,
-      c: { d: 3, f: { h: 4 }}
-    }
-
-    const tracker = createTracker(base)
-    const f = tracker.c.f
-    const h = f.h
-    const x = f
-
-    const remarkable = generateRemarkablePaths(tracker.paths)
-
-    expect(remarkable).toEqual([['c', 'f', 'h']])
-  })
-
-  test('with intermediate value and `setRemarkable`', () => {
-    const base = {
-      a: 1,
-      b: 2,
-      c: { d: 3, f: { h: 4 }}
-    }
-
-    const tracker = createTracker(base)
-    const f = tracker.c.f
-    const h = f.h
-    const x = f
-
-    f.setRemarkable()
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['c', 'f'], ['c', 'f', 'h']])
-  })
-})
-
-describe('generate array remarkable path', () => {
-  test('access index', () => {
-    const base = [4, 5, 6]
-
-    const tracker = createTracker(base)
-    const a = tracker[0]
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['0']])
-  })
-
-  test('access nested array', () => {
-    const base = [{ a: { b: [{ c: 1 }]}}]
-    const tracker = createTracker(base)
-    const c = tracker[0].a.b[0].c
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['0', 'a', 'b', '0', 'c']])
-  })
-
-  test('call `map` function', () => {
-    const base = [4, 5, 6]
-
-    const tracker = createTracker(base)
-    const len = tracker.length
-    for (let i = 0; i < len; i++) {
-      const a = tracker[i]
-    }
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
-  })
-
-  test('remarkable path will remove duplicate path', () => {
-    const base = [4, 5, 6]
-
-    const tracker = createTracker(base)
-    for (let i = 0; i < tracker.length; i++) {
-      const a = tracker[i]
-    }
-    const remarkable = generateRemarkablePaths(tracker.paths)
-    expect(remarkable).toEqual([['length'], ['2'], ['1'], ['0']])
-  })
-})
