@@ -53,11 +53,13 @@ export function createTracker(base, config, contextTrackerNode) {
 
   tracker.relink = (prop, value) => {
     proxy.base[prop] = value
-    proxy.proxy[prop] = createTracker(value, {
-      accessPath,
-      parentTrack: proxy,
-    }, contextTrackerNode)
-    console.log('orox ', proxy)
+    if (isTrackable(value)) {
+      proxy.proxy[prop] = createTracker(value, {
+        // do not forget `prop` param
+        accessPath: accessPath.concat(prop),
+        parentTrack: proxy,
+      }, contextTrackerNode)
+    }
   }
 
   tracker.setRemarkable = function() {
@@ -112,6 +114,7 @@ export function createTracker(base, config, contextTrackerNode) {
         return target.proxy[prop]
       }
       const value = target.base[prop]
+
       if (!isTrackable(value)) return value
 
       return (target.proxy[prop] = createTracker(value, {

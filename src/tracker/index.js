@@ -25,26 +25,4 @@ const Tracker = ({
   return node
 }
 
-const base = [{
-  a: 1,
-}, {
-  b: 2
-}]
-const copy = base
-
-const nest = {
-  e: 3,
-  f: 4,
-}
-
-const copyNode = Tracker({ base: copy, useProxy: true })
-const nestNode = Tracker({ base: nest, useProxy: true })
-
-const prop = copyNode.tracker[0]
-console.log('prop ', prop)
-copyNode.tracker.relink('0', { ...base[0], a: 4 })
-console.log('after -----')
-
-console.log('copy node ', copyNode, prop.a)
-
 export default Tracker

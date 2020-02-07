@@ -96,5 +96,43 @@ function testTracker(useProxy) {
       copyNode.tracker.relink('0', { ...base[0], a: 4 })
       expect(prop.a).toBe(4)
     })
+
+    test("simulate prop propagation 3", () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: {
+          d: 4,
+          e: [{
+            f: 7
+          }]
+        }
+      }
+      const copy = base
+
+      const nest = {
+        e: 3,
+        f: 4,
+      }
+
+      const copyNode = Tracker({ base: copy, useProxy })
+      const nestNode = Tracker({ base: nest, useProxy })
+
+      const prop = copyNode.tracker
+      expect(prop.a).toBe(1)
+      expect(prop.c.d).toBe(4)
+      expect(prop.c.e[0].f).toBe(7)
+
+      copyNode.tracker.relink('a', 5)
+      expect(prop.a).toBe(5)
+      copyNode.tracker.relink('c', {
+        d: 5,
+        e: [{
+          f: 9
+        }]
+      })
+      expect(prop.c.d).toBe(5)
+      expect(prop.c.e[0].f).toBe(9)
+    })
   })
 }
