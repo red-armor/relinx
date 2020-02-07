@@ -108,7 +108,7 @@ export function createES5Tracker(target, config) {
     const descriptors = Object.getPrototypeOf([])
     const keys = Object.getOwnPropertyNames(descriptors)
 
-    const handler = (func, context, invokeLength) => function() {
+    const handler = (func, context, invokeLength = true) => function() {
       const args = Array.prototype.slice.call(arguments)
       assertRevokable()
       const tracker = this[TRACKER]
@@ -127,8 +127,8 @@ export function createES5Tracker(target, config) {
     keys.forEach(key => {
       const func = descriptors[key]
       if (typeof func === 'function') {
-        if (key === 'concat') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'copyWith') createHiddenProperty(proxy, key, handler(func, proxy))
+        if (key === 'concat') createHiddenProperty(proxy, key, handler(func, proxy, false))
+        if (key === 'copyWith') createHiddenProperty(proxy, key, handler(func, proxy, false))
         if (key === 'fill') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'find') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'findIndex') createHiddenProperty(proxy, key, handler(func, proxy))
@@ -146,11 +146,11 @@ export function createES5Tracker(target, config) {
         if (key === 'join') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'keys') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'entries') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'forEach') createHiddenProperty(proxy, key, handler(func, proxy, true))
+        if (key === 'forEach') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'filter') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'flat') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'flatMap') createHiddenProperty(proxy, key, handler(func, proxy))
-        if (key === 'map') createHiddenProperty(proxy, key, handler(func, proxy, true))
+        if (key === 'map') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'every') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'some') createHiddenProperty(proxy, key, handler(func, proxy))
         if (key === 'reduce') createHiddenProperty(proxy, key, handler(func, proxy))
