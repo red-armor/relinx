@@ -65,7 +65,9 @@ const Tracker = ({
 //   b: {
 //     b1: { b11: 1 },
 //     b2: { b21: { b211: 9 }},
-//     b3: { b31: [{ b311: 7 }]}
+//     b3: { b31: [{ b311: 7 }]},
+//     b4: 1,
+//     b5: 'b5',
 //   },
 //   c: {
 //     c1: { c11: 1 },
@@ -75,29 +77,23 @@ const Tracker = ({
 // }
 
 // const trackerNodeA = Tracker({ base: store.a })
-// console.log('create a1')
 // const trackerNodeA1 = Tracker({ base: store.a.a1 })
-// console.log('create a2')
-
 // const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
-// console.log('create a3')
-
 // const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
-// // console.log('tracker node a ', trackerNodeA)
 
-// const trackerNodeB = Tracker({ base: store.a.a3, parent: null })
-// // console.log('tracker node b ', trackerNodeB)
+// const trackerNodeB = Tracker({ base: store.b, parent: null })
+// const trackerNodeB1 = Tracker({ base: store.b.b1 })
+// const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB })
 
-// const trackerNodeB1 = Tracker({ base: store.a.a1 })
-// console.log('create b2')
+// const b21 = trackerNodeB2.tracker.b21
+// const { b211 } = b21
+// const b_b1_b11 = trackerNodeB.tracker.b1.b11
+// const { b4, b5 } = trackerNodeB.tracker
+// console.log('trackerNodeB2 ', trackerNodeB2.tracker.getRemarkablePaths())
 
-// const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
-// console.log('create b3')
-
-// const trackerNodeB3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
+// const trackerNodeB3 = Tracker({ base: store.b.b3, parent: trackerNodeB })
 
 // console.log('tracker node a ', trackerNodeA)
 // console.log('tracker node b ', trackerNodeB)
-
 
 export default Tracker
