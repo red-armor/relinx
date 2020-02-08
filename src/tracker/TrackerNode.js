@@ -9,9 +9,9 @@ class TrackerNode {
     this.nextSibling = null
     this.tracker = null
     this.id = `__TrackerNode_${count++}__`
+    this.isRevoked = false
 
     this.updateParent()
-    console.log('is ', isSibling)
     if (isSibling) {
       this.initPrevSibling()
     }
@@ -59,14 +59,41 @@ class TrackerNode {
     }
   }
 
+  /**
+   *
+   * @param {null | TrackerNode} parent, null value means revoke until to top most.
+   */
   revokeUntil(parent) {
-    console.log('revoke this ', this)
     if (parent === this) return true
-    if (!parent) throw new Error('parent should exist')
-    // the top most node, still can not find `parent` node
-    if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
-    this.tracker.revoke()
-    this.parent.revokeUntil(parent)
+
+    if (parent) {
+      if (parent.isRevoked) throw new Error('Assign a `revoked` parent is forbidden')
+    }
+
+    if (this.parent) {
+      // if (!parent) throw new Error('parent should exist')
+
+      // the top most node, still can not find `parent` node
+      // if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
+      if (this.parent) {
+        this.parent.revokeUntil(parent)
+      }
+    }
+
+    this.revokeSelf()
+  }
+
+  revokeSelf() {
+    if (!this.isRevoked) {
+      this.tracker.revoke()
+      this.isRevoked = true
+    }
+
+    if (this.children.length) {
+      this.children.forEach(child => {
+        if (!child.isRevoked) child.revokeSelf()
+      })
+    }
   }
 
   /**

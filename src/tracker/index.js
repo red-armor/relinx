@@ -24,7 +24,7 @@ const Tracker = ({
   // re-create a top most node
   if (!parentTrackerNode) {
     if (context.trackerNode) {
-      context.trackerNode.revoke()
+      context.trackerNode.revokeUntil(parentTrackerNode)
     }
   } else {
     if (!context.trackerNode) throw new Error(
@@ -39,7 +39,6 @@ const Tracker = ({
       parentTrackerNode.revokeLastChild()
     } else {
       // add sibling, or create new branch....so `revokeUntil` is required.
-      console.log('context node ', context.trackerNode)
       context.trackerNode.revokeUntil(parentTrackerNode)
     }
 
@@ -57,33 +56,48 @@ const Tracker = ({
   return node
 }
 
-const store = {
-  a: {
-    a1: { a11: 1 },
-    a2: { a21: { a211: 9 }},
-    a3: { a31: [{ a311: 7 }]}
-  },
-  b: {
-    b1: { b11: 1 },
-    b2: { b21: { b211: 9 }},
-    b3: { b31: [{ b311: 7 }]}
-  },
-  c: {
-    c1: { c11: 1 },
-    c2: { c21: { c211: 9 }},
-    c3: { c31: [{ c311: 7 }]}
-  },
-}
+// const store = {
+//   a: {
+//     a1: { a11: 1 },
+//     a2: { a21: { a211: 9 }},
+//     a3: { a31: [{ a311: 7 }]}
+//   },
+//   b: {
+//     b1: { b11: 1 },
+//     b2: { b21: { b211: 9 }},
+//     b3: { b31: [{ b311: 7 }]}
+//   },
+//   c: {
+//     c1: { c11: 1 },
+//     c2: { c21: { c211: 9 }},
+//     c3: { c31: [{ c311: 7 }]}
+//   },
+// }
 
-const trackerNodeA = Tracker({ base: store.a })
-console.log('create a1')
-const trackerNodeA1 = Tracker({ base: store.a.a1 })
-console.log('create a2')
+// const trackerNodeA = Tracker({ base: store.a })
+// console.log('create a1')
+// const trackerNodeA1 = Tracker({ base: store.a.a1 })
+// console.log('create a2')
 
-const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
-console.log('create a3')
+// const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
+// console.log('create a3')
 
-const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
-console.log('tracker node a ', trackerNodeA)
+// const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
+// // console.log('tracker node a ', trackerNodeA)
+
+// const trackerNodeB = Tracker({ base: store.a.a3, parent: null })
+// // console.log('tracker node b ', trackerNodeB)
+
+// const trackerNodeB1 = Tracker({ base: store.a.a1 })
+// console.log('create b2')
+
+// const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
+// console.log('create b3')
+
+// const trackerNodeB3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
+
+// console.log('tracker node a ', trackerNodeA)
+// console.log('tracker node b ', trackerNodeB)
+
 
 export default Tracker

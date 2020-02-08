@@ -153,6 +153,47 @@ function testTracker(useProxy) {
           c3: { c31: [{ c311: 7 }]}
         },
       }
+
+      expect(() => {
+        const trackerNodeA = Tracker({ base: store.a, useProxy })
+        const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy })
+        const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
+        const trackerNodeB = Tracker({ base: store.a.a3, parent: null, useProxy })
+        const trackerNodeB1 = Tracker({ base: store.a.a1, useProxy })
+        const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
+      }).toThrow('Assign a `revoked` parent is forbidden')
+    })
+
+    test("verify children", () => {
+      const store = {
+        a: {
+          a1: { a11: 1 },
+          a2: { a21: { a211: 9 }},
+          a3: { a31: [{ a311: 7 }]}
+        },
+        b: {
+          b1: { b11: 1 },
+          b2: { b21: { b211: 9 }},
+          b3: { b31: [{ b311: 7 }]}
+        },
+        c: {
+          c1: { c11: 1 },
+          c2: { c21: { c211: 9 }},
+          c3: { c31: [{ c311: 7 }]}
+        },
+      }
+
+      const trackerNodeA = Tracker({ base: store.a })
+      const trackerNodeA1 = Tracker({ base: store.a.a1 })
+      const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA })
+      const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA })
+      const trackerNodeB = Tracker({ base: store.a.a3, parent: null })
+      const trackerNodeB1 = Tracker({ base: store.a.a1 })
+      const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeB })
+      const trackerNodeB3 = Tracker({ base: store.a.a3, parent: trackerNodeB })
+
+      expect(trackerNodeA.children.length).toBe(3)
+      expect(trackerNodeB.children.length).toBe(3)
     })
   })
 }
