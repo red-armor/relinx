@@ -21,6 +21,8 @@ export function createTracker(base, config, contextTrackerNode) {
   const {
     accessPath = [],
     parentTrack,
+    useRevoke,
+    useScope,
   } = config || {}
 
   let tracker = {
@@ -76,6 +78,25 @@ export function createTracker(base, config, contextTrackerNode) {
     return generateRemarkablePaths(paths)
   }
 
+  const assertScope = (parentNode, childNode) => {
+    if (useScope) {
+      // If `contextTrackerNode` is null, it means access top most data prop.
+      // console.log('context tracker node ', contextTrackerNode)
+      if (!parentNode) {
+        console.warn(
+          '`currentTrackerNode` is undefined, which means you are using `createTracker` function directly.' +
+          'Maybe you should call `TrackerNode` or set `useScope` to false in config param'
+        )
+      } else if (!parentNode.contains(childNode))
+        throw new Error(
+          JSON.stringify(trackerNode) +
+          'is not child node of ' +
+          JSON.stringify(parentNode) +
+          'Property only could be accessed by self node or parent node.'
+        )
+    }
+  }
+
   const internalProps = Object.getOwnPropertyNames(tracker)
 
   // Should be placed after get `internalProps`
@@ -91,6 +112,7 @@ export function createTracker(base, config, contextTrackerNode) {
 
   const handler = {
     get: (tracker, prop, receiver) => {
+      assertScope(contextTrackerNode, trackerNode)
       let target = tracker
       if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
@@ -124,7 +146,9 @@ export function createTracker(base, config, contextTrackerNode) {
   }
 
   const { proxy, revoke } = Proxy.revocable(tracker, handler)
-  proxy.revoke = revoke
+  proxy.revoke = () => {
+    if (useRevoke) revoke()
+  }
 
   return proxy
 }

@@ -11,8 +11,10 @@ import TrackerNode from './TrackerNode'
  */
 const Tracker = ({
   base,
-  useProxy = true,
   parent,
+  useProxy = true,
+  useRevoke = true,
+  useScope = true,
 }) => {
   const verifiedUseProxy = canIUseProxy() && useProxy
   const fn = verifiedUseProxy ? createTracker : createES5Tracker
@@ -22,7 +24,7 @@ const Tracker = ({
   // re-create a top most node
   if (!parentTrackerNode) {
     if (context.trackerNode) {
-      context.trackerNode.revokeUntil(parentTrackerNode)
+      useRevoke && context.trackerNode.revokeUntil(parentTrackerNode)
     }
   } else {
     if (!context.trackerNode) throw new Error(
@@ -31,10 +33,10 @@ const Tracker = ({
 
     if (parentTrackerNode === context.trackerNode) {
       // Add the first child, for sibling, intersection access is forbidden.
-      parentTrackerNode.revokeLastChild()
+      useRevoke && parentTrackerNode.revokeLastChild()
     } else {
       // add sibling, or create new branch....so `revokeUntil` is required.
-      context.trackerNode.revokeUntil(parentTrackerNode)
+      useRevoke && context.trackerNode.revokeUntil(parentTrackerNode)
     }
 
     if (parentTrackerNode === context.trackerNode.parent) {
@@ -44,7 +46,7 @@ const Tracker = ({
 
   const node = new TrackerNode(parentTrackerNode, isSibling)
   context.trackerNode = node
-  const tracker = fn(base, {}, context.trackerNode)
+  const tracker = fn(base, { useRevoke, useScope }, context.trackerNode)
 
   node.tracker = tracker
 

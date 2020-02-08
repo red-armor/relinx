@@ -17,7 +17,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const h = tracker.c.f.h
       let remarkable
       if (useProxy) {
@@ -35,7 +35,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const { h } = tracker.c.f
       let remarkable
       if (useProxy) {
@@ -53,7 +53,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
       let remarkable
@@ -72,7 +72,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
       const x = f
@@ -93,7 +93,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
       const x = f
@@ -114,7 +114,7 @@ function testTracker(useProxy) {
     test('access index', () => {
       const base = [4, 5, 6]
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const a = tracker[0]
       let remarkable
       if (useProxy) {
@@ -127,7 +127,7 @@ function testTracker(useProxy) {
 
     test('access nested array', () => {
       const base = [{ a: { b: [{ c: 1 }]}}]
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const c = tracker[0].a.b[0].c
       let remarkable
       if (useProxy) {
@@ -158,7 +158,7 @@ function testTracker(useProxy) {
     test('call `map` function', () => {
       const base = [4, 5, 6]
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       tracker.map(item => {
         //
       })
@@ -175,7 +175,7 @@ function testTracker(useProxy) {
     test('call `forEach` function', () => {
       const base = [4, 5, 6]
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       tracker.forEach(item => {})
 
       let remarkable

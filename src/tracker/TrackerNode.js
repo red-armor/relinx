@@ -53,6 +53,15 @@ class TrackerNode {
     }
   }
 
+  contains(childNode) {
+    if (childNode === this) return true
+    if (!childNode) return false
+    const parent = childNode.parent
+    if (!parent) return false
+    if (parent === this) return true
+    return this.contains(parent)
+  }
+
   revokeLastChild() {
     if (this.children.length) {
       this.children[this.children.length - 1].revoke()

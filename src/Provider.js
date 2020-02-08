@@ -1,88 +1,36 @@
-import React, {
-  useMemo,
-  useReducer,
-  useEffect,
-  useRef,
-} from 'react'
+import React, { useMemo, useRef, useReducer, useEffect } from 'react'
 import context from './context'
-import central from './central'
-import infoLog from './utils/infoLog'
-import mergeAutoRunActions from './utils/mergeAutoRunActions'
+import ApplicationImpl from './ApplicationImpl'
+import { generateNamespaceKey } from './utils/key'
 
-const DEBUG = false
-
-export default ({ store, children, namespace = 'default' }) => {
+export default ({
+  store,
+  children,
+  useProxy = true,
+  namespace,
+}) => {
   const { initialState, createReducer, createDispatch } = store
-  const nonReactiveInitialState = initialState
-  const initialized = useRef({})
+  const application = useRef(new ApplicationImpl(initialState))
 
-  if (!initialized.current[namespace]) {
-    central.addApplication({
-      initialState,
-      namespace,
-    })
-    initialized.current[namespace] = true
-  }
-
-  const combinedReducers = useMemo(() => createReducer(nonReactiveInitialState), [])
+  const combinedReducers = useMemo(() => createReducer(initialState), [])
+  // no need to update value every time.
   const [value, setValue] = useReducer(combinedReducers, [])
   let setState = setValue
   const dispatch = useMemo(() => createDispatch(setState), [])
 
-  if (DEBUG) {
-    // 打印出来actions中的reducers方法；对于在effects中的actions都会单独再打印出来
-    // 对于action是一个function的话，目前只能够通过`middleware`层进行hook；因为这个
-    // dispatch其实只能是操作`reducer`
-    setState = (...args) => {
-      infoLog('Dispatch Action ', ...args)
-      setValue(...args)
-    }
-  }
-
   useEffect(() => {
-    try {
-      let autoRunComputations = []
-      if (value.length) {
-        value.forEach(currentValue => {
-          const { storeKey, changedValue = {} } = currentValue
-          const keys = Object.keys(changedValue)
-          keys.forEach(key => {
-            const newComputations = central.reconcileWithPaths(
-              [storeKey, key],
-              changedValue[key],
-              namespace
-            )
-            autoRunComputations = autoRunComputations.concat(newComputations)
-          })
-        })
-
-        // 触发autoRunFunction函数进行调用，从而进行数据层的更新
-        const autoRunLeft = mergeAutoRunActions(autoRunComputations)
-        autoRunLeft.forEach(comp => comp.applyChange())
-
-        dispatch({
-          type: '@init/logger',
-        })
-      }
-    } catch (err) {
-      console.error(err) // eslint-disable-line
-    }
+    application.current.update(value)
   }, [value])
 
-  if (DEBUG) {
-    infoLog('central : ', central)
-  }
-
-  // Context only need to pass `dispatch`, state value could get
-  // from isolate `useTracker` instance
-  const propagatedValue = useMemo(() => ({
-    computation: null,
-    namespace,
+  const contextValue = useRef({
+    application: application.current,
     dispatch,
-  }), [])
+    useProxy,
+    namespace: namespace || generateNamespaceKey(),
+  })
 
   return (
-    <context.Provider value={propagatedValue}>
+    <context.Provider value={contextValue.current}>
       {children}
     </context.Provider>
   )

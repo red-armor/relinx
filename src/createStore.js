@@ -14,12 +14,16 @@ const combineReducers = reducers => state => (_, actions) => {
     invariant(usedReducer, 'Reducer missing for type `${type}`') // eslint-disable-line
 
     const currentState = state[storeKey]
-    const changedValue = usedReducer[actionType](currentState, payload)
+    if (usedReducer[actionType]) {
+      const changedValue = usedReducer[actionType](currentState, payload)
 
-    changedValueGroup.push({
-      storeKey,
-      changedValue,
-    })
+      changedValueGroup.push({
+        storeKey,
+        changedValue,
+      })
+    } else {
+      console.warn(`Do not have action '${actionType}'`)
+    }
 
     return changedValueGroup
   }, [])

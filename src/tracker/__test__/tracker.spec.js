@@ -17,7 +17,7 @@ function testTracker(useProxy) {
         c: 3,
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       expect(tracker.a).toBe(1)
       expect(tracker.b).toBe(2)
@@ -31,7 +31,7 @@ function testTracker(useProxy) {
         c: { d: 4, f: { h: 5 }},
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       if (useProxy) {
         expect(tracker.a).toBe(1)
@@ -53,7 +53,7 @@ function testTracker(useProxy) {
         c: 3,
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       if (useProxy) {
         expect(tracker.base).toEqual({ a: 1, b: 2, c: 3 })
@@ -69,7 +69,7 @@ function testTracker(useProxy) {
         c: { d: 3 }
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       const a = tracker.a
       const b = tracker.b
@@ -94,7 +94,7 @@ function testTracker(useProxy) {
         c: { d: 3 }
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       const a = tracker.a
       const b = tracker.b
@@ -120,7 +120,7 @@ function testTracker(useProxy) {
         e: { f: 4 },
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       const a = tracker.a
       const b = tracker.b
@@ -147,7 +147,7 @@ function testTracker(useProxy) {
         e: { f: 4 },
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       const a = tracker.a
       const b = tracker.b
@@ -173,7 +173,7 @@ function testTracker(useProxy) {
         e: { f: 4 },
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const h = tracker.c.h
 
       if (useProxy) {
@@ -194,7 +194,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
       const x = f
@@ -217,7 +217,7 @@ function testTracker(useProxy) {
         c: { d: 3, f: { h: 4 }}
       }
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
       const x = f
@@ -253,7 +253,7 @@ function testTracker(useProxy) {
         c: 3,
       }]
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       if (useProxy) {
         expect(tracker[0].base).toEqual({ a: 1, b: 2, c: 3 })
@@ -265,7 +265,7 @@ function testTracker(useProxy) {
     test(`${decorateDesc('access index', useProxy)}`, () => {
       const base = [4, 5, 6]
 
-      const tracker = fn(base)
+      const tracker = fn(base, { useScope: false })
 
       expect(tracker[0]).toBe(4)
       expect(tracker[1]).toBe(5)
