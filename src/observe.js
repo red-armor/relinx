@@ -7,7 +7,8 @@ import React, {
 } from 'react'
 import context from './context'
 import Tracker from './tracker'
-import { generateObserveKey } from './utils/key'
+import { generateObserveKey, generatePatcherKey } from './utils/key'
+import Patcher from './Patcher'
 
 let count = 0
 
@@ -18,7 +19,8 @@ const Helper = ({ addListener }) => {
 
 export default (WrappedComponent) => {
   function NextComponent(props) {
-    const [state, setState] = useState(0)
+    const state = useRef(0)
+    const [_, setState] = useState(state.current)
     const storeName = useRef()
     const trackerNode = useRef()
     const {
@@ -27,8 +29,14 @@ export default (WrappedComponent) => {
       namespace,
       ...rest
     } = useContext(context)
-
-    console.log('namespace ', namespace)
+    const incrementCount = useRef(count++)
+    const componentName = `${NextComponent.displayName}-${incrementCount.current}`
+    const patcher = useRef()
+    const getData = useCallback(() => ({ trackerNode: trackerNode.current }), [])
+    const autoRunFn = () => {
+      state.current = state.current + 1
+      setState(state.current)
+    }
 
     const attachStoreName = useCallback(name => {
       storeName.current = name
@@ -44,16 +52,17 @@ export default (WrappedComponent) => {
 
     const addListener = useCallback(() => {
       const paths = trackerNode.current.tracker.getRemarkablePaths()
-      console.log('paths ', storeName.current, paths)
+      patcher.current = new Patcher({
+        key: generatePatcherKey({
+          namespace,
+          componentName,
+        }),
+        paths,
+        autoRunFn,
+        storeName: storeName.current,
+      })
+      application.addPatcher(patcher.current)
     }, [])
-
-    const getData = useCallback(() => ({ trackerNode: trackerNode.current }), [])
-
-    const teardown = []
-
-    const autoRunFn = useCallback(() => {
-      setState(state + 1)
-    }, [state])
 
     const contextValue = {
       ...rest,

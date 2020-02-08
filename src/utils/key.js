@@ -18,6 +18,11 @@ export const generateConnectKey = ({ namespace, componentName }) => {
 
 }
 
+const patcherSeenKeys = {}
 export const generatePatcherKey = ({ namespace, componentName }) => {
-
+  if (!patcherSeenKeys[namespace]) patcherSeenKeys[namespace] = {}
+  const count = patcherSeenKeys[namespace][componentName] || 0
+  const next = count + 1
+  patcherSeenKeys[namespace][componentName] = next
+  return `${namespace}_${componentName}_patcher_${count}`
 }
