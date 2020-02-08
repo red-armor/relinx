@@ -134,5 +134,25 @@ function testTracker(useProxy) {
       expect(prop.c.d).toBe(5)
       expect(prop.c.e[0].f).toBe(9)
     })
+
+    test("simulate prop propagation 3", () => {
+      const store = {
+        a: {
+          a1: { a11: 1 },
+          a2: { a21: { a211: 9 }},
+          a3: { a31: [{ a311: 7 }]}
+        },
+        b: {
+          b1: { b11: 1 },
+          b2: { b21: { b211: 9 }},
+          b3: { b31: [{ b311: 7 }]}
+        },
+        c: {
+          c1: { c11: 1 },
+          c2: { c21: { c211: 9 }},
+          c3: { c31: [{ c311: 7 }]}
+        },
+      }
+    })
   })
 }

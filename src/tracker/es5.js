@@ -70,7 +70,7 @@ export function createES5Tracker(target, config, context) {
   tracker.getRemarkablePaths = function() {
     const tracker = proxy[TRACKER]
     const { revoke, paths } = tracker
-    revoke()
+    // revoke()
     return generateRemarkablePaths(paths)
   }
 

@@ -1,13 +1,26 @@
 let count = 1
+import context from './context'
 
 class TrackerNode {
-  constructor(parent) {
+  constructor(parent, isSibling) {
     this.children = []
     this.parent = parent
-    this.prevSibling = this.initPrevSibling()
+    this.prevSibling = null
     this.nextSibling = null
     this.tracker = null
     this.id = `__TrackerNode_${count++}__`
+
+    this.updateParent()
+    console.log('is ', isSibling)
+    if (isSibling) {
+      this.initPrevSibling()
+    }
+  }
+
+  updateParent() {
+    if (this.parent) {
+      this.parent.children.push(this)
+    }
   }
 
   initPrevSibling() {
@@ -37,6 +50,32 @@ class TrackerNode {
     if (next) {
       if (prev) next.prevSibling = prev
       else next.prevSibling = null
+    }
+  }
+
+  revokeLastChild() {
+    if (this.children.length) {
+      this.children[this.children.length - 1].revoke()
+    }
+  }
+
+  revokeUntil(parent) {
+    console.log('revoke this ', this)
+    if (parent === this) return true
+    if (!parent) throw new Error('parent should exist')
+    // the top most node, still can not find `parent` node
+    if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
+    this.tracker.revoke()
+    this.parent.revokeUntil(parent)
+  }
+
+  /**
+   * return context handler to parent node.
+   */
+  revoke() {
+    if (this.parent) {
+      this.tracker.revoke()
+      context.trackerNode = this.parent
     }
   }
 }

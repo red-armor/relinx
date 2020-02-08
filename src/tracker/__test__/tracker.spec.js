@@ -226,23 +226,23 @@ function testTracker(useProxy) {
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
 
-    test(`${decorateDesc('`revoke` is called after getRemarkablePaths', useProxy)}`, () => {
-      const base = {
-        a: 1,
-        b: 2,
-        c: { d: 3, f: { h: 4 }}
-      }
+    // test(`${decorateDesc('`revoke` is called after getRemarkablePaths', useProxy)}`, () => {
+    //   const base = {
+    //     a: 1,
+    //     b: 2,
+    //     c: { d: 3, f: { h: 4 }}
+    //   }
 
-      const tracker = fn(base)
-      const f = tracker.c.f
-      const h = f.h
-      const x = f
+    //   const tracker = fn(base)
+    //   const f = tracker.c.f
+    //   const h = f.h
+    //   const x = f
 
-      tracker.getRemarkablePaths()
-      expect(() => {
-        const b = tracker.b
-      }).toThrowError()
-    })
+    //   tracker.getRemarkablePaths()
+    //   expect(() => {
+    //     const b = tracker.b
+    //   }).toThrowError()
+    // })
   })
 
   describe('create array object', () => {

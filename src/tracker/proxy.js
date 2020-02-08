@@ -72,8 +72,7 @@ export function createTracker(base, config, contextTrackerNode) {
   }
 
   tracker.getRemarkablePaths = function() {
-    const { revoke, paths } = proxy
-    revoke()
+    const { paths } = proxy
     return generateRemarkablePaths(paths)
   }
 
