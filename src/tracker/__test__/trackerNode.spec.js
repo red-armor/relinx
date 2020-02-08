@@ -309,4 +309,55 @@ function testTracker(useProxy) {
       }).toThrow('Cannot perform \'get\' on a proxy that has been revoked')
     })
   })
+
+  describe('revoke', () => {
+    test('revoked after enter into other node scop', () => {
+      const store = {
+        a: {
+          a1: { a11: 1 },
+          a2: { a21: { a211: 9 }},
+          a3: { a31: [{ a311: 7 }]}
+        },
+        b: {
+          b1: { b11: 1 },
+          b2: { b21: { b211: 9 }},
+          b3: { b31: [{ b311: 7 }]}
+        },
+        c: {
+          c1: { c11: 1 },
+          c2: { c21: { c211: 9 }},
+          c3: { c31: [{ c311: 7 }]}
+        },
+      }
+
+      const trackerNodeA = Tracker({ base: store.a, useProxy })
+      const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy })
+      expect(trackerNodeA.isRevoked).toBe(false)
+      expect(trackerNodeA1.isRevoked).toBe(false)
+
+      const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
+      expect(trackerNodeA.isRevoked).toBe(false)
+      expect(trackerNodeA1.isRevoked).toBe(true)
+      expect(trackerNodeA2.isRevoked).toBe(false)
+
+      const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA, useProxy })
+      expect(trackerNodeA.isRevoked).toBe(false)
+      expect(trackerNodeA1.isRevoked).toBe(true)
+      expect(trackerNodeA2.isRevoked).toBe(true)
+
+      const trackerNodeB = Tracker({ base: store.b, parent: null, useProxy })
+      expect(trackerNodeA.isRevoked).toBe(true)
+      expect(trackerNodeA3.isRevoked).toBe(true)
+      expect(trackerNodeB.isRevoked).toBe(false)
+
+      const trackerNodeB1 = Tracker({ base: store.b.b1, useProxy })
+      expect(trackerNodeB.isRevoked).toBe(false)
+      expect(trackerNodeB1.isRevoked).toBe(false)
+
+      const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB, useProxy })
+      expect(trackerNodeB.isRevoked).toBe(false)
+      expect(trackerNodeB1.isRevoked).toBe(true)
+      expect(trackerNodeB2.isRevoked).toBe(false)
+    })
+  })
 }
