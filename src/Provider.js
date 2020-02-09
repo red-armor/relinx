@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useReducer, useEffect } from 'react'
 import context from './context'
-import ApplicationImpl from './ApplicationImpl'
+import Application from './Application'
 import { generateNamespaceKey } from './utils/key'
 
 export default ({
@@ -10,7 +10,13 @@ export default ({
   namespace,
 }) => {
   const { initialState, createReducer, createDispatch } = store
-  const application = useRef(new ApplicationImpl(initialState))
+  const namespaceRef = useRef(namespace || generateNamespaceKey())
+  const application = useRef(
+    new Application({
+      base: initialState,
+      namespace: namespaceRef.current,
+    })
+  )
 
   const combinedReducers = useMemo(() => createReducer(initialState), [])
   // no need to update value every time.
@@ -23,10 +29,10 @@ export default ({
   }, [value])
 
   const contextValue = useRef({
-    application: application.current,
     dispatch,
     useProxy,
-    namespace: namespace || generateNamespaceKey(),
+    namespace: namespaceRef.current,
+    application: application.current,
   })
 
   return (

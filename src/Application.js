@@ -2,19 +2,25 @@ import invariant from 'invariant'
 import PathNode from './PathNode'
 import is from './utils/is'
 
-class ApplicationImpl {
-  constructor(base) {
+import { generatePatcherId } from './utils/key'
+
+class Application {
+  constructor({ base, namespace }) {
     this.base = base
     this.node = new PathNode()
     this.pendingPatchers =[]
+    this.namespace = namespace
   }
+
+  blame() {}
 
   update(values) {
     this.pendingPatchers = []
     values.forEach(value => this.treeShake(value))
     values.forEach(value => this.updateBase(value))
-    if (this.pendingPatchers) {
-      this.pendingPatchers.forEach(patcher => patcher.triggerAutoRun())
+    if (this.pendingPatchers.length) {
+      const patcherId = generatePatcherId({ namespace: this.namespace })
+      this.pendingPatchers.forEach(patcher => patcher.triggerAutoRun(patcherId))
     }
   }
 
@@ -72,4 +78,4 @@ class ApplicationImpl {
   }
 }
 
-export default ApplicationImpl
+export default Application

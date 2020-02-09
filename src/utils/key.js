@@ -14,8 +14,12 @@ export const generateNamespaceKey = () => {
   return key
 }
 
-export const generateConnectKey = ({ namespace, componentName }) => {
-
+const patcherIds = {}
+export const generatePatcherId = ({ namespace }) => {
+  const count = patcherIds[namespace] || 0
+  const next = count + 1
+  patcherIds[namespace] = next
+  return `${namespace}_patcherId_${count}`
 }
 
 const patcherSeenKeys = {}
