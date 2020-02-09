@@ -60,6 +60,7 @@ export default (WrappedComponent) => {
         useRevoke: false,
         useScope: true,
         parent: parentTrackerNode,
+        rootPath: [],
       })
     }
 
@@ -86,9 +87,9 @@ export default (WrappedComponent) => {
       : []
 
     if (propertyFromProps.length) {
-      const currentBase = application.getStoreData(storeName.current)
       propertyFromProps.forEach(prop => {
         const { path, source } = prop
+        const currentBase = application.getStoreData(source.rootPath[0])
         source.relink(path, currentBase)
       })
     }
@@ -98,16 +99,14 @@ export default (WrappedComponent) => {
       // occupied.current = true
       storeName.current = name
       const initialState = application.getStoreData(storeName.current)
-      trackerNode.current.hydrate(initialState)
+      trackerNode.current.hydrate(initialState, {
+        rootPath: [storeName.current],
+      })
     }, [])
 
     const addListener = useCallback(() => {
-      const paths = trackerNode.current.tracker.getRemarkablePaths()
-      patcher.current.update({
-        paths,
-        storeName: storeName.current,
-      })
-
+      const paths = trackerNode.current.tracker.getRemarkableFullPaths()
+      patcher.current.update({ paths })
       application.addPatcher(patcher.current)
       trackerNode.current.leaveContext()
     }, [])

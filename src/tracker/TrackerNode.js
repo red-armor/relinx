@@ -12,11 +12,14 @@ class TrackerNode {
     useRevoke,
     useScope,
     useProxy,
+    rootPath,
   }) {
     this.base = base
     this.useRevoke = useRevoke
     this.useScope = useScope
     this.useProxy = useProxy
+
+    this.rootPath = rootPath
 
     this.children = []
     this.parent = parent
@@ -47,9 +50,11 @@ class TrackerNode {
   enterTrackerScope() {
     const fn = this.useProxy ? createTracker : createES5Tracker
     this.tracker = fn(
-      this.base, {
+      this.base,
+      {
         useRevoke: this.useRevoke,
         useScope: this.useScope,
+        rootPath: this.rootPath,
       },
       this,
     )
@@ -165,8 +170,10 @@ class TrackerNode {
     }
   }
 
-  hydrate(base) {
+  hydrate(base, config = {}) {
     this.base = base || this.base
+    const keys = Object.keys(config)
+    keys.forEach(key => this[key] = config[key])
     this.enterTrackerScope()
   }
 }

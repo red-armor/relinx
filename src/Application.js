@@ -77,11 +77,8 @@ class Application {
   }
 
   addPatcher(patcher) {
-    const storeName = patcher.storeName
     const paths = patcher.paths
-
-    paths.forEach(path => {
-      const fullPath = [storeName].concat(path)
+    paths.forEach(fullPath => {
       this.node.addPathNode(fullPath, patcher)
     })
   }

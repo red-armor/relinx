@@ -2,14 +2,12 @@ import React, { useCallback } from 'react'
 import { observe, useRelinx, useDispatch } from 'relinx'
 
 const Title = () => {
-  console.log('trigger title')
   return (
     <div>Counter without observe item</div>
   )
 }
 
 const Item = ({ item, index }) => {
-  console.log('trigger item ', index)
   const [dispatch] = useDispatch()
   // const [, dispatch] = useRelinx('counterWithoutObserveItem')
   const incrementItemNumber = () => {
@@ -37,9 +35,6 @@ const Item = ({ item, index }) => {
 const Counter = () => {
   const [state, dispatch] = useRelinx('counterWithoutObserveItem')
   const { items, count } = state
-
-  console.log('trigger counterWithoutObserveItem --')
-
   const increment = useCallback(() => {
     dispatch({ type: 'counterWithoutObserveItem/increment' })
   }, [])

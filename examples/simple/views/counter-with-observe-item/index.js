@@ -2,14 +2,12 @@ import React, { useCallback } from 'react'
 import { observe, useRelinx } from 'relinx'
 
 const Title = () => {
-  console.log('trigger title')
   return (
     <div>Counter with observe item</div>
   )
 }
 
 const Item = ({ item, index }) => {
-  console.log('trigger item ', index)
   const [, dispatch] = useRelinx('counterWithObserveItem')
   const incrementItemNumber = () => {
     dispatch({
@@ -39,8 +37,6 @@ const Counter = () => {
   const [state, dispatch] = useRelinx('counterWithObserveItem')
   const { items, count } = state
 
-  console.log('trigger counterWithObserveItem --')
-
   const increment = useCallback(() => {
     dispatch({ type: 'counterWithObserveItem/increment' })
   }, [])
@@ -48,8 +44,6 @@ const Counter = () => {
   const decrement = useCallback(() => {
     dispatch({ type: 'counterWithObserveItem/decrement' })
   }, [])
-
-  console.log('console ', items[0])
 
   return (
     <div style={{ marginTop: '30px' }}>

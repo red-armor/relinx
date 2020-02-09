@@ -23,6 +23,7 @@ export function createTracker(base, config, trackerNode) {
     parentTrack,
     useRevoke,
     useScope,
+    rootPath = [],
   } = config || {}
 
   let tracker = {
@@ -30,12 +31,13 @@ export function createTracker(base, config, trackerNode) {
     proxy: {},
     paths: [],
     accessPath,
+    rootPath,
     revoke: emptyFunction,
     parentTrack,
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
     getRemarkablePaths: emptyFunction,
-
+    getRemarkableFullPaths: emptyFunction,
     parent: null,
     children: [],
     prevSibling: null,
@@ -91,8 +93,24 @@ export function createTracker(base, config, trackerNode) {
   }
 
   tracker.getRemarkablePaths = function() {
-    const { paths } = proxy
+    const { paths }  = proxy
     return generateRemarkablePaths(paths)
+  }
+
+  tracker.getRemarkableFullPaths = function() {
+    const { paths, propertyFromProps } = proxy
+
+    const internalPaths = generateRemarkablePaths(paths).map(path => {
+      return rootPath.concat(path)
+    })
+
+    const external = propertyFromProps.map(prop => {
+      const { path, source } = prop
+      return source.rootPath.concat(path)
+    })
+    const externalPaths = generateRemarkablePaths(external)
+
+    return internalPaths.concat(externalPaths)
   }
 
   const assertScope = (trackerNode, contextTrackerNode) => {
@@ -170,6 +188,7 @@ export function createTracker(base, config, trackerNode) {
       return (target.proxy[prop] = createTracker(value, {
         accessPath,
         parentTrack: target,
+        rootPath,
       }, trackerNode))
     }
   }

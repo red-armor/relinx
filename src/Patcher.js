@@ -7,7 +7,7 @@ class Patcher {
     parent,
   }) {
     this.autoRunFn = autoRunFn
-    this.storeName = storeName
+    // this.storeName = storeName
     this.paths = paths
 
     this.removers = []
@@ -34,7 +34,7 @@ class Patcher {
 
   update({ paths, storeName }) {
     this.paths = paths
-    this.storeName = storeName
+    // this.storeName = storeName
     this.dirty = false
     this.teardown()
   }

@@ -13,6 +13,7 @@ const Tracker = ({
   useProxy = true,
   useRevoke = true,
   useScope = true,
+  rootPath = [],
 }) => {
   const verifiedUseProxy = canIUseProxy() && useProxy
   const parentTrackerNode = typeof parent !== 'undefined' ? parent : context.trackerNode
@@ -48,6 +49,7 @@ const Tracker = ({
     useRevoke,
     useScope,
     useProxy: verifiedUseProxy,
+    rootPath,
   })
 }
 
