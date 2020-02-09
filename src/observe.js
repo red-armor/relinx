@@ -22,14 +22,14 @@ export default (WrappedComponent) => {
     const state = useRef(0)
     const [_, setState] = useState(state.current)
     const storeName = useRef()
-    const trackerNode = useRef()
+    // const occupied = useRef(false)
 
     const {
       application,
       useProxy,
       namespace,
       patcher: parentPatcher,
-      getData: parentGetData,
+      trackerNode: parentTrackerNode,
       ...rest
     } = useContext(context)
 
@@ -39,17 +39,49 @@ export default (WrappedComponent) => {
       state.current = state.current + 1
       setState(state.current)
     }
-    const patcher = useRef(new Patcher({
-      paths: [],
-      autoRunFn,
-      parent: parentPatcher,
-      key: generatePatcherKey({ namespace, componentName }),
-    }))
-    const getData = useCallback(() => ({ trackerNode: trackerNode.current }), [])
+    const patcher = useRef()
+    const trackerNode = useRef()
+
+    if (!patcher.current) {
+      patcher.current = new Patcher({
+        paths: [],
+        autoRunFn,
+        parent: parentPatcher,
+        key: generatePatcherKey({ namespace, componentName }),
+      })
+    }
+
+    if (!trackerNode.current) {
+      // `base` should has a default value value `{}`, or it will cause error.
+      // Detail refer to https://github.com/ryuever/relinx/issues/6
+      trackerNode.current = Tracker({
+        base: {},
+        useProxy,
+        useRevoke: false,
+        useScope: true,
+        parent: parentTrackerNode,
+      })
+    }
+
+    if (trackerNode.current) {
+      trackerNode.current.enterContext()
+    }
+
+    // destroy `patcher` when component un-mount.
+    useEffect(() => {
+      return () => {
+        patcher.current && patcher.current.destroy()
+      }
+    }, [])
+
+    const getData = useCallback(() => ({
+      trackerNode: trackerNode.current,
+      // occupied: occupied.current,
+    }), [])
 
     // should relink first
     const propertyFromProps =
-      trackerNode.current
+      trackerNode.current.tracker
       ? trackerNode.current.tracker.propertyFromProps
       : []
 
@@ -63,31 +95,21 @@ export default (WrappedComponent) => {
 
     // only run one time
     const attachStoreName = useCallback(name => {
+      // occupied.current = true
       storeName.current = name
       const initialState = application.getStoreData(storeName.current)
-      const parent = parentGetData ? parentGetData().trackerNode : null
-
-      // It is difficult to clean up tracker object, so recreate
-      // should be a better choice...
-      // As a result, `useRelinx` should have self `observe` function.
-      trackerNode.current = Tracker({
-        base: initialState,
-        useProxy,
-        useRevoke: false,
-        useScope: true,
-        parent,
-      })
+      trackerNode.current.hydrate(initialState)
     }, [])
 
     const addListener = useCallback(() => {
       const paths = trackerNode.current.tracker.getRemarkablePaths()
-
       patcher.current.update({
         paths,
         storeName: storeName.current,
       })
 
       application.addPatcher(patcher.current)
+      trackerNode.current.leaveContext()
     }, [])
 
     const contextValue = {
@@ -99,6 +121,7 @@ export default (WrappedComponent) => {
       patcher: patcher.current,
       trackerNode: trackerNode.current,
       attachStoreName,
+      // occupied: occupied.current,
     }
 
     return (

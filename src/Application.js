@@ -2,8 +2,11 @@ import invariant from 'invariant'
 import PathNode from './PathNode'
 import is from './utils/is'
 import { isMutable, isTypeEqual, hasEmptyItem } from './utils/ifType'
+import infoLog from './utils/infoLog'
 
 import { generatePatcherId } from './utils/key'
+
+const DEBUG = true
 
 class Application {
   constructor({ base, namespace }) {
@@ -17,10 +20,17 @@ class Application {
 
   update(values) {
     this.pendingPatchers = []
+
+    if (DEBUG) {
+      infoLog('[Application] top most node ', this.node)
+    }
+
     values.forEach(value => this.treeShake(value))
     values.forEach(value => this.updateBase(value))
 
-    console.log('pending ', this.pendingPatchers)
+    if (DEBUG) {
+      infoLog('[Application] pending patchers ', this.pendingPatchers)
+    }
 
     if (this.pendingPatchers.length) {
       const patcherId = generatePatcherId({ namespace: this.namespace })
@@ -38,13 +48,14 @@ class Application {
     const baseValue = this.base[storeKey]
     const nextValue = { ...baseValue, ...changedValue }
 
-    // console.log('node ', this.node, baseValue, nextValue)
+    // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
+    if (!branch) return
 
     const compare = (branch, baseValue, nextValue) => {
       if (is(baseValue, nextValue)) return
 
       // TODO, add description...only primitive type react...
-      if (!isTypeEqual() || !isMutable(nextValue)) {
+      if (!isTypeEqual(baseValue, nextValue) || !isMutable(nextValue)) {
         if (branch.patchers.length) {
           branch.patchers.forEach(patcher => {
             patcher.markDirty()
@@ -90,3 +101,4 @@ class Application {
 }
 
 export default Application
+

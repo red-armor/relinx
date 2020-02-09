@@ -4,7 +4,7 @@ import {
   emptyFunction,
 } from './commons'
 import { generateRemarkablePaths } from './path'
-import { trackerNode } from './context'
+import { trackerNode as contextTrackerNode } from './context'
 
 const peek = (tracker, accessPath) => {
   const value = accessPath.reduce((value, cur) => {
@@ -17,7 +17,7 @@ const peek = (tracker, accessPath) => {
   return value
 }
 
-export function createTracker(base, config, contextTrackerNode) {
+export function createTracker(base, config, trackerNode) {
   const {
     accessPath = [],
     parentTrack,
@@ -48,8 +48,6 @@ export function createTracker(base, config, contextTrackerNode) {
 
   tracker.reportAccessPath = path => {
     proxy.paths.push(path)
-    // console.log('report access path ', path, proxy.paths, proxy)
-
     const parentTrack = proxy.parentTrack
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
@@ -68,7 +66,7 @@ export function createTracker(base, config, contextTrackerNode) {
         // do not forget `prop` param
         accessPath: path,
         parentTrack: tracker,
-      }, contextTrackerNode)
+      }, trackerNode)
     }
   }
 
@@ -79,7 +77,7 @@ export function createTracker(base, config, contextTrackerNode) {
         // do not forget `prop` param
         accessPath: accessPath.concat(prop),
         parentTrack: proxy,
-      }, contextTrackerNode)
+      }, trackerNode)
     }
   }
 
@@ -97,22 +95,26 @@ export function createTracker(base, config, contextTrackerNode) {
     return generateRemarkablePaths(paths)
   }
 
-  const assertScope = (parentNode, childNode) => {
-    console.log('parent node ', parentNode, childNode)
+  const assertScope = (trackerNode, contextTrackerNode) => {
 
     if (useScope) {
-      // If `contextTrackerNode` is null, it means access top most data prop.
-      // console.log('context tracker node ', contextTrackerNode)
-      if (!parentNode) {
+      // If `trackerNode` is null, it means access top most data prop.
+      if (!trackerNode) {
         console.warn(
-          '`currentTrackerNode` is undefined, which means you are using `createTracker` function directly.' +
+          '`trackerNode` is undefined, which means you are using `createTracker` function directly.' +
           'Maybe you should call `TrackerNode` or set `useScope` to false in config param'
         )
-      } else if (!parentNode.contains(childNode))
+      } else if (!contextTrackerNode) {
+        console.warn(
+          `contextTrackerNode is undefined, which means trackerNode(${trackerNode.id})\n` +
+          'is accessed after finish tracking property. You can do as follows: \n' +
+          '  trackerNode.enterContext() // manually set current context value\n' +
+          '  // ... code to access trackerNode\n' +
+          '  trackerNode.leaveContext()'
+        )
+      } else if (!trackerNode.contains(contextTrackerNode))
         throw new Error(
-          JSON.stringify(trackerNode) +
-          'is not child node of ' +
-          JSON.stringify(parentNode) +
+          `'${contextTrackerNode.id}' should be children of '${trackerNode.id}'\n` +
           'Property only could be accessed by self node or parent node.'
         )
     }
@@ -134,7 +136,7 @@ export function createTracker(base, config, contextTrackerNode) {
   const handler = {
     get: (tracker, prop, receiver) => {
       // TODO --------
-      // assertScope(contextTrackerNode, trackerNode)
+      assertScope(trackerNode, contextTrackerNode)
       let target = tracker
       if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
@@ -145,14 +147,14 @@ export function createTracker(base, config, contextTrackerNode) {
       const accessPath = target.accessPath.concat(prop)
 
       if (!tracker.isPeekValue) {
-        if (trackerNode && contextTrackerNode.id !== trackerNode.id) {
-          trackerNode.tracker.paths.push(accessPath)
-          trackerNode.tracker.propertyFromProps.push({
+        if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
+          contextTrackerNode.tracker.paths.push(accessPath)
+          contextTrackerNode.tracker.propertyFromProps.push({
             path: accessPath,
-            source: contextTrackerNode.tracker,
-            target: trackerNode.tracker,
+            source: trackerNode.tracker,
+            target: contextTrackerNode.tracker,
           })
-          return peek(contextTrackerNode.tracker, accessPath)
+          return peek(trackerNode.tracker, accessPath)
         } else {
           target.reportAccessPath(accessPath)
         }
@@ -168,7 +170,7 @@ export function createTracker(base, config, contextTrackerNode) {
       return (target.proxy[prop] = createTracker(value, {
         accessPath,
         parentTrack: target,
-      }, contextTrackerNode))
+      }, trackerNode))
     }
   }
 

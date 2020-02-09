@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { observe, useDispatch } from 'relinx'
+import { observe, useDispatch, useRelinx } from 'relinx'
 
 import BottomBar from './BottomBar'
 import GoodsView from './GoodsView'

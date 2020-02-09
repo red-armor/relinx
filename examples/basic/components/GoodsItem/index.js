@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { useDispatch, observe } from 'relinx'
+import { useDispatch, observe, useRelinx } from 'relinx'
 
 const styles = {
   container: {
@@ -43,7 +43,6 @@ const styles = {
 const GoodsItem = props => {
   const { index } = props
   const [dispatch] = useDispatch()
-
   const { data: { title, id, count } } = props
 
   const increment = useCallback(() => {

@@ -2,7 +2,7 @@ import context from './context'
 import { createES5Tracker } from './es5'
 import { createTracker } from './proxy'
 
-let count = 1
+let count = 0
 
 class TrackerNode {
   constructor({
@@ -26,16 +26,16 @@ class TrackerNode {
     this.id = `__TrackerNode_${count++}__`
     this.isRevoked = false
 
+    this.inScope = false
+
     this.updateParent()
     if (isSibling) {
       this.initPrevSibling()
     }
 
     if (this.base) {
-      this.initTracker()
+      this.enterTrackerScope()
     }
-
-    context.trackerNode = this
   }
 
   updateParent() {
@@ -44,7 +44,7 @@ class TrackerNode {
     }
   }
 
-  initTracker() {
+  enterTrackerScope() {
     const fn = this.useProxy ? createTracker : createES5Tracker
     this.tracker = fn(
       this.base, {
@@ -53,6 +53,24 @@ class TrackerNode {
       },
       this,
     )
+
+    this.enterContext()
+  }
+
+  enterContext() {
+    context.trackerNode = this
+    this.inScope = true
+  }
+
+  leaveContext() {
+    if (this.inScope) {
+      this.inScope = false
+      context.trackerNode = null
+    }
+
+    if (this.parent && this.parent.inScope) {
+      context.trackerNode = this.parent
+    }
   }
 
   initPrevSibling() {
@@ -147,12 +165,9 @@ class TrackerNode {
     }
   }
 
-  hydrate() {
-
-  }
-
-  purge() {
-
+  hydrate(base) {
+    this.base = base || this.base
+    this.enterTrackerScope()
   }
 }
 

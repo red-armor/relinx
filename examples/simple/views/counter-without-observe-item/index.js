@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { observe, useRelinx } from 'relinx'
+import { observe, useRelinx, useDispatch } from 'relinx'
 
 const Title = () => {
   console.log('trigger title')
@@ -10,7 +10,8 @@ const Title = () => {
 
 const Item = ({ item, index }) => {
   console.log('trigger item ', index)
-  const [, dispatch] = useRelinx('counterWithoutObserveItem')
+  const [dispatch] = useDispatch()
+  // const [, dispatch] = useRelinx('counterWithoutObserveItem')
   const incrementItemNumber = () => {
     dispatch({
       type: 'counterWithoutObserveItem/incrementItemNumber',

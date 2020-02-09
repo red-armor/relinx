@@ -7,7 +7,7 @@ export default () => {
   return (
     <div>
       <CounterWithoutObserveItem />
-      <CounterWithObserveItem />
+      {/* <CounterWithObserveItem /> */}
     </div>
   )
 }
