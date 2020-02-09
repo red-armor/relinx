@@ -1,6 +1,7 @@
 import invariant from 'invariant'
 import PathNode from './PathNode'
 import is from './utils/is'
+import { isMutable, isTypeEqual, hasEmptyItem } from './utils/ifType'
 
 import { generatePatcherId } from './utils/key'
 
@@ -18,6 +19,9 @@ class Application {
     this.pendingPatchers = []
     values.forEach(value => this.treeShake(value))
     values.forEach(value => this.updateBase(value))
+
+    console.log('pending ', this.pendingPatchers)
+
     if (this.pendingPatchers.length) {
       const patcherId = generatePatcherId({ namespace: this.namespace })
       this.pendingPatchers.forEach(patcher => patcher.triggerAutoRun(patcherId))
@@ -34,14 +38,21 @@ class Application {
     const baseValue = this.base[storeKey]
     const nextValue = { ...baseValue, ...changedValue }
 
+    // console.log('node ', this.node, baseValue, nextValue)
+
     const compare = (branch, baseValue, nextValue) => {
       if (is(baseValue, nextValue)) return
-      if (branch.patchers.length) {
-        branch.patchers.forEach(patcher => {
-          patcher.markDirty()
-          this.pendingPatchers.push(patcher)
-        })
+
+      // TODO, add description...only primitive type react...
+      if (!isTypeEqual() || !isMutable(nextValue)) {
+        if (branch.patchers.length) {
+          branch.patchers.forEach(patcher => {
+            patcher.markDirty()
+            this.pendingPatchers.push(patcher)
+          })
+        }
       }
+
       const caredKeys = Object.keys(branch.children)
       caredKeys.forEach(key => {
         const childBranch = branch.children[key]
@@ -62,6 +73,8 @@ class Application {
       const fullPath = [storeName].concat(path)
       this.node.addPathNode(fullPath, patcher)
     })
+
+    // console.log("final node ", this.node)
   }
 
   getStoreData(storeName) {

@@ -17,7 +17,7 @@ const Tracker = ({
   useScope = true,
 }) => {
   const verifiedUseProxy = canIUseProxy() && useProxy
-  const fn = verifiedUseProxy ? createTracker : createES5Tracker
+  // const fn = verifiedUseProxy ? createTracker : createES5Tracker
   const parentTrackerNode = typeof parent !== 'undefined' ? parent : context.trackerNode
   let isSibling = false
 
@@ -44,13 +44,22 @@ const Tracker = ({
     }
   }
 
-  const node = new TrackerNode(parentTrackerNode, isSibling)
-  context.trackerNode = node
-  const tracker = fn(base, { useRevoke, useScope }, context.trackerNode)
+  return new TrackerNode({
+    parent: parentTrackerNode,
+    isSibling,
+    base,
+    useRevoke,
+    useScope,
+    useProxy: verifiedUseProxy,
+  })
 
-  node.tracker = tracker
+  // const node = new TrackerNode(parentTrackerNode, isSibling)
+  // context.trackerNode = node
+  // const tracker = fn(base, { useRevoke, useScope }, context.trackerNode)
 
-  return node
+  // node.tracker = tracker
+
+  // return node
 }
 
 export default Tracker

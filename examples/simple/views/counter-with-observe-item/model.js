@@ -3,6 +3,10 @@ export default () => ({
     count: 0,
     items: [{
       number: 1,
+    }, {
+      number: 7,
+    }, {
+      number: 9,
     }]
   },
   reducers: {

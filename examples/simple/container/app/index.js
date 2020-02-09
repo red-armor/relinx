@@ -1,8 +1,13 @@
 import React from 'react'
-import Counter from '../../views/counter'
+// import CounterWithoutObserveItem from '../../views/counter-without-observe-item'
+import CounterWithObserveItem from '../../views/counter-with-observe-item'
 
 export default () => {
+  console.log('trigger app --')
   return (
-    <Counter />
+    <div>
+      {/* <CounterWithoutObserveItem /> */}
+      <CounterWithObserveItem />
+    </div>
   )
 }

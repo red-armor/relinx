@@ -13,6 +13,7 @@ export default storeName => {
     typeof storeName === 'string' && storeName !== '',
     '`storeName` is required'
   )
+
   attachStoreName(storeName)
 
   const { trackerNode } = getData()

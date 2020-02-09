@@ -10,10 +10,13 @@ class PathNode {
   addPathNode(path, patcher) {
     const len = path.length
 
+    // console.log('add patcher ', path, patcher, this)
+
     path.reduce((node, cur, index) => {
       if (!node.children[cur]) node.children[cur] = new PathNode(cur, node)
       if (index === len - 1) {
         const childNode = node.children[cur]
+        // console.log('children ', childNode)
         childNode.patchers.push(patcher)
         patcher.addRemover(() => {
           const index = childNode.patchers.indexOf(patcher)

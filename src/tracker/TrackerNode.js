@@ -1,8 +1,23 @@
-let count = 1
 import context from './context'
+import { createES5Tracker } from './es5'
+import { createTracker } from './proxy'
+
+let count = 1
 
 class TrackerNode {
-  constructor(parent, isSibling) {
+  constructor({
+    parent,
+    isSibling,
+    base,
+    useRevoke,
+    useScope,
+    useProxy,
+  }) {
+    this.base = base
+    this.useRevoke = useRevoke
+    this.useScope = useScope
+    this.useProxy = useProxy
+
     this.children = []
     this.parent = parent
     this.prevSibling = null
@@ -15,12 +30,29 @@ class TrackerNode {
     if (isSibling) {
       this.initPrevSibling()
     }
+
+    if (this.base) {
+      this.initTracker()
+    }
+
+    context.trackerNode = this
   }
 
   updateParent() {
     if (this.parent) {
       this.parent.children.push(this)
     }
+  }
+
+  initTracker() {
+    const fn = this.useProxy ? createTracker : createES5Tracker
+    this.tracker = fn(
+      this.base, {
+        useRevoke: this.useRevoke,
+        useScope: this.useScope,
+      },
+      this,
+    )
   }
 
   initPrevSibling() {
@@ -113,6 +145,14 @@ class TrackerNode {
       this.tracker.revoke()
       context.trackerNode = this.parent
     }
+  }
+
+  hydrate() {
+
+  }
+
+  purge() {
+
   }
 }
 

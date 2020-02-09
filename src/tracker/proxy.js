@@ -42,10 +42,13 @@ export function createTracker(base, config, contextTrackerNode) {
     nextSibling: null,
     relink: emptyFunction,
     isPeekValue: false,
+
+    propertyFromProps: [],
   }
 
   tracker.reportAccessPath = path => {
     proxy.paths.push(path)
+    // console.log('report access path ', path, proxy.paths, proxy)
 
     const parentTrack = proxy.parentTrack
     if (parentTrack) {
@@ -53,7 +56,25 @@ export function createTracker(base, config, contextTrackerNode) {
     }
   }
 
-  tracker.relink = (prop, value) => {
+  tracker.relink = (path, base) => {
+    const copy = path.slice()
+    const last = copy.pop()
+    const tracker = peek(proxy, copy)
+    const value = path.reduce((base, cur) => {
+      return base[cur]
+    }, base)
+
+    tracker.base[last] = value
+    if (isTrackable(value)) {
+      tracker.proxy[prop] = createTracker(value, {
+        // do not forget `prop` param
+        accessPath: path,
+        parentTrack: tracker,
+      }, contextTrackerNode)
+    }
+  }
+
+  tracker.relinkProp = (prop, value) => {
     proxy.base[prop] = value
     if (isTrackable(value)) {
       proxy.proxy[prop] = createTracker(value, {
@@ -63,6 +84,7 @@ export function createTracker(base, config, contextTrackerNode) {
       }, contextTrackerNode)
     }
   }
+
 
   tracker.setRemarkable = function() {
     const parentTrack = proxy.parentTrack
@@ -79,6 +101,8 @@ export function createTracker(base, config, contextTrackerNode) {
   }
 
   const assertScope = (parentNode, childNode) => {
+    console.log('parent node ', parentNode, childNode)
+
     if (useScope) {
       // If `contextTrackerNode` is null, it means access top most data prop.
       // console.log('context tracker node ', contextTrackerNode)
@@ -112,7 +136,8 @@ export function createTracker(base, config, contextTrackerNode) {
 
   const handler = {
     get: (tracker, prop, receiver) => {
-      assertScope(contextTrackerNode, trackerNode)
+      // TODO --------
+      // assertScope(contextTrackerNode, trackerNode)
       let target = tracker
       if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
@@ -125,6 +150,11 @@ export function createTracker(base, config, contextTrackerNode) {
       if (!tracker.isPeekValue) {
         if (trackerNode && contextTrackerNode.id !== trackerNode.id) {
           trackerNode.tracker.paths.push(accessPath)
+          trackerNode.tracker.propertyFromProps.push({
+            path: accessPath,
+            source: contextTrackerNode.tracker,
+            target: trackerNode.tracker,
+          })
           return peek(contextTrackerNode.tracker, accessPath)
         } else {
           target.reportAccessPath(accessPath)
