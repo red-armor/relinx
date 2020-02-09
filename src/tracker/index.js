@@ -1,7 +1,5 @@
 // import canIUseProxy from './utils/canIUseProxy'
 import { canIUseProxy, TRACKER } from './commons'
-import { createES5Tracker } from './es5'
-import { createTracker } from './proxy'
 import context from './context'
 import TrackerNode from './TrackerNode'
 
@@ -17,7 +15,6 @@ const Tracker = ({
   useScope = true,
 }) => {
   const verifiedUseProxy = canIUseProxy() && useProxy
-  // const fn = verifiedUseProxy ? createTracker : createES5Tracker
   const parentTrackerNode = typeof parent !== 'undefined' ? parent : context.trackerNode
   let isSibling = false
 
@@ -52,14 +49,6 @@ const Tracker = ({
     useScope,
     useProxy: verifiedUseProxy,
   })
-
-  // const node = new TrackerNode(parentTrackerNode, isSibling)
-  // context.trackerNode = node
-  // const tracker = fn(base, { useRevoke, useScope }, context.trackerNode)
-
-  // node.tracker = tracker
-
-  // return node
 }
 
 export default Tracker

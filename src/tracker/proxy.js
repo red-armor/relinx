@@ -60,9 +60,7 @@ export function createTracker(base, config, contextTrackerNode) {
     const copy = path.slice()
     const last = copy.pop()
     const tracker = peek(proxy, copy)
-    const value = path.reduce((base, cur) => {
-      return base[cur]
-    }, base)
+    const value = path.reduce((base, cur) => base[cur], base)
 
     tracker.base[last] = value
     if (isTrackable(value)) {
@@ -84,7 +82,6 @@ export function createTracker(base, config, contextTrackerNode) {
       }, contextTrackerNode)
     }
   }
-
 
   tracker.setRemarkable = function() {
     const parentTrack = proxy.parentTrack

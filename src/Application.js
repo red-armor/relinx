@@ -73,8 +73,6 @@ class Application {
       const fullPath = [storeName].concat(path)
       this.node.addPathNode(fullPath, patcher)
     })
-
-    // console.log("final node ", this.node)
   }
 
   getStoreData(storeName) {

@@ -93,7 +93,7 @@ function testTracker(useProxy) {
       const prop = copyNode.tracker[0]
       expect(prop.a).toBe(1)
 
-      copyNode.tracker.relink('0', { ...base[0], a: 4 })
+      copyNode.tracker.relinkProp('0', { ...base[0], a: 4 })
       expect(prop.a).toBe(4)
     })
 
@@ -123,9 +123,9 @@ function testTracker(useProxy) {
       expect(prop.c.d).toBe(4)
       expect(prop.c.e[0].f).toBe(7)
 
-      copyNode.tracker.relink('a', 5)
+      copyNode.tracker.relinkProp('a', 5)
       expect(prop.a).toBe(5)
-      copyNode.tracker.relink('c', {
+      copyNode.tracker.relinkProp('c', {
         d: 5,
         e: [{
           f: 9
