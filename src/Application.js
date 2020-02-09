@@ -30,9 +30,9 @@ class Application {
   }
 
   treeShake({ storeKey, changedValue }) {
-    const branch = this.node
+    const branch = this.node.children[storeKey]
     const baseValue = this.base[storeKey]
-    const nextValue = { baseValue, ...changedValue }
+    const nextValue = { ...baseValue, ...changedValue }
 
     const compare = (branch, baseValue, nextValue) => {
       if (is(baseValue, nextValue)) return

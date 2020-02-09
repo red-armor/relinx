@@ -9,19 +9,17 @@ class PathNode {
 
   addPathNode(path, patcher) {
     const len = path.length
+
     path.reduce((node, cur, index) => {
+      if (!node.children[cur]) node.children[cur] = new PathNode(cur, node)
       if (index === len - 1) {
-        this.patchers.push(patcher)
+        const childNode = node.children[cur]
+        childNode.patchers.push(patcher)
         patcher.addRemover(() => {
-          const index = this.patchers.indexOf(patcher)
-          this.patchers.splice(index, 1)
+          const index = childNode.patchers.indexOf(patcher)
+          childNode.patchers.splice(index, 1)
         })
       }
-
-      if (!node.children[cur]) {
-        node.children[cur] = new PathNode(cur, this)
-      }
-
       return node.children[cur]
     }, this)
   }
