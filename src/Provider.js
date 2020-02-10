@@ -6,8 +6,9 @@ import { generateNamespaceKey } from './utils/key'
 export default ({
   store,
   children,
-  useProxy = true,
   namespace,
+  useProxy = true,
+  useRelinkMode = true,
 }) => {
   const { initialState, createReducer, createDispatch } = store
   const namespaceRef = useRef(namespace || generateNamespaceKey())
@@ -31,6 +32,7 @@ export default ({
   const contextValue = useRef({
     dispatch,
     useProxy,
+    useRelinkMode,
     namespace: namespaceRef.current,
     application: application.current,
   })

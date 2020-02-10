@@ -22,6 +22,7 @@ export default (WrappedComponent) => {
     const state = useRef(0)
     const [_, setState] = useState(state.current)
     const storeName = useRef()
+    const isHydrated = useRef(false)
     // const occupied = useRef(false)
 
     const {
@@ -30,6 +31,7 @@ export default (WrappedComponent) => {
       namespace,
       patcher: parentPatcher,
       trackerNode: parentTrackerNode,
+      useRelinkMode,
       ...rest
     } = useContext(context)
 
@@ -80,28 +82,50 @@ export default (WrappedComponent) => {
       // occupied: occupied.current,
     }), [])
 
-    // should relink first
-    const propertyFromProps =
-      trackerNode.current.tracker
-      ? trackerNode.current.tracker.propertyFromProps
-      : []
+    // onUpdate, `relink` relative paths value....
+    if (trackerNode.current.tracker) {
+      const tracker = trackerNode.current.tracker
+      const { propertyFromProps = [], paths = [] } = tracker
 
-    if (propertyFromProps.length) {
       propertyFromProps.forEach(prop => {
         const { path, source } = prop
         const currentBase = application.getStoreData(source.rootPath[0])
         source.relink(path, currentBase)
       })
+
+      if (useRelinkMode) {
+        if (storeName.current) {
+          const base = application.getStoreData(storeName.current)
+          paths.forEach(path => {
+            tracker.relink(path, base)
+          })
+        }
+      }
     }
 
     // only run one time
     const attachStoreName = useCallback(name => {
       // occupied.current = true
-      storeName.current = name
-      const initialState = application.getStoreData(storeName.current)
-      trackerNode.current.hydrate(initialState, {
-        rootPath: [storeName.current],
-      })
+      if (useRelinkMode) {
+        if (name && !isHydrated.current) {
+          storeName.current = name
+          const initialState = application.getStoreData(storeName.current)
+          trackerNode.current.hydrate(initialState, {
+            rootPath: [storeName.current],
+          })
+          isHydrated.current = true
+        } else {
+          // onRelink mode... clean up original tracker
+          trackerNode.current.tracker.cleanup()
+        }
+      } else {
+        storeName.current = name
+        const initialState = application.getStoreData(storeName.current)
+        trackerNode.current.hydrate(initialState, {
+          rootPath: [storeName.current],
+        })
+        isHydrated.current = true
+      }
     }, [])
 
     const addListener = useCallback(() => {
@@ -117,6 +141,7 @@ export default (WrappedComponent) => {
       application,
       useProxy,
       namespace,
+      useRelinkMode,
       patcher: patcher.current,
       trackerNode: trackerNode.current,
       attachStoreName,

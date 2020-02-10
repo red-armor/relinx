@@ -56,6 +56,11 @@ export function createTracker(base, config, trackerNode) {
     }
   }
 
+  tracker.cleanup = function() {
+    this.paths = []
+    this.propertyFromProps = []
+  }
+
   tracker.relink = (path, base) => {
     const copy = path.slice()
     const last = copy.pop()
@@ -64,7 +69,7 @@ export function createTracker(base, config, trackerNode) {
 
     tracker.base[last] = value
     if (isTrackable(value)) {
-      tracker.proxy[prop] = createTracker(value, {
+      tracker.proxy[last] = createTracker(value, {
         // do not forget `prop` param
         accessPath: path,
         parentTrack: tracker,
@@ -166,7 +171,7 @@ export function createTracker(base, config, trackerNode) {
 
       if (!tracker.isPeekValue) {
         if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-          contextTrackerNode.tracker.paths.push(accessPath)
+          // contextTrackerNode.tracker.paths.push(accessPath)
           contextTrackerNode.tracker.propertyFromProps.push({
             path: accessPath,
             source: trackerNode.tracker,
