@@ -8,6 +8,7 @@ import {
   isTrackable,
 } from './commons'
 import { generateRemarkablePaths } from './path'
+import { trackerNode as contextTrackerNode } from './context'
 
 const peek = (tracker, accessPath) => {
   return accessPath.reduce((tracker, cur) => {
@@ -28,7 +29,7 @@ const getInternalProp = (proxy, props) => {
   }, {})
 }
 
-export function createES5Tracker(target, config, context) {
+export function createES5Tracker(target, config, trackerNode) {
   const {
     accessPath = [],
     parentTrack,
@@ -195,14 +196,23 @@ export function createES5Tracker(target, config, context) {
         const nextAccessPath = accessPath.concat(`${prop}`)
 
         if (!tracker.isPeekValue) {
-          reportAccessPath(nextAccessPath)
+          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
+            contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
+              path: nextAccessPath,
+              source: trackerNode.tracker,
+              target: contextTrackerNode.tracker,
+            })
+            return peek(trackerNode.tracker, accessPath)
+          } else {
+            reportAccessPath(nextAccessPath)
+          }
         }
 
         if (proxy[prop]) return proxy[prop]
         if (isTrackable(value)) return (proxy[prop] = createES5Tracker(value, {
           accessPath: nextAccessPath,
           parentTrack: this[TRACKER],
-        }, context))
+        }, trackerNode))
         return value
       }
     }
@@ -222,9 +232,17 @@ export function createES5Tracker(target, config, context) {
       if (invokeLength) {
         const { accessPath, parentTrack, paths } = tracker
         const nextAccessPath = accessPath.concat('length')
-        paths.push(nextAccessPath)
-        if (parentTrack) {
-          parentTrack.reportAccessPath(nextAccessPath)
+        if (!tracker.isPeekValue) {
+          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
+            contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
+              path: nextAccessPath,
+              source: trackerNode.tracker,
+              target: contextTrackerNode.tracker,
+            })
+            return peek(trackerNode.tracker, accessPath)
+          } else {
+            reportAccessPath(nextAccessPath)
+          }
         }
       }
 

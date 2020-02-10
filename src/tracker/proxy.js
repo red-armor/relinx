@@ -58,6 +58,9 @@ export function createTracker(base, config, trackerNode) {
   tracker.reportAccessPath = path => {
     const { paths, parentTrack } = getInternalProp(proxy, ['paths', 'parentTrack'])
     paths.push(path)
+
+    console.log('parent ', parentTrack)
+
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
     }
@@ -169,22 +172,18 @@ export function createTracker(base, config, trackerNode) {
 
   const handler = {
     get: (tracker, prop, receiver) => {
-      console.log('prop ', prop)
-      // TODO --------
       assertScope(trackerNode, contextTrackerNode)
       let target = tracker
       if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed) return Reflect.get(target, prop, receiver)
       if (!hasOwnProperty(target.base, prop)) {
-        console.log('xxxx', prop, target.base, Reflect.get(target.base, prop, receiver))
         return Reflect.get(target.base, prop, receiver)
       }
       const accessPath = target.accessPath.concat(prop)
 
       if (!tracker.isPeekValue) {
         if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-          // contextTrackerNode.tracker.paths.push(accessPath)
           contextTrackerNode.tracker.propertyFromProps.push({
             path: accessPath,
             source: trackerNode.tracker,
