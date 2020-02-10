@@ -12,7 +12,7 @@ stages:
 test:
   stage: test
   script:
-    - formula lint
+    # - formula lint
     - formula test
 
 
