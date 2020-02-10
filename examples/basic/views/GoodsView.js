@@ -6,6 +6,8 @@ const GoodsView = () => {
   const [state] = useRelinx('goods')
   const { listData } = state
 
+  console.log('state ', state)
+
   return listData.map((data, key) => (
     <GoodsItem
       key={key}

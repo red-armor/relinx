@@ -7,14 +7,21 @@ import { generateRemarkablePaths } from './path'
 import { trackerNode as contextTrackerNode } from './context'
 
 const peek = (tracker, accessPath) => {
-  const value = accessPath.reduce((value, cur) => {
-    value.isPeekValue = true
-    const v = value[cur]
-    value.isPeekValue = false
-    return v
+  return accessPath.reduce((tracker, cur) => {
+    tracker.isPeekValue = true
+    const nextTracker = tracker[cur]
+    tracker.isPeekValue = false
+    return nextTracker
   }, tracker)
+}
 
-  return value
+const getInternalProp = (proxy, props) => {
+  return props.reduce((o, prop) => {
+    if (proxy[prop]) {
+      o[prop] = proxy[prop]
+    }
+    return o
+  }, {})
 }
 
 export function createTracker(base, config, trackerNode) {
@@ -49,8 +56,8 @@ export function createTracker(base, config, trackerNode) {
   }
 
   tracker.reportAccessPath = path => {
-    proxy.paths.push(path)
-    const parentTrack = proxy.parentTrack
+    const { paths, parentTrack } = getInternalProp(proxy, ['paths', 'parentTrack'])
+    paths.push(path)
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
     }
@@ -61,15 +68,16 @@ export function createTracker(base, config, trackerNode) {
     this.propertyFromProps = []
   }
 
-  tracker.relink = (path, base) => {
+  tracker.relink = (path, baseValue) => {
     const copy = path.slice()
     const last = copy.pop()
     const tracker = peek(proxy, copy)
-    const value = path.reduce((base, cur) => base[cur], base)
+    const nextBaseValue = path.reduce((baseValue, cur) => baseValue[cur], baseValue)
+    const { base, proxy: proxyProps } = getInternalProp(tracker, ['base', 'proxy'])
 
-    tracker.base[last] = value
-    if (isTrackable(value)) {
-      tracker.proxy[last] = createTracker(value, {
+    base[last] = nextBaseValue
+    if (isTrackable(nextBaseValue)) {
+      proxyProps[last] = createTracker(nextBaseValue, {
         // do not forget `prop` param
         accessPath: path,
         parentTrack: tracker,
@@ -77,10 +85,12 @@ export function createTracker(base, config, trackerNode) {
     }
   }
 
-  tracker.relinkProp = (prop, value) => {
-    proxy.base[prop] = value
-    if (isTrackable(value)) {
-      proxy.proxy[prop] = createTracker(value, {
+  tracker.relinkProp = (prop, baseValue) => {
+    const { base, proxy: proxyProps } = getInternalProp(proxy, ['base', 'proxy'])
+
+    base[prop] = baseValue
+    if (isTrackable(baseValue)) {
+      proxyProps[prop] = createTracker(baseValue, {
         // do not forget `prop` param
         accessPath: accessPath.concat(prop),
         parentTrack: proxy,
@@ -89,7 +99,7 @@ export function createTracker(base, config, trackerNode) {
   }
 
   tracker.setRemarkable = function() {
-    const parentTrack = proxy.parentTrack
+    const { parentTrack } = getInternalProp(proxy, ['parentTrack'])
     if (parentTrack) {
       parentTrack.reportAccessPath(proxy.accessPath)
       return true
@@ -103,7 +113,9 @@ export function createTracker(base, config, trackerNode) {
   }
 
   tracker.getRemarkableFullPaths = function() {
-    const { paths, propertyFromProps } = proxy
+    const { paths, propertyFromProps } = getInternalProp(
+      proxy, ['paths', 'propertyFromProps']
+    )
 
     const internalPaths = generateRemarkablePaths(paths).map(path => {
       return rootPath.concat(path)
@@ -119,7 +131,6 @@ export function createTracker(base, config, trackerNode) {
   }
 
   const assertScope = (trackerNode, contextTrackerNode) => {
-
     if (useScope) {
       // If `trackerNode` is null, it means access top most data prop.
       if (!trackerNode) {
@@ -158,6 +169,7 @@ export function createTracker(base, config, trackerNode) {
 
   const handler = {
     get: (tracker, prop, receiver) => {
+      console.log('prop ', prop)
       // TODO --------
       assertScope(trackerNode, contextTrackerNode)
       let target = tracker
@@ -165,6 +177,7 @@ export function createTracker(base, config, trackerNode) {
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed) return Reflect.get(target, prop, receiver)
       if (!hasOwnProperty(target.base, prop)) {
+        console.log('xxxx', prop, target.base, Reflect.get(target.base, prop, receiver))
         return Reflect.get(target.base, prop, receiver)
       }
       const accessPath = target.accessPath.concat(prop)
