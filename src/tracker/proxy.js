@@ -59,8 +59,6 @@ export function createTracker(base, config, trackerNode) {
     const { paths, parentTrack } = getInternalProp(proxy, ['paths', 'parentTrack'])
     paths.push(path)
 
-    console.log('parent ', parentTrack)
-
     if (parentTrack) {
       parentTrack.reportAccessPath(path)
     }
@@ -131,6 +129,15 @@ export function createTracker(base, config, trackerNode) {
     const externalPaths = generateRemarkablePaths(external)
 
     return internalPaths.concat(externalPaths)
+  }
+
+  tracker.getInternalPropExported = props => {
+    return props.reduce((o, prop) => {
+      if (proxy[prop]) {
+        o[prop] = proxy[prop]
+      }
+      return o
+    }, {})
   }
 
   const assertScope = (trackerNode, contextTrackerNode) => {

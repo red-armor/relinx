@@ -1,6 +1,7 @@
 export default () => ({
   state: {
     count: 0,
+    items: [],
     items: [{
       number: 1,
     }, {

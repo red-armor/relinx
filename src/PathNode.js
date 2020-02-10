@@ -1,6 +1,6 @@
 class PathNode {
-  constructor(name, parent) {
-    this.name = name || 'root'
+  constructor(prop, parent) {
+    this.prop = prop || 'root'
 
     this.parent = parent
     this.children = {}

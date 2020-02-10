@@ -9,6 +9,7 @@ import context from './context'
 import Tracker from './tracker'
 import { generatePatcherKey } from './utils/key'
 import Patcher from './Patcher'
+import infoLog from './utils/infoLog'
 
 let count = 0
 
@@ -17,12 +18,15 @@ const Helper = ({ addListener }) => {
   return null
 }
 
+const DEBUG = true
+
 export default (WrappedComponent) => {
   function NextComponent(props) {
     const state = useRef(0)
     const [_, setState] = useState(state.current)
     const storeName = useRef()
     const isHydrated = useRef(false)
+    const isInit = useRef(true)
     // const occupied = useRef(false)
 
     const {
@@ -43,6 +47,16 @@ export default (WrappedComponent) => {
     }
     const patcher = useRef()
     const trackerNode = useRef()
+
+    useEffect(() => {
+      if (!DEBUG) return
+      if (isInit.current) {
+        infoLog('[Observe]', `${componentName} is inited`)
+        isInit.current = false
+      } else {
+        infoLog('[Observe]', `${componentName} is re-rendered`)
+      }
+    })
 
     if (!patcher.current) {
       patcher.current = new Patcher({
@@ -77,6 +91,15 @@ export default (WrappedComponent) => {
       }
     }, [])
 
+    // useEffect(() => {
+    //   return () => {
+    //     if (useRelinkMode && (!name || isHydrated.current)) {
+    //       // onRelink mode... clean up original tracker
+    //       trackerNode.current.tracker.cleanup()
+    //     }
+    //   }
+    // })
+
     const getData = useCallback(() => ({
       trackerNode: trackerNode.current,
       // occupied: occupied.current,
@@ -85,7 +108,10 @@ export default (WrappedComponent) => {
     // onUpdate, `relink` relative paths value....
     if (trackerNode.current.tracker) {
       const tracker = trackerNode.current.tracker
-      const { propertyFromProps = [], paths = [] } = tracker
+      const {
+        propertyFromProps = [],
+        paths = []
+      } = tracker.getInternalPropExported(['propertyFromProps', 'paths'])
 
       propertyFromProps.forEach(prop => {
         const { path, source } = prop
@@ -101,6 +127,8 @@ export default (WrappedComponent) => {
           })
         }
       }
+
+      trackerNode.current.tracker.cleanup()
     }
 
     // only run one time
@@ -114,9 +142,6 @@ export default (WrappedComponent) => {
             rootPath: [storeName.current],
           })
           isHydrated.current = true
-        } else {
-          // onRelink mode... clean up original tracker
-          trackerNode.current.tracker.cleanup()
         }
       } else {
         storeName.current = name
