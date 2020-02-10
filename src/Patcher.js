@@ -51,9 +51,9 @@ class Patcher {
     this.teardown()
 
     // If parent is dirty, then its children should be all dirty...
-    if (this.children.length) {
-      this.children.forEach(child => child.markDirty())
-    }
+    // if (this.children.length) {
+    //   this.children.forEach(child => child.markDirty())
+    // }
   }
 
   triggerAutoRun() {

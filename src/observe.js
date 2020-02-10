@@ -187,5 +187,5 @@ export default (WrappedComponent) => {
     || WrappedComponent.name
     || 'ObservedComponent'
 
-  return NextComponent
+  return React.memo(props => <NextComponent {...props} />, () => true)
 }
