@@ -91,15 +91,6 @@ export default (WrappedComponent) => {
       }
     }, [])
 
-    // useEffect(() => {
-    //   return () => {
-    //     if (useRelinkMode && (!name || isHydrated.current)) {
-    //       // onRelink mode... clean up original tracker
-    //       trackerNode.current.tracker.cleanup()
-    //     }
-    //   }
-    // })
-
     const getData = useCallback(() => ({
       trackerNode: trackerNode.current,
       // occupied: occupied.current,
@@ -108,6 +99,7 @@ export default (WrappedComponent) => {
     // onUpdate, `relink` relative paths value....
     if (trackerNode.current.tracker) {
       const tracker = trackerNode.current.tracker
+
       const {
         propertyFromProps = [],
         paths = []

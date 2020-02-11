@@ -25,19 +25,19 @@ const Tracker = ({
       useRevoke && context.trackerNode.revokeUntil(parentTrackerNode)
     }
   } else {
-    if (!context.trackerNode) throw new Error(
-      'Maybe you are assign an invalid `parent`, which should define first'
-    )
+    // if (!context.trackerNode) throw new Error(
+    //   'Maybe you are assign an invalid `parent`, which should define first'
+    // )
 
     if (parentTrackerNode === context.trackerNode) {
       // Add the first child, for sibling, intersection access is forbidden.
-      useRevoke && parentTrackerNode.revokeLastChild()
+      useRevoke && parentTrackerNode && parentTrackerNode.revokeLastChild()
     } else {
       // add sibling, or create new branch....so `revokeUntil` is required.
-      useRevoke && context.trackerNode.revokeUntil(parentTrackerNode)
+      useRevoke && context.trackerNode && context.trackerNode.revokeUntil(parentTrackerNode)
     }
 
-    if (parentTrackerNode === context.trackerNode.parent) {
+    if (context.trackerNode && parentTrackerNode === context.trackerNode.parent) {
       isSibling = true
     }
   }

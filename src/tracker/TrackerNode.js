@@ -48,6 +48,7 @@ class TrackerNode {
   }
 
   enterTrackerScope() {
+    this.enterContext()
     const fn = this.useProxy ? createTracker : createES5Tracker
     this.tracker = fn(
       this.base,
@@ -58,8 +59,6 @@ class TrackerNode {
       },
       this,
     )
-
-    this.enterContext()
   }
 
   enterContext() {
