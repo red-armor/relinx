@@ -10,7 +10,9 @@ class PathNode {
   addPathNode(path, patcher) {
     const len = path.length
     path.reduce((node, cur, index) => {
+      // path中前面的值都是为了让我们定位到最后的需要关心的位置
       if (!node.children[cur]) node.children[cur] = new PathNode(cur, node)
+      // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
       if (index === len - 1) {
         const childNode = node.children[cur]
         childNode.patchers.push(patcher)

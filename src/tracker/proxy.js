@@ -72,7 +72,9 @@ export function createTracker(target, config, trackerNode) {
     prevSibling: null,
     nextSibling: null,
 
+
     relink: emptyFunction,
+    unlink: emptyFunction,
     isPeekValue: false,
 
     propertyFromProps: [],
@@ -94,6 +96,12 @@ export function createTracker(target, config, trackerNode) {
   tracker.cleanup = function() {
     proxy[TRACKER].paths = []
     proxy[TRACKER].propertyFromProps = []
+  }
+
+  const unlink = function() {
+    const proxy = this
+    const tracker = proxy[TRACKER]
+    return tracker.base
   }
 
   tracker.relink = (path, baseValue) => {
@@ -157,17 +165,20 @@ export function createTracker(target, config, trackerNode) {
     }, {})
   }
 
+  const revokeFn = function() {
+    if (useRevoke) revoke()
+  }
+
   createHiddenProperty(copy, TRACKER, tracker)
   createHiddenProperty(copy, 'getRemarkableFullPaths', tracker.getRemarkableFullPaths)
   createHiddenProperty(copy, 'getRemarkablePaths', tracker.getRemarkablePaths)
   createHiddenProperty(copy, 'setRemarkable', tracker.setRemarkable)
   createHiddenProperty(copy, 'cleanup', tracker.cleanup)
   createHiddenProperty(copy, 'getInternalPropExported', tracker.getInternalPropExported)
+  createHiddenProperty(copy, 'unlink', unlink)
   createHiddenProperty(copy, 'relink', tracker.relink)
   createHiddenProperty(copy, 'rootPath', rootPath)
-  createHiddenProperty(copy, 'revoke', () => {
-    if (useRevoke) revoke()
-  })
+  createHiddenProperty(copy, 'revoke', revokeFn)
 
   const internalProps = [
     'getRemarkableFullPaths',
@@ -176,6 +187,7 @@ export function createTracker(target, config, trackerNode) {
     'cleanup',
     'getInternalPropExported',
     'relink',
+    'unlink',
     'rootPath',
     TRACKER,
   ]
@@ -188,6 +200,7 @@ export function createTracker(target, config, trackerNode) {
       // if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed) {
+        // console.log('internal ', prop)
         return Reflect.get(target, prop, receiver)
       }
 

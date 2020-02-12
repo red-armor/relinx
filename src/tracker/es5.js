@@ -73,6 +73,7 @@ export function createES5Tracker(target, config, trackerNode) {
     nextSibling: null,
 
     relink: emptyFunction,
+    unlink: emptyFunction,
     isPeekValue: false,
 
     propertyFromProps: [],
@@ -90,6 +91,12 @@ export function createES5Tracker(target, config, trackerNode) {
   tracker.cleanup = function() {
     proxy[TRACKER].paths = []
     proxy[TRACKER].propertyFromProps = []
+  }
+
+  const unlink = function() {
+    const proxy = this
+    const tracker = proxy[TRACKER]
+    return tracker.base
   }
 
   tracker.relink = (path, baseValue) => {
@@ -160,6 +167,7 @@ export function createES5Tracker(target, config, trackerNode) {
   createHiddenProperty(proxy, 'cleanup', tracker.cleanup)
   createHiddenProperty(proxy, 'getInternalPropExported', tracker.getInternalPropExported)
   createHiddenProperty(proxy, 'relink', tracker.relink)
+  createHiddenProperty(proxy, 'unlink', unlink)
   createHiddenProperty(proxy, 'rootPath', rootPath)
 
   each(target, prop => {

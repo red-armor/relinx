@@ -34,7 +34,7 @@ class Application {
 
     if (this.pendingPatchers.length) {
       const patcherId = generatePatcherId({ namespace: this.namespace })
-      this.pendingPatchers.forEach(patcher => patcher.triggerAutoRun(patcherId))
+      this.pendingPatchers.forEach(({ patcher }) => patcher.triggerAutoRun(patcherId))
     }
   }
 
@@ -51,16 +51,18 @@ class Application {
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
     if (!branch) return
 
-    const compare = (branch, baseValue, nextValue) => {
+    const compare = (branch, baseValue, nextValue, collections) => {
       if (is(baseValue, nextValue)) return
 
       // TODO, add description...only primitive type react...
       if (!isTypeEqual(baseValue, nextValue) || !isMutable(nextValue)) {
         if (branch.patchers.length) {
           branch.patchers.forEach(patcher => {
-            patcher.markDirty()
-            this.pendingPatchers.push(patcher)
+            this.pendingPatchers.push({ collections, patcher })
           })
+          // delete should be placed after collection...
+          // `branch.patchers` will be modified on `markDirty`..
+          branch.patchers.forEach(patcher => patcher.markDirty())
         }
       }
 
@@ -69,11 +71,11 @@ class Application {
         const childBranch = branch.children[key]
         const childBaseValue = baseValue[key]
         const childNextValue = nextValue[key]
-        compare(childBranch, childBaseValue, childNextValue)
+        compare(childBranch, childBaseValue, childNextValue, collections.concat(key))
       })
     }
 
-    compare(branch, baseValue, nextValue)
+    compare(branch, baseValue, nextValue, [storeKey])
   }
 
   addPatcher(patcher) {
