@@ -24,6 +24,23 @@ class PathNode {
       return node.children[cur]
     }, this)
   }
+
+  destroy() {
+    this.patchers.forEach(patcher => patcher.destroy())
+
+    if (this.children) {
+      const childKeys = Object.keys(this.children)
+      childKeys.forEach(key => {
+        const pathNode = this.children[key]
+        pathNode.destroy()
+      })
+    }
+
+    if (this.parent) {
+      console.log('parent ', this.parent)
+      delete this.parent.children[this.prop]
+    }
+  }
 }
 
 export default PathNode

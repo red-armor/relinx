@@ -112,7 +112,11 @@ export function createTracker(target, config, trackerNode) {
 
     const { base, proxy: proxyProps } = getInternalProp(nextProxy, ['base', 'proxy'])
 
-    base[last] = nextBaseValue
+    if (Array.isArray(base)) {
+      nextProxy[TRACKER].base = base.filter(v => v)
+    }
+    nextProxy[TRACKER].base[last] = nextBaseValue
+
     if (isTrackable(nextBaseValue)) {
       proxyProps[last] = createTracker(nextBaseValue, {
         // do not forget `prop` param

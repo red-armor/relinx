@@ -21,6 +21,11 @@ class Patcher {
   }
 
   destroy() {
+    this.teardown()
+    if (this.children.length) {
+      this.children.forEach(child => child.destroy())
+    }
+
     if (this.parent) {
       this.parent.removeChild(this)
     }
@@ -54,6 +59,16 @@ class Patcher {
     // if (this.children.length) {
     //   this.children.forEach(child => child.markDirty())
     // }
+  }
+
+  markDirtyAll() {
+    this.dirty = true
+    this.teardown()
+
+    // If parent is dirty, then its children should be all dirty...
+    if (this.children.length) {
+      this.children.forEach(child => child.markDirtyAll())
+    }
   }
 
   triggerAutoRun() {

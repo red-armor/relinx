@@ -24,10 +24,19 @@ export default () => ({
       const { listData } = state
       const item = listData[index]
       const next = [...listData]
-      next[index] = {
-        ...item,
-        count: Math.max(item.count - 1, 1),
+      const nextCount = item.count - 1
+      console.log('ne ', next, nextCount)
+      if (nextCount <= 0) {
+        console.log('splice ', index)
+        next.splice(index, 1)
+      } else {
+        next[index] = {
+          ...item,
+          count: nextCount,
+        }
       }
+      console.log('next', next, id, index)
+
       return {
         listData: next
       }
