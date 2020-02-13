@@ -1,6 +1,5 @@
 class Patcher {
   constructor({
-    storeName,
     paths,
     autoRunFn,
     key,

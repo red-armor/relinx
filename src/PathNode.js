@@ -18,7 +18,9 @@ class PathNode {
         childNode.patchers.push(patcher)
         patcher.addRemover(() => {
           const index = childNode.patchers.indexOf(patcher)
-          childNode.patchers.splice(index, 1)
+          if (index !== -1) {
+            childNode.patchers.splice(index, 1)
+          }
         })
       }
       return node.children[cur]
@@ -26,19 +28,22 @@ class PathNode {
   }
 
   destroy() {
-    this.patchers.forEach(patcher => patcher.destroy())
+    try {
+      this.patchers.forEach(patcher => patcher.destroy())
 
-    if (this.children) {
-      const childKeys = Object.keys(this.children)
-      childKeys.forEach(key => {
-        const pathNode = this.children[key]
-        pathNode.destroy()
-      })
-    }
+      if (this.children) {
+        const childKeys = Object.keys(this.children)
+        childKeys.forEach(key => {
+          const pathNode = this.children[key]
+          pathNode.destroy()
+        })
+      }
 
-    if (this.parent) {
-      console.log('parent ', this.parent)
-      delete this.parent.children[this.prop]
+      if (this.parent) {
+        delete this.parent.children[this.prop]
+      }
+    } catch(err) {
+      console.log('destry ', err)
     }
   }
 }

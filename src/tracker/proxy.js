@@ -10,14 +10,20 @@ import {
 } from './commons'
 import { generateRemarkablePaths } from './path'
 import { trackerNode as contextTrackerNode } from './context'
+import infoLog from '../utils/infoLog'
 
 const peek = (proxy, accessPath) => {
-  return accessPath.reduce((proxy, cur) => {
-    proxy[TRACKER].isPeekValue = true
-    const nextProxy = proxy[cur]
-    proxy[TRACKER].isPeekValue = false
-    return nextProxy
-  }, proxy)
+  try {
+    return accessPath.reduce((proxy, cur) => {
+      if (typeof proxy === 'undefined') return
+      proxy[TRACKER].isPeekValue = true
+      const nextProxy = proxy[cur]
+      proxy[TRACKER].isPeekValue = false
+      return nextProxy
+    }, proxy)
+  } catch(err) {
+    infoLog('[proxy] peek ', err, proxy, accessPath)
+  }
 }
 
 const getInternalProp = (proxy, props) => {
@@ -83,7 +89,6 @@ export function createTracker(target, config, trackerNode) {
     getRemarkablePaths: emptyFunction,
   }
 
-
   tracker.reportAccessPath = function(path) {
     const tracker = proxy[TRACKER]
     tracker.paths.push(path)
@@ -104,26 +109,68 @@ export function createTracker(target, config, trackerNode) {
     return tracker.base
   }
 
-  tracker.relink = (path, baseValue) => {
-    const copy = path.slice()
-    const last = copy.pop()
-    const nextProxy = peek(proxy, copy)
-    const nextBaseValue = path.reduce((baseValue, cur) => baseValue[cur], baseValue)
-
-    const { base, proxy: proxyProps } = getInternalProp(nextProxy, ['base', 'proxy'])
-
-    if (Array.isArray(base)) {
-      nextProxy[TRACKER].base = base.filter(v => v)
+  tracker.rebase = function(baseValue) {
+    try {
+      const proxy = this
+      proxy[TRACKER].base = baseValue
+    } catch(err) {
+      infoLog('[proxy] rebase ', err)
     }
-    nextProxy[TRACKER].base[last] = nextBaseValue
+  }
 
-    if (isTrackable(nextBaseValue)) {
-      proxyProps[last] = createTracker(nextBaseValue, {
-        // do not forget `prop` param
-        accessPath: path,
-        parentTrack: nextProxy,
-        rootPath,
-      }, trackerNode)
+  tracker.relink = function (path, baseValue) {
+    try {
+      const proxy = this
+      let copy = path.slice()
+      let last = copy.pop()
+      const len = path.length
+      let nextBaseValue = baseValue
+
+      // 修复 {a: { b: 1 }} => {a: {}} 时出现 nextBaseValue[key]为undefined
+      for (let i = 0; i < len; i++) {
+        const key = path[i]
+        if (typeof nextBaseValue[key] !== 'undefined') {
+          nextBaseValue = nextBaseValue[key]
+        } else {
+          copy = path.slice(0, i - 1)
+          last = path[i - 1]
+
+          break;
+        }
+      }
+
+      const nextProxy = peek(proxy, copy)
+
+      nextProxy.relinkProp(last, nextBaseValue, nextProxy)
+    } catch (err) {
+      console.log('relink error ', path, baseValue, err)
+    }
+  }
+
+  tracker.relinkProp = function(prop, newValue, proxy) {
+    const nextProxy = proxy || this
+    try {
+      const {
+        base,
+        proxy: proxyProps,
+        accessPath,
+      } = getInternalProp(nextProxy, ['base', 'proxy', 'accessPath'])
+
+      if (Array.isArray(base)) {
+        nextProxy[TRACKER].base = base.filter(v => v)
+      }
+      nextProxy[TRACKER].base[prop] = newValue
+
+      if (isTrackable(newValue)) {
+        proxyProps[prop] = createTracker(newValue, {
+          // do not forget `prop` param
+          accessPath: accessPath.concat(prop),
+          parentTrack: nextProxy,
+          rootPath,
+        }, trackerNode)
+      }
+    } catch (err) {
+      console.log('relink prop ', err)
     }
   }
 
@@ -138,18 +185,22 @@ export function createTracker(target, config, trackerNode) {
   }
 
   tracker.getRemarkableFullPaths = function() {
-    const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
+    try {
+      const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
 
-    const internalPaths = generateRemarkablePaths(paths).map(path => {
-      return rootPath.concat(path)
-    })
-    const external = propertyFromProps.map(prop => {
-      const { path, source } = prop
-      return source[TRACKER].rootPath.concat(path)
-    })
-    const externalPaths = generateRemarkablePaths(external)
+      const internalPaths = generateRemarkablePaths(paths).map(path => {
+        return rootPath.concat(path)
+      })
+      const external = propertyFromProps.map(prop => {
+        const { path, source } = prop
+        return source[TRACKER].rootPath.concat(path)
+      })
+      const externalPaths = generateRemarkablePaths(external)
 
-    return internalPaths.concat(externalPaths)
+      return internalPaths.concat(externalPaths)
+    } catch (err) {
+      infoLog("[proxy getRemarkableFullPaths] ", err)
+    }
   }
 
   tracker.getRemarkablePaths = function() {
@@ -181,6 +232,8 @@ export function createTracker(target, config, trackerNode) {
   createHiddenProperty(copy, 'getInternalPropExported', tracker.getInternalPropExported)
   createHiddenProperty(copy, 'unlink', unlink)
   createHiddenProperty(copy, 'relink', tracker.relink)
+  createHiddenProperty(copy, 'rebase', tracker.rebase)
+  createHiddenProperty(copy, 'relinkProp', tracker.relinkProp)
   createHiddenProperty(copy, 'rootPath', rootPath)
   createHiddenProperty(copy, 'revoke', revokeFn)
 
@@ -191,6 +244,8 @@ export function createTracker(target, config, trackerNode) {
     'cleanup',
     'getInternalPropExported',
     'relink',
+    'rebase',
+    'relinkProp',
     'unlink',
     'rootPath',
     TRACKER,
@@ -198,46 +253,51 @@ export function createTracker(target, config, trackerNode) {
 
   const handler = {
     get: (target, prop, receiver) => {
-      // assertScope(trackerNode, contextTrackerNode)
-      // if (prop === TRACKER) return Reflect.get(target, prop, receiver)
-      let tracker = target[TRACKER]
-      // if (Array.isArray(tracker)) target = tracker[0]
-      const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
-      if (isInternalPropAccessed) {
-        // console.log('internal ', prop)
-        return Reflect.get(target, prop, receiver)
-      }
-
-      if (!hasOwnProperty(tracker.base, prop)) {
-        return Reflect.get(tracker.base, prop, receiver)
-      }
-      const accessPath = tracker.accessPath.concat(prop)
-
-      if (!tracker.isPeekValue) {
-        if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-          contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
-            path: accessPath,
-            source: trackerNode.tracker,
-            target: contextTrackerNode.tracker,
-          })
-          return peek(trackerNode.tracker, accessPath)
-        } else {
-          tracker.reportAccessPath(accessPath)
+      try {
+        // assertScope(trackerNode, contextTrackerNode)
+        // if (prop === TRACKER) return Reflect.get(target, prop, receiver)
+        let tracker = target[TRACKER]
+        // if (Array.isArray(tracker)) target = tracker[0]
+        const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
+        if (isInternalPropAccessed) {
+          return Reflect.get(target, prop, receiver)
         }
+
+        if (!hasOwnProperty(tracker.base, prop)) {
+          return Reflect.get(tracker.base, prop, receiver)
+        }
+        const accessPath = tracker.accessPath.concat(prop)
+
+        if (!tracker.isPeekValue) {
+          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
+            // console.log('update propertyFromProps', contextTrackerNode.tracker[TRACKER])
+            contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
+              path: accessPath,
+              source: trackerNode.tracker,
+              target: contextTrackerNode.tracker,
+            })
+            return peek(trackerNode.tracker, accessPath)
+          } else {
+            tracker.reportAccessPath(accessPath)
+          }
+        }
+
+        const value = tracker.base[prop]
+        if (!isTrackable(value)) return value
+
+        if (hasOwnProperty(tracker.proxy, prop) && tracker.proxy[prop][TRACKER].base === value) {
+          // console.log('use default value ', tracker.proxy[prop])
+          return tracker.proxy[prop]
+        } else {
+          return (tracker.proxy[prop] = createTracker(value, {
+            accessPath,
+            parentTrack: target,
+            rootPath,
+          }, trackerNode))
+        }
+      } catch(err) {
+        infoLog('[Proxy get] ', err)
       }
-
-      if (hasOwnProperty(tracker.proxy, prop)) {
-        return tracker.proxy[prop]
-      }
-      const value = tracker.base[prop]
-
-      if (!isTrackable(value)) return value
-
-      return (tracker.proxy[prop] = createTracker(value, {
-        accessPath,
-        parentTrack: target,
-        rootPath,
-      }, trackerNode))
     }
   }
 

@@ -27,6 +27,7 @@ const combineReducers = reducers => state => (_, actions) => {
 
     return changedValueGroup
   }, [])
+
   if (changedValues.length) return changedValues
   return []
 }
