@@ -7,7 +7,7 @@ import { isPresent, isObject } from './utils/ifType'
 import diffArraySimple from './utils/diffArraySimple'
 import { generatePatcherId } from './utils/key'
 
-const DEBUG = false
+const DEBUG = true
 const MINIMUS_RE_RENDER = false
 
 class Application {
@@ -17,8 +17,6 @@ class Application {
     this.pendingPatchers = []
     this.namespace = namespace
   }
-
-  blame() {}
 
   update(values) {
     this.pendingPatchers = []
@@ -34,6 +32,8 @@ class Application {
     } catch (err) {
       infoLog('[Application] update issue ', err)
     }
+
+    console.log('pendign ', this.pendingPatchers)
 
     const finalPatchers = []
     const len = this.pendingPatchers.length
@@ -96,11 +96,13 @@ class Application {
     const toDestroy = []
     const compare = (branch, baseValue, nextValue, collections, operation) => {
       if (is(baseValue, nextValue)) return
+      console.log('base ', baseValue, nextValue, branch)
 
       // TODO, add description...only primitive type react...
       if (!isTypeEqual(baseValue, nextValue) || !isMutable(nextValue)) {
         if (branch.patchers.length) {
           branch.patchers.forEach(patcher => {
+            console.log('push------- ', this.pendingPatchers)
             this.pendingPatchers.push({ collections, patcher, operation })
           })
           // delete should be placed after collection...
@@ -114,6 +116,8 @@ class Application {
       let keysToCompare = caredKeys
       let keysToDestroy = []
       const currentOperation = []
+
+      console.log(' key to compare ', keysToCompare)
 
       // 处理，如果说array中的一项被删除了。。。。
       if (isTypeEqual(baseValue, nextValue) && Array.isArray(nextValue)) {
@@ -153,6 +157,7 @@ class Application {
       }
 
       keysToCompare.forEach(key => {
+        console.log('to compare ', key)
         const childBranch = branch.children[key]
         const childBaseValue = baseValue[key]
         // 当时一个对象，并且key被删除的时候，那么它的值就是undefined

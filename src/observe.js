@@ -18,15 +18,15 @@ const Helper = ({ addListener }) => {
   return null
 }
 
-const DEBUG = false
+const DEBUG = true
 
 const unmount = {}
 const rerender = {}
 
-const diff = (componentName, patcher, tracker) => {
+const diff = (componentName, patcher, proxy) => {
   const key1 = Object.keys(unmount)
   if (key1.indexOf(componentName) !== -1) {
-    infoLog('invalid re-render', componentName, patcher, tracker)
+    infoLog('invalid re-render', componentName, patcher, proxy)
   }
 }
 
@@ -108,36 +108,40 @@ export default WrappedComponent => {
 
     const getData = useCallback(() => ({
       trackerNode: trackerNode.current,
-      // occupied: occupied.current,
     }), [])
 
+    console.log('current ', trackerNode.current.proxy)
+
     // onUpdate, `relink` relative paths value....
-    if (trackerNode.current.tracker) {
-      const tracker = trackerNode.current.tracker
+    if (trackerNode.current.proxy) {
+      const proxy = trackerNode.current.proxy
+      // 为什么如果进行remove的话，`propProperties`已经将旧key删除了呢。。。
+      const propProperties = proxy.getProp('propProperties')
 
-      // 为什么如果进行remove的话，`propertyFromProps`已经将旧key删除了呢。。。
-      const {
-        propertyFromProps = [],
-        paths = [],
-        base: prevBase,
-      } = tracker.getInternalPropExported(['propertyFromProps', 'paths', 'base'])
+      console.log('proxy ', proxy)
 
-      propertyFromProps.forEach(prop => {
-        const { source } = prop
-        const storeName = source.rootPath[0]
-        const currentBase = application.getStoreData(storeName)
-
-        source.rebase(currentBase)
+      propProperties.forEach(prop => {
+        try {
+          const { source } = prop
+          const rootPath = source.getProp('rootPath')
+          const storeName = rootPath[0]
+          const currentBase = application.getStoreData(storeName)
+          console.log('source ', source)
+          source.runFn('rebase', currentBase)
+        } catch (err) {
+          infoLog('[observe rebase propProperties]', err)
+        }
       })
 
       if (useRelinkMode) {
         if (storeName.current) {
           const base = application.getStoreData(storeName.current)
-          tracker.rebase(base)
+          console.log('update current base ', base, trackerNode.current.proxy)
+          proxy.runFn('rebase', base)
         }
       }
 
-      trackerNode.current.tracker.cleanup()
+      trackerNode.current.proxy.runFn('cleanup')
     }
 
     // only run one time
@@ -165,11 +169,12 @@ export default WrappedComponent => {
 
     const addListener = useCallback(() => {
       patcher.current.appendTo(parentPatcher) // maybe not needs
-      const paths = trackerNode.current.tracker.getRemarkableFullPaths()
-      // console.log('tear down ', componentName)
+      if (!trackerNode.current.proxy) return
+
+      const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths')
+      console.log('getRemarkableFullPaths in addListener ', paths, trackerNode.current.proxy, componentName)
       patcher.current.update({ paths })
       application.addPatcher(patcher.current)
-      // console.log('paths ', paths)
       patcherUpdated.current += 1
       trackerNode.current.leaveContext()
     }, [])

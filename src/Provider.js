@@ -12,7 +12,7 @@ export default ({
   store,
   children,
   namespace,
-  useProxy = true,
+  useProxy = false,
   useRelinkMode = true,
 }) => {
   const { initialState, createReducer, createDispatch } = store

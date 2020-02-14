@@ -1,66 +1,112 @@
+import { TRACKER, createHiddenProperty } from './commons'
+import { generateRemarkablePaths } from './path'
+
 function internalFunctions() {}
+const proto = internalFunctions.prototype
 
-internalFunctions.prototype.reportAccessPath = function(path) {
+proto.reportAccessPath = function(path) {
   const proxy = this
-  const tracker = proxy[TRACKER]
-  tracker.paths.push(path)
-  const parentTrack = tracker.parentTrack
-  if (parentTrack) {
-    parentTrack[TRACKER].reportAccessPath(path)
-  }
+  const paths = proxy.getProp('paths')
+  const parentProxy = proxy.getProp('parentProxy')
+  paths.push(path)
+  if (!parentProxy) return
+  parentProxy.runFn('reportAccessPath', path)
 }
 
-internalFunctions.prototype.cleanup = function() {
-  proxy[TRACKER].paths = []
-  proxy[TRACKER].propertyFromProps = []
+proto.cleanup = function() {
+  const proxy = this
+  proxy.setProp('paths', [])
+  proxy.setProp('propProperties', [])
 }
 
-internalFunctions.prototype.unlink = function () {
+proto.unlink = function () {
   const proxy = this // eslint-disable-line
-  const tracker = proxy[TRACKER]
-  return tracker.base
+  return proxy.getProp('base')
 }
 
-internalFunctions.prototype.relink = function(path, baseValue) {
+proto.relink = function(path, baseValue) {
   const proxy = this
   const copy = path.slice()
   const last = copy.pop()
   const nextProxy = peek(proxy, copy)
   const nextBaseValue = path.reduce((baseValue, cur) => baseValue[cur], baseValue)
 
-  const { base, proxy: proxyProps } = getInternalProp(nextProxy, ['base', 'proxy'])
+  const base = nextProxy.getProp('base')
+  const childProxies = nextProxy.getProp('childProxies')
+  const rootPath = proxy.getProp('rootPath')
 
   base[last] = nextBaseValue
   if (isTrackable(nextBaseValue)) {
-    proxyProps[last] = createES5Tracker(nextBaseValue, {
+    childProxies[last] = createES5Tracker(nextBaseValue, {
       // do not forget `prop` param
       accessPath: path,
-      parentTrack: nextProxy,
+      parentProxy: nextProxy,
       rootPath,
     }, trackerNode)
   }
 }
 
-internalFunctions.prototype.setRemarkable = function () {
-  const proxy = this
-  const tracker = proxy[TRACKER]
-  const parentTrack = tracker.parentTrack
-  if (parentTrack) {
-    parentTrack[TRACKER].reportAccessPath(tracker.accessPath)
-    return true
+proto.rebase = function(baseValue) {
+  try {
+    const proxy = this
+    proxy.setProp('base', baseValue)
+  } catch(err) {
+    infoLog('[proxy] rebase ', err)
   }
-  return false
 }
 
-internalFunctions.prototype.getRemarkableFullPaths = function() {
-  const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
+proto.setRemarkable = function () {
+  const proxy = this
+  const accessPath = proxy.getProp('accessPath')
+  const parentProxy = proxy.getProp('parentProxy')
+  if (!parentProxy) return false
+  parentProxy.runFn(reportAccessPath, accessPath)
+  return true
+}
 
-  const internalPaths = generateRemarkablePaths(paths).map(path => rootPath.concat(path))
-  const external = propertyFromProps.map(prop => {
+proto.getRemarkableFullPaths = function() {
+  const proxy = this
+  const paths = proxy.getProp('paths')
+  const propProperties = proxy.getProp('propProperties')
+  const rootPath = proxy.getProp('rootPath')
+  const internalPaths = generateRemarkablePaths(paths)
+    .map(path => rootPath.concat(path))
+  const external = propProperties.map(prop => {
     const { path, source } = prop
-    return source[TRACKER].rootPath.concat(path)
+    const sourceRootPath = source.getProp('rootPath')
+    return sourceRootPath.concat(path)
   })
   const externalPaths = generateRemarkablePaths(external)
-
   return internalPaths.concat(externalPaths)
 }
+
+Object.defineProperty(proto, 'reportAccessPath', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'cleanup', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'unlink', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'relink', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'setRemarkable', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'getRemarkableFullPaths', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'rebase', {
+  enumerable: false,
+  configurable: false,
+})
+
+export default internalFunctions

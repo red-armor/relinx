@@ -45,3 +45,17 @@ export function shallowCopy(o) {
 
   return value
 }
+
+export const inherit = (subClass, superClass) => {
+  subClass.prototype = Object.create(superClass.prototype)
+  subClass.prototype.constructor = subClass
+  subClass.__proto__ = superClass
+}
+
+export const createHiddenProperty = (target, prop, value) => {
+  Object.defineProperty(target, prop, {
+    value,
+    enumerable: false,
+    writable: true,
+  })
+}

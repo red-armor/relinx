@@ -92,7 +92,7 @@ export function createTracker(target, config, trackerNode) {
     unlink: emptyFunction,
     isPeekValue: false,
 
-    propertyFromProps: [],
+    propProperties: [],
     reportAccessPath: emptyFunction,
     setRemarkable: emptyFunction,
     getRemarkablePaths: emptyFunction,
@@ -109,7 +109,7 @@ export function createTracker(target, config, trackerNode) {
 
   tracker.cleanup = function () {
     proxy[TRACKER].paths = []
-    proxy[TRACKER].propertyFromProps = []
+    proxy[TRACKER].propProperties = []
   }
 
   const unlink = function () {
@@ -195,12 +195,12 @@ export function createTracker(target, config, trackerNode) {
 
   tracker.getRemarkableFullPaths = function() {
     try {
-      const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
+      const { paths, propProperties } = getInternalProp(proxy, ['paths', 'propProperties'])
       const internalPaths = generateRemarkablePaths(paths).map(path => {
         return rootPath.concat(path)
       })
 
-      const external = propertyFromProps.map(prop => {
+      const external = propProperties.map(prop => {
         const { path, source } = prop
         return source[TRACKER].rootPath.concat(path)
       })
@@ -279,12 +279,12 @@ export function createTracker(target, config, trackerNode) {
 
         if (!tracker.isPeekValue) {
           if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-            contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
+            contexttrackerNode.proxy[TRACKER].propProperties.push({
               path: accessPath,
-              source: trackerNode.tracker,
-              target: contextTrackerNode.tracker,
+              source: trackerNode.proxy,
+              target: contexttrackerNode.proxy,
             })
-            return peek(trackerNode.tracker, accessPath)
+            return peek(trackerNode.proxy, accessPath)
           } else {
             tracker.reportAccessPath(accessPath)
           }
