@@ -18,7 +18,7 @@ const Helper = ({ addListener }) => {
   return null
 }
 
-const DEBUG = true
+const DEBUG = false
 
 const unmount = {}
 const rerender = {}
@@ -110,15 +110,11 @@ export default WrappedComponent => {
       trackerNode: trackerNode.current,
     }), [])
 
-    console.log('current ', trackerNode.current.proxy)
-
     // onUpdate, `relink` relative paths value....
     if (trackerNode.current.proxy) {
       const proxy = trackerNode.current.proxy
       // 为什么如果进行remove的话，`propProperties`已经将旧key删除了呢。。。
       const propProperties = proxy.getProp('propProperties')
-
-      console.log('proxy ', proxy)
 
       propProperties.forEach(prop => {
         try {
@@ -126,7 +122,6 @@ export default WrappedComponent => {
           const rootPath = source.getProp('rootPath')
           const storeName = rootPath[0]
           const currentBase = application.getStoreData(storeName)
-          console.log('source ', source)
           source.runFn('rebase', currentBase)
         } catch (err) {
           infoLog('[observe rebase propProperties]', err)
@@ -136,7 +131,6 @@ export default WrappedComponent => {
       if (useRelinkMode) {
         if (storeName.current) {
           const base = application.getStoreData(storeName.current)
-          console.log('update current base ', base, trackerNode.current.proxy)
           proxy.runFn('rebase', base)
         }
       }
@@ -172,7 +166,6 @@ export default WrappedComponent => {
       if (!trackerNode.current.proxy) return
 
       const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths')
-      console.log('getRemarkableFullPaths in addListener ', paths, trackerNode.current.proxy, componentName)
       patcher.current.update({ paths })
       application.addPatcher(patcher.current)
       patcherUpdated.current += 1
