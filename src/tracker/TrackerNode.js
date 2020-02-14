@@ -1,6 +1,6 @@
 import context from './context'
 import createES5Tracker from './es5'
-import { createTracker } from './proxy'
+import createTracker from './proxy'
 
 let count = 0
 

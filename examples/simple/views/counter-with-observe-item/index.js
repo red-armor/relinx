@@ -22,7 +22,7 @@ const Item = ({ item, index }) => {
     })
   }
 
-  console.log('item ', item)
+  console.log('item ', item, item.number)
 
   return (
     <div key={index}>
@@ -38,6 +38,8 @@ const ObservedItem = observe(Item)
 const Counter = () => {
   const [state, dispatch] = useRelinx('counterWithObserveItem')
   const { items, count } = state
+
+  console.log('count ', count, items)
 
   const increment = useCallback(() => {
     dispatch({ type: 'counterWithObserveItem/increment' })

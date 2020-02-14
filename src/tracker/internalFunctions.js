@@ -1,5 +1,13 @@
-import { TRACKER, createHiddenProperty } from './commons'
 import { generateRemarkablePaths } from './path'
+
+const peek = (proxy, accessPath) => { // eslint-disable-line
+  return accessPath.reduce((proxy, cur) => {
+    proxy.setProp('isPeeking', true)
+    const nextProxy = proxy[cur]
+    proxy.setProp('isPeeking', false)
+    return nextProxy
+  }, proxy)
+}
 
 function internalFunctions() {}
 const proto = internalFunctions.prototype
@@ -25,24 +33,51 @@ proto.unlink = function () {
 }
 
 proto.relink = function(path, baseValue) {
+  try {
+    const proxy = this
+    let copy = path.slice()
+    let last = copy.pop()
+    const len = path.length
+    let nextBaseValue = baseValue
+
+    // 修复 {a: { b: 1 }} => {a: {}} 时出现 nextBaseValue[key]为undefined
+    for (let i = 0; i < len; i++) {
+      const key = path[i]
+      if (typeof nextBaseValue[key] !== 'undefined') {
+        nextBaseValue = nextBaseValue[key]
+      } else {
+        copy = path.slice(0, i - 1)
+        last = path[i - 1]
+
+        break;
+      }
+    }
+    const nextProxy = peek(proxy, copy)
+    nextProxy.relinkProp(last, nextBaseValue)
+  } catch (err) {
+    infoLog('[proxy relink issue]', path, baseValue, err)
+  }
+}
+
+proto.relinkProp = function(prop, newValue) {
   const proxy = this
-  const copy = path.slice()
-  const last = copy.pop()
-  const nextProxy = peek(proxy, copy)
-  const nextBaseValue = path.reduce((baseValue, cur) => baseValue[cur], baseValue)
+  const base = proxy.getProp('base')
+  // const childProxies = proxy.getProp('childProxies')
+  // const rootPath = proxy.getProp('rootPath')
+  // const accessPath = proxy.getProp('accessPath')
 
-  const base = nextProxy.getProp('base')
-  const childProxies = nextProxy.getProp('childProxies')
-  const rootPath = proxy.getProp('rootPath')
+  if (Array.isArray(base)) {
+    proxy.setProp('base', base.filter(v => v))
+  }
+  base[prop] = newValue
 
-  base[last] = nextBaseValue
-  if (isTrackable(nextBaseValue)) {
-    childProxies[last] = createES5Tracker(nextBaseValue, {
-      // do not forget `prop` param
-      accessPath: path,
-      parentProxy: nextProxy,
-      rootPath,
-    }, trackerNode)
+  if (isTrackable(newValue)) {
+    // childProxies[prop] = createTracker(newValue, {
+    //   // do not forget `prop` param
+    //   accessPath: accessPath.concat(prop),
+    //   parentTrack: proxy,
+    //   rootPath,
+    // }, trackerNode)
   }
 }
 
@@ -93,6 +128,10 @@ Object.defineProperty(proto, 'unlink', {
   configurable: false,
 })
 Object.defineProperty(proto, 'relink', {
+  enumerable: false,
+  configurable: false,
+})
+Object.defineProperty(proto, 'relinkProp', {
   enumerable: false,
   configurable: false,
 })

@@ -76,9 +76,7 @@ function createES5Tracker(target, config, trackerNode) {
         }
 
         if (!isTrackable(value)) return value
-
         const childProxy = childProxies[prop]
-
         // for rebase value, if base value change, the childProxy should
         // be replaced
         if (childProxy && childProxy.base === value) {
