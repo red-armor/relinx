@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   isObject,
   TRACKER,
@@ -36,6 +37,14 @@ const getInternalProp = (proxy, props) => {
   }, {})
 }
 
+const createHiddenProperty = (target, prop, value) => {
+  Object.defineProperty(target, prop, {
+    value,
+    enumerable: false,
+    writable: true,
+  })
+}
+
 export function createTracker(target, config, trackerNode) {
   const {
     accessPath = [],
@@ -46,12 +55,12 @@ export function createTracker(target, config, trackerNode) {
   } = config || {}
 
   let isRevoked = false
-  let assertRevokable = () => {
+  const assertRevokable = () => {
     if (!useRevoke) return
     if (isRevoked) {
       throw new Error(
-        "Cannot use a proxy that has been revoked. Did you pass an object " +
-        "to an async process? "
+        'Cannot use a proxy that has been revoked. Did you pass an object '
+        + 'to an async process? '
       )
     }
   }
@@ -98,13 +107,13 @@ export function createTracker(target, config, trackerNode) {
     }
   }
 
-  tracker.cleanup = function() {
+  tracker.cleanup = function () {
     proxy[TRACKER].paths = []
     proxy[TRACKER].propertyFromProps = []
   }
 
-  const unlink = function() {
-    const proxy = this
+  const unlink = function () {
+    const proxy = this // eslint-disable-line
     const tracker = proxy[TRACKER]
     return tracker.base
   }
@@ -143,7 +152,7 @@ export function createTracker(target, config, trackerNode) {
 
       nextProxy.relinkProp(last, nextBaseValue, nextProxy)
     } catch (err) {
-      console.log('relink error ', path, baseValue, err)
+      infoLog('[proxy relink issue]', path, baseValue, err)
     }
   }
 
@@ -170,11 +179,11 @@ export function createTracker(target, config, trackerNode) {
         }, trackerNode)
       }
     } catch (err) {
-      console.log('relink prop ', err)
+      infoLog('[proxy relink prop issue]', err)
     }
   }
 
-  tracker.setRemarkable = function() {
+  tracker.setRemarkable = function () {
     const tracker = proxy[TRACKER]
     const parentTrack = tracker.parentTrack
     if (parentTrack) {
@@ -187,10 +196,10 @@ export function createTracker(target, config, trackerNode) {
   tracker.getRemarkableFullPaths = function() {
     try {
       const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
-
       const internalPaths = generateRemarkablePaths(paths).map(path => {
         return rootPath.concat(path)
       })
+
       const external = propertyFromProps.map(prop => {
         const { path, source } = prop
         return source[TRACKER].rootPath.concat(path)
@@ -203,7 +212,7 @@ export function createTracker(target, config, trackerNode) {
     }
   }
 
-  tracker.getRemarkablePaths = function() {
+  tracker.getRemarkablePaths = function () {
     const tracker = proxy[TRACKER]
     const { revoke, paths } = tracker
     // revoke()
@@ -220,7 +229,7 @@ export function createTracker(target, config, trackerNode) {
     }, {})
   }
 
-  const revokeFn = function() {
+  const revokeFn = function () {
     if (useRevoke) revoke()
   }
 
@@ -270,7 +279,6 @@ export function createTracker(target, config, trackerNode) {
 
         if (!tracker.isPeekValue) {
           if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-            // console.log('update propertyFromProps', contextTrackerNode.tracker[TRACKER])
             contextTrackerNode.tracker[TRACKER].propertyFromProps.push({
               path: accessPath,
               source: trackerNode.tracker,
@@ -286,7 +294,6 @@ export function createTracker(target, config, trackerNode) {
         if (!isTrackable(value)) return value
 
         if (hasOwnProperty(tracker.proxy, prop) && tracker.proxy[prop][TRACKER].base === value) {
-          // console.log('use default value ', tracker.proxy[prop])
           return tracker.proxy[prop]
         } else {
           return (tracker.proxy[prop] = createTracker(value, {
@@ -305,12 +312,4 @@ export function createTracker(target, config, trackerNode) {
 
 
   return proxy
-}
-
-const createHiddenProperty = (target, prop, value) => {
-  Object.defineProperty(target, prop, {
-    value,
-    enumerable: false,
-    writable: true,
-  })
 }

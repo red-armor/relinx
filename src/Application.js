@@ -7,13 +7,14 @@ import { isPresent, isObject } from './utils/ifType'
 import diffArraySimple from './utils/diffArraySimple'
 import { generatePatcherId } from './utils/key'
 
-const DEBUG = true
+const DEBUG = false
+const MINIMUS_RE_RENDER = false
 
 class Application {
   constructor({ base, namespace }) {
     this.base = base
     this.node = new PathNode()
-    this.pendingPatchers =[]
+    this.pendingPatchers = []
     this.namespace = namespace
   }
 
@@ -30,19 +31,52 @@ class Application {
     try {
       values.forEach(value => this.treeShake(value))
       values.forEach(value => this.updateBase(value))
-    } catch(err) {
+    } catch (err) {
       infoLog('[Application] update issue ', err)
     }
 
-    if (DEBUG) {
-      infoLog('[Application] pending patchers ', this.pendingPatchers)
+    const finalPatchers = []
+    const len = this.pendingPatchers.length
+
+    for (let i = 0; i < len; i++) {
+      const current = this.pendingPatchers[i].patcher
+
+      const y = 0
+      const l = finalPatchers.length
+      let found = false
+      for (let y = 0; y < l; y++) {
+        const base = finalPatchers[y]
+        if (current.belongs(base)) {
+          found = true
+          break;
+        }
+        if (base.belongs(current)) {
+          finalPatchers.splice(y, 1)
+          finalPatchers.splice(y, 0, current)
+          found = true
+          break;
+        }
+      }
+      if (!found) finalPatchers.push(current)
     }
 
-    if (this.pendingPatchers.length) {
+    if (MINIMUS_RE_RENDER) {
+      finalPatchers.forEach(patcher => patcher.triggerAutoRun())
+    } else if (this.pendingPatchers.length) {
       const patcherId = generatePatcherId({ namespace: this.namespace })
       this.pendingPatchers.forEach(({ patcher, operation }) => {
         patcher.triggerAutoRun(patcherId)
       })
+    }
+
+    if (DEBUG) {
+      if (MINIMUS_RE_RENDER) {
+        const final = finalPatchers.map(patcher => patcher.id)
+        infoLog('[Application] final patchers ', final, finalPatchers)
+      } else {
+        const pending = this.pendingPatchers.map(({ patcher }) => patcher.id)
+        infoLog('[Application] pending patchers ', pending, this.pendingPatchers)
+      }
     }
   }
 
@@ -59,7 +93,7 @@ class Application {
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
     if (!branch) return
 
-    let toDestroy = []
+    const toDestroy = []
     const compare = (branch, baseValue, nextValue, collections, operation) => {
       if (is(baseValue, nextValue)) return
 
@@ -71,6 +105,7 @@ class Application {
           })
           // delete should be placed after collection...
           // `branch.patchers` will be modified on `markDirty`..
+          // branch.patchers.forEach(patcher => patcher.markDirtyAll())
           branch.patchers.forEach(patcher => patcher.markDirty())
         }
       }
@@ -87,10 +122,10 @@ class Application {
 
         if (nextLength < baseLength) {
           keysToCompare = caredKeys.filter(
-            key => parseInt(key) < nextLength || key === 'length'
+            key => parseInt(key, 10) < nextLength || key === 'length'
           )
           keysToDestroy = caredKeys.filter(key => {
-            if (parseInt(key) >= nextLength) {
+            if (parseInt(key, 10) >= nextLength) {
               currentOperation.push({
                 path: collections.concat(key),
                 isDelete: true,
@@ -108,16 +143,14 @@ class Application {
         const removed = diffArraySimple(prevKeys, nextKeys)
 
         if (removed.length) {
-          toDestroy.push((function(branch, removed) {
+          toDestroy.push((((branch, removed) => {
             removed.forEach(key => {
               const childBranch = branch.children[key]
-              childBranch && childBranch.destroy()
+              if (childBranch) childBranch.destroyPathNode()
             })
-          }).bind(null, branch, removed))
+          })).bind(null, branch, removed))
         }
       }
-
-      // console.log('key to compared ', keysToDestroy, keysToCompare, baseValue, nextValue)
 
       keysToCompare.forEach(key => {
         const childBranch = branch.children[key]
@@ -125,24 +158,27 @@ class Application {
         // 当时一个对象，并且key被删除的时候，那么它的值就是undefined
         const childNextValue = nextValue ? nextValue[key] : undefined
 
-        compare(childBranch, childBaseValue, childNextValue, collections.concat(key), currentOperation)
+        compare(
+          childBranch,
+          childBaseValue,
+          childNextValue,
+          collections.concat(key),
+          currentOperation
+        )
       })
 
       if (keysToDestroy.length) {
-        toDestroy.push((function(branch, keysToDestroy) {
-          console.log('branch delete ', branch, keysToDestroy)
+        toDestroy.push((((branch, keysToDestroy) => {
           keysToDestroy.forEach(key => {
             const childBranch = branch.children[key]
-            childBranch && childBranch.destroy()
+            if (childBranch) childBranch.destroyPathNode()
           })
-        }).bind(null, branch, keysToDestroy))
+        })).bind(null, branch, keysToDestroy))
       }
     }
 
     compare(branch, baseValue, nextValue, [storeKey], [])
     toDestroy.forEach(fn => fn())
-
-    console.log('final ----', this.node)
   }
 
   addPatcher(patcher) {
@@ -159,8 +195,8 @@ class Application {
     // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
     invariant(
       !!storeValue,
-      `Invalid storeName '${storeName}'.` +
-      'Please ensure `base[storeName]` return non-undefined value '
+      `Invalid storeName '${storeName}'.`
+      + 'Please ensure `base[storeName]` return non-undefined value '
     )
 
     return storeValue
@@ -168,4 +204,3 @@ class Application {
 }
 
 export default Application
-

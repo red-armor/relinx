@@ -1,8 +1,3 @@
-// export default ({ getState }) => next => action => {
-//   console.log('action : ', action)
-//   next(action)
-// }
-
 import print from './print'
 
 export default ({ getState }) => next => actions => {

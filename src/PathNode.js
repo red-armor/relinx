@@ -1,3 +1,7 @@
+import infoLog from './utils/infoLog'
+
+const DEBUG = false
+
 class PathNode {
   constructor(prop, parent) {
     this.prop = prop || 'root'
@@ -15,9 +19,16 @@ class PathNode {
       // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
       if (index === len - 1) {
         const childNode = node.children[cur]
+        if (DEBUG) {
+          infoLog('[PathNode add patcher]', childNode, patcher)
+        }
         childNode.patchers.push(patcher)
         patcher.addRemover(() => {
           const index = childNode.patchers.indexOf(patcher)
+
+          if (DEBUG) {
+            infoLog('[PathNode remove patcher]', patcher.id, childNode)
+          }
           if (index !== -1) {
             childNode.patchers.splice(index, 1)
           }
@@ -27,23 +38,23 @@ class PathNode {
     }, this)
   }
 
-  destroy() {
+  destroyPathNode() {
     try {
-      this.patchers.forEach(patcher => patcher.destroy())
+      this.patchers.forEach(patcher => patcher.destroyPatcher())
 
       if (this.children) {
         const childKeys = Object.keys(this.children)
         childKeys.forEach(key => {
           const pathNode = this.children[key]
-          pathNode.destroy()
+          pathNode.destroyPathNode()
         })
       }
 
       if (this.parent) {
         delete this.parent.children[this.prop]
       }
-    } catch(err) {
-      console.log('destry ', err)
+    } catch (err) {
+      infoLog('[PathNode destroy issue]', err)
     }
   }
 }

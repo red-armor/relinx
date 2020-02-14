@@ -2,9 +2,9 @@ const toString = Function.call.bind(Object.prototype.toString)
 const ownKeys = o => Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o))
 
 export const emptyFunction = () => {}
-export const isObject = o => o ? (typeof o === 'object' || typeof o === 'function') : false
-export const hasSymbol = typeof Symbol !== "undefined"
-export const TRACKER = hasSymbol ? Symbol("tracker") : "__tracker__"
+export const isObject = o => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
+export const hasSymbol = typeof Symbol !== 'undefined'
+export const TRACKER = hasSymbol ? Symbol('tracker') : '__tracker__'
 
 export const canIUseProxy = () => {
   try {
@@ -14,9 +14,9 @@ export const canIUseProxy = () => {
   return true
 }
 
-export const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop)
+export const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop) // eslint-disable-line
 
-export const isTrackable = o => {
+export const isTrackable = o => { // eslint-disable-line
   return [
     '[object Object]',
     '[object Array]',
@@ -45,6 +45,3 @@ export function shallowCopy(o) {
 
   return value
 }
-
-
-

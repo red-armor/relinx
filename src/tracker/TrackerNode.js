@@ -26,7 +26,7 @@ class TrackerNode {
     this.prevSibling = null
     this.nextSibling = null
     this.tracker = null
-    this.id = `__TrackerNode_${count++}__`
+    this.id = `__TrackerNode_${count++}__` // eslint-disable-line
     this.isRevoked = false
 
     this.inScope = false

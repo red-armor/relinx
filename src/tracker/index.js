@@ -22,7 +22,7 @@ const Tracker = ({
   // re-create a top most node
   if (!parentTrackerNode) {
     if (context.trackerNode) {
-      useRevoke && context.trackerNode.revokeUntil(parentTrackerNode)
+      useRevoke && context.trackerNode.revokeUntil(parentTrackerNode) // eslint-disable-line
     }
   } else {
     // if (!context.trackerNode) throw new Error(
@@ -31,10 +31,10 @@ const Tracker = ({
 
     if (parentTrackerNode === context.trackerNode) {
       // Add the first child, for sibling, intersection access is forbidden.
-      useRevoke && parentTrackerNode && parentTrackerNode.revokeLastChild()
+      useRevoke && parentTrackerNode && parentTrackerNode.revokeLastChild() // eslint-disable-line
     } else {
       // add sibling, or create new branch....so `revokeUntil` is required.
-      useRevoke && context.trackerNode && context.trackerNode.revokeUntil(parentTrackerNode)
+      useRevoke && context.trackerNode && context.trackerNode.revokeUntil(parentTrackerNode) // eslint-disable-line
     }
 
     if (context.trackerNode && parentTrackerNode === context.trackerNode.parent) {

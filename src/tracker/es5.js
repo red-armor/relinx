@@ -10,7 +10,7 @@ import {
 import { generateRemarkablePaths } from './path'
 import { trackerNode as contextTrackerNode } from './context'
 
-const peek = (proxy, accessPath) => {
+const peek = (proxy, accessPath) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur) => {
     proxy[TRACKER].isPeekValue = true
     const nextProxy = proxy[cur]
@@ -29,6 +29,14 @@ const getInternalProp = (proxy, props) => {
   }, {})
 }
 
+const createHiddenProperty = (target, prop, value) => {
+  Object.defineProperty(target, prop, {
+    value,
+    enumerable: false,
+    writable: true,
+  })
+}
+
 export function createES5Tracker(target, config, trackerNode) {
   const {
     accessPath = [],
@@ -39,12 +47,12 @@ export function createES5Tracker(target, config, trackerNode) {
   } = config || {}
 
   let isRevoked = false
-  let assertRevokable = () => {
+  const assertRevokable = () => {
     if (!useRevoke) return
     if (isRevoked) {
       throw new Error(
-        "Cannot use a proxy that has been revoked. Did you pass an object " +
-        "to an async process? "
+        'Cannot use a proxy that has been revoked. Did you pass an object '
+        + 'to an async process? '
       )
     }
   }
@@ -79,7 +87,7 @@ export function createES5Tracker(target, config, trackerNode) {
     propertyFromProps: [],
   }
 
-  tracker.reportAccessPath = function(path) {
+  tracker.reportAccessPath = function (path) {
     const tracker = proxy[TRACKER]
     tracker.paths.push(path)
     const parentTrack = tracker.parentTrack
@@ -88,13 +96,13 @@ export function createES5Tracker(target, config, trackerNode) {
     }
   }
 
-  tracker.cleanup = function() {
+  tracker.cleanup = function () {
     proxy[TRACKER].paths = []
     proxy[TRACKER].propertyFromProps = []
   }
 
-  const unlink = function() {
-    const proxy = this
+  const unlink = function () {
+    const proxy = this // eslint-disable-line
     const tracker = proxy[TRACKER]
     return tracker.base
   }
@@ -118,7 +126,7 @@ export function createES5Tracker(target, config, trackerNode) {
     }
   }
 
-  tracker.setRemarkable = function() {
+  tracker.setRemarkable = function () {
     const tracker = proxy[TRACKER]
     const parentTrack = tracker.parentTrack
     if (parentTrack) {
@@ -128,12 +136,10 @@ export function createES5Tracker(target, config, trackerNode) {
     return false
   }
 
-  tracker.getRemarkableFullPaths = function() {
+  tracker.getRemarkableFullPaths = function () {
     const { paths, propertyFromProps } = getInternalProp(proxy, ['paths', 'propertyFromProps'])
 
-    const internalPaths = generateRemarkablePaths(paths).map(path => {
-      return rootPath.concat(path)
-    })
+    const internalPaths = generateRemarkablePaths(paths).map(path => rootPath.concat(path))
     const external = propertyFromProps.map(prop => {
       const { path, source } = prop
       return source[TRACKER].rootPath.concat(path)
@@ -143,7 +149,7 @@ export function createES5Tracker(target, config, trackerNode) {
     return internalPaths.concat(externalPaths)
   }
 
-  tracker.getRemarkablePaths = function() {
+  tracker.getRemarkablePaths = function () {
     const tracker = proxy[TRACKER]
     const { revoke, paths } = tracker
     // revoke()
@@ -170,18 +176,14 @@ export function createES5Tracker(target, config, trackerNode) {
   createHiddenProperty(proxy, 'unlink', unlink)
   createHiddenProperty(proxy, 'rootPath', rootPath)
 
-  each(target, prop => {
-    const desc = Object.getOwnPropertyDescriptor(target, prop)
-    const enumerable = desc.enumerable
-    proxyProperty(proxy, prop, enumerable)
-  })
-
   function proxyProperty(proxy, prop, enumerable) {
     const desc = {
-      enumerable: enumerable,
+      enumerable,
       get() {
         assertRevokable()
-        const { base, proxy: proxyProps, accessPath, reportAccessPath } = this[TRACKER]
+        const {
+          base, proxy: proxyProps, accessPath, reportAccessPath,
+        } = this[TRACKER]
         const value = base[prop]
 
         // For es5, the prop in array index getter is integer; when use proxy,
@@ -196,30 +198,37 @@ export function createES5Tracker(target, config, trackerNode) {
               target: contextTrackerNode.tracker,
             })
             return peek(trackerNode.tracker, nextAccessPath)
-          } else {
-            reportAccessPath(nextAccessPath)
           }
+          reportAccessPath(nextAccessPath)
         }
 
         if (proxyProps[prop]) return proxyProps[prop]
-        if (isTrackable(value)) return (proxyProps[prop] = createES5Tracker(value, {
-          accessPath: nextAccessPath,
-          parentTrack: proxy,
-          rootPath,
-        }, trackerNode))
+        if (isTrackable(value)) {
+          return (proxyProps[prop] = createES5Tracker(value, {
+            accessPath: nextAccessPath,
+            parentTrack: proxy,
+            rootPath,
+          }, trackerNode))
+        }
         return value
-      }
+      },
     }
 
     Object.defineProperty(proxy, prop, desc)
   }
 
+  each(target, prop => {
+    const desc = Object.getOwnPropertyDescriptor(target, prop)
+    const enumerable = desc.enumerable
+    proxyProperty(proxy, prop, enumerable)
+  })
+
   if (Array.isArray(target)) {
     const descriptors = Object.getPrototypeOf([])
     const keys = Object.getOwnPropertyNames(descriptors)
 
-    const handler = (func, context, invokeLength = true) => function() {
-      const args = Array.prototype.slice.call(arguments)
+    const handler = (func, context, invokeLength = true) => function () {
+      const args = Array.prototype.slice.call(arguments) // eslint-disable-line
       assertRevokable()
       const tracker = this[TRACKER]
       if (invokeLength) {
@@ -234,9 +243,8 @@ export function createES5Tracker(target, config, trackerNode) {
               target: contextTrackerNode.tracker,
             })
             return peek(trackerNode.tracker, nextAccessPath)
-          } else {
-            reportAccessPath(nextAccessPath)
           }
+          reportAccessPath(nextAccessPath)
         }
       }
 
@@ -264,12 +272,4 @@ export function createES5Tracker(target, config, trackerNode) {
   }
 
   return proxy
-}
-
-const createHiddenProperty = (target, prop, value) => {
-  Object.defineProperty(target, prop, {
-    value,
-    enumerable: false,
-    writable: true,
-  })
 }
