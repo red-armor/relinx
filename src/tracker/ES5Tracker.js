@@ -8,9 +8,12 @@ function ES5Tracker({
   parentProxy,
   rootPath,
   base,
+  trackerNode,
+  useRevoke,
 }) {
   createHiddenProperty(this, 'id', `ES5Tracker_${count++}`) // eslint-disable-line
 
+  createHiddenProperty(this, 'trackerNode', trackerNode)
   createHiddenProperty(this, 'accessPath', accessPath)
   createHiddenProperty(this, 'rootPath', rootPath)
   createHiddenProperty(this, 'type', Array.isArray(base) ? Type.Array : Type.Object)
@@ -19,10 +22,24 @@ function ES5Tracker({
   createHiddenProperty(this, 'parentProxy', parentProxy)
   createHiddenProperty(this, 'childProxies', {})
 
-  createHiddenProperty(this, 'isPeekValue', false)
+  createHiddenProperty(this, 'isPeeking', false)
   createHiddenProperty(this, 'propProperties', [])
   createHiddenProperty(this, 'paths', [])
-  // this.revoke = () => { isRevoked = true }
+
+  createHiddenProperty(this, 'useRevoke', useRevoke)
+
+  createHiddenProperty(this, 'isRevoked', false)
+  createHiddenProperty(this, 'assertRevoke', function() {
+    const useRevoke = this.getProp('useRevoke')
+    if (!useRevoke) return
+    const isRevoked = this.getProp('isRevoked')
+    if (isRevoked) {
+      throw new Error(
+        'Cannot use a proxy that has been revoked. Did you pass an object '
+        + 'to an async process? '
+      )
+    }
+  })
 }
 
 inherit(ES5Tracker, internalFunctions)

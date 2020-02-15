@@ -1,5 +1,5 @@
-import { createTracker } from '../proxy'
-import { createES5Tracker } from '../es5'
+import createTracker from '../proxy'
+import createES5Tracker from '../es5'
 import { generateRemarkablePaths } from '../path'
 import { TRACKER } from '../commons'
 
@@ -19,12 +19,7 @@ function testTracker(useProxy) {
 
       const tracker = fn(base, { useScope: false })
       const h = tracker.c.f.h
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
 
@@ -37,12 +32,7 @@ function testTracker(useProxy) {
 
       const tracker = fn(base, { useScope: false })
       const { h } = tracker.c.f
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
 
@@ -56,12 +46,8 @@ function testTracker(useProxy) {
       const tracker = fn(base, { useScope: false })
       const f = tracker.c.f
       const h = f.h
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
+
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
 
@@ -76,13 +62,8 @@ function testTracker(useProxy) {
       const f = tracker.c.f
       const h = f.h
       const x = f
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
 
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
 
@@ -98,14 +79,8 @@ function testTracker(useProxy) {
       const h = f.h
       const x = f
 
-      let remarkable
-      if (useProxy) {
-        f.setRemarkable()
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        f[TRACKER].setRemarkable()
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      f.runFn('setRemarkable')
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['c', 'f'], ['c', 'f', 'h']])
     })
   })
@@ -116,12 +91,8 @@ function testTracker(useProxy) {
 
       const tracker = fn(base, { useScope: false })
       const a = tracker[0]
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
+
       expect(remarkable).toEqual([['0']])
     })
 
@@ -129,12 +100,7 @@ function testTracker(useProxy) {
       const base = [{ a: { b: [{ c: 1 }]}}]
       const tracker = fn(base, { useScope: false })
       const c = tracker[0].a.b[0].c
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['0', 'a', 'b', '0', 'c']])
     })
 
@@ -148,9 +114,9 @@ function testTracker(useProxy) {
     //   }
     //   let remarkable
     //   if (useProxy) {
-    //     remarkable = generateRemarkablePaths(tracker.paths)
+    //     remarkable = generateRemarkablePaths(tracker.getProp('paths'))
     //   } else {
-    //     remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
+    //     remarkable = generateRemarkablePaths(tracker.getProp('paths'))
     //   }
     //   expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
     // })
@@ -163,12 +129,7 @@ function testTracker(useProxy) {
         //
       })
 
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
     })
 
@@ -178,12 +139,7 @@ function testTracker(useProxy) {
       const tracker = fn(base, { useScope: false })
       tracker.forEach(item => {})
 
-      let remarkable
-      if (useProxy) {
-        remarkable = generateRemarkablePaths(tracker.paths)
-      } else {
-        remarkable = generateRemarkablePaths(tracker[TRACKER].paths)
-      }
+      const remarkable = generateRemarkablePaths(tracker.getProp('paths'))
       expect(remarkable).toEqual([['2'], ['1'], ['0'], ['length']])
     })
   })

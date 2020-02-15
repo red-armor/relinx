@@ -28,17 +28,6 @@ function createES5Tracker(target, config, trackerNode) {
     rootPath = [],
   } = config || {}
 
-  const isRevoked = false
-  const assertRevokable = () => {
-    if (!useRevoke) return
-    if (isRevoked) {
-      throw new Error(
-        'Cannot use a proxy that has been revoked. Did you pass an object '
-        + 'to an async process? '
-      )
-    }
-  }
-
   if (!isObject(target)) {
     throw new TypeError('Cannot create proxy with a non-object as target or handler')
   }
@@ -50,7 +39,7 @@ function createES5Tracker(target, config, trackerNode) {
       enumerable,
       configurable: false,
       get() {
-        assertRevokable()
+        this.runFn('assertRevoke')
         const base = this.getProp('base')
         const accessPath = this.getProp('accessPath')
         const childProxies = this.getProp('childProxies')
@@ -61,6 +50,7 @@ function createES5Tracker(target, config, trackerNode) {
         const nextAccessPath = accessPath.concat(`${prop}`)
 
         if (!isPeeking) {
+          // for relink return parent prop...
           if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
             const contextProxy = contextTrackerNode.proxy
             const propProperties = contextProxy.getProp('propProperties')
@@ -105,7 +95,7 @@ function createES5Tracker(target, config, trackerNode) {
 
     const handler = (func, context, lengthGetter = true) => function () {
       const args = Array.prototype.slice.call(arguments) // eslint-disable-line
-      assertRevokable()
+      this.runFn('assertRevoke')
       if (lengthGetter) {
         const accessPath = this.getProp('accessPath')
         const isPeeking = this.getProp('isPeeking')
@@ -155,6 +145,8 @@ function createES5Tracker(target, config, trackerNode) {
     parentProxy,
     accessPath,
     rootPath,
+    trackerNode,
+    useRevoke,
   })
 
   createHiddenProperty(proxy, 'getProps', function () {
@@ -179,6 +171,21 @@ function createES5Tracker(target, config, trackerNode) {
   })
   createHiddenProperty(proxy, 'unlink', function () {
     return this.runFn('unlink')
+  })
+  createHiddenProperty(proxy, 'createChild', function() {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+    const target = args[0] || {}
+    const config = args[1] || {}
+    return createES5Tracker(target, {
+      useRevoke,
+      useScope,
+      rootPath,
+      ...config
+    }, trackerNode)
+  })
+  createHiddenProperty(proxy, 'revoke', function() {
+    const useRevoke = this.getProp('useRevoke')
+    if (useRevoke) this.setProp('isRevoked', true)
   })
 
   createHiddenProperty(proxy, TRACKER, tracker)

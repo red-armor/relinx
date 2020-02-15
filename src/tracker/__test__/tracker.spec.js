@@ -1,5 +1,5 @@
-import { createES5Tracker } from '../es5'
-import { createTracker } from '../proxy'
+import createES5Tracker from '../es5'
+import createTracker from '../proxy'
 import { TRACKER } from '../commons'
 
 testTracker(true)
@@ -54,12 +54,8 @@ function testTracker(useProxy) {
       }
 
       const tracker = fn(base, { useScope: false })
-
-      if (useProxy) {
-        expect(tracker.base).toEqual({ a: 1, b: 2, c: 3 })
-      } else {
-        expect(tracker[TRACKER].base).toEqual({ a: 1, b: 2, c: 3 })
-      }
+      const baseValue = tracker.getProp('base')
+      expect(baseValue).toEqual({ a: 1, b: 2, c: 3 })
     })
 
     test(`${decorateDesc("accessPath", useProxy)}`, () => {
@@ -75,16 +71,10 @@ function testTracker(useProxy) {
       const b = tracker.b
       const c = tracker.c
       const d = tracker.c.d
-
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['a'], ['b'], ['c'], ['c'], ['c', 'd']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['a'], ['b'], ['c'], ['c'], ['c', 'd']
-        ])
-      }
+      const paths = tracker.getProp('paths')
+      expect(paths).toEqual([
+        ['a'], ['b'], ['c'], ['c'], ['c', 'd']
+      ])
     })
 
     test(`${decorateDesc("accessPath: with spread value", useProxy)}`, () => {
@@ -100,16 +90,11 @@ function testTracker(useProxy) {
       const b = tracker.b
       const c = tracker.c
       const { d } = c
+      const paths = tracker.getProp('paths')
 
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd']
-        ])
-      }
+      expect(paths).toEqual([
+        ['a'], ['b'], ['c'], ['c', 'd']
+      ])
     })
 
     test(`${decorateDesc("accessPath: intermediate trackable value access should be tracked", useProxy)}`, () => {
@@ -127,16 +112,11 @@ function testTracker(useProxy) {
       const c = tracker.c
       const { d } = c
       const cd = tracker.c.d
+      const paths = tracker.getProp('paths')
 
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd'], ['c'], ['c', 'd']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd'], ['c'], ['c', 'd']
-        ])
-      }
+      expect(paths).toEqual([
+        ['a'], ['b'], ['c'], ['c', 'd'], ['c'], ['c', 'd']
+      ])
     })
 
     test(`${decorateDesc("accessPath: parent value only be access once", useProxy)}`, () => {
@@ -148,21 +128,15 @@ function testTracker(useProxy) {
       }
 
       const tracker = fn(base, { useScope: false })
-
       const a = tracker.a
       const b = tracker.b
       const c = tracker.c
       const { d, h } = c
+      const paths = tracker.getProp('paths')
 
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd'], ['c', 'h']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['a'], ['b'], ['c'], ['c', 'd'], ['c', 'h']
-        ])
-      }
+      expect(paths).toEqual([
+        ['a'], ['b'], ['c'], ['c', 'd'], ['c', 'h']
+      ])
     })
 
     test(`${decorateDesc("accessPath: parent value only be access once", useProxy)}`, () => {
@@ -175,16 +149,10 @@ function testTracker(useProxy) {
 
       const tracker = fn(base, { useScope: false })
       const h = tracker.c.h
-
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['c'], ['c', 'h']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['c'], ['c', 'h']
-        ])
-      }
+      const paths = tracker.getProp('paths')
+      expect(paths).toEqual([
+        ['c'], ['c', 'h']
+      ])
     })
 
     test(`${decorateDesc('with intermediate value and use it', useProxy)}`, () => {
@@ -198,19 +166,13 @@ function testTracker(useProxy) {
       const f = tracker.c.f
       const h = f.h
       const x = f
-
-      if (useProxy) {
-        expect(tracker.paths).toEqual([
-          ['c'], ['c', 'f'], ['c', 'f', 'h']
-        ])
-      } else {
-        expect(tracker[TRACKER].paths).toEqual([
-          ['c'], ['c', 'f'], ['c', 'f', 'h']
-        ])
-      }
+      const paths = tracker.getProp('paths')
+      expect(paths).toEqual([
+        ['c'], ['c', 'f'], ['c', 'f', 'h']
+      ])
     })
 
-    test(`${decorateDesc('getRemarkablePaths', useProxy)}`, () => {
+    test(`${decorateDesc('getRemarkableFullPaths', useProxy)}`, () => {
       const base = {
         a: 1,
         b: 2,
@@ -221,28 +183,10 @@ function testTracker(useProxy) {
       const f = tracker.c.f
       const h = f.h
       const x = f
+      const remarkable = tracker.runFn('getRemarkableFullPaths')
 
-      const remarkable = tracker.getRemarkablePaths()
       expect(remarkable).toEqual([['c', 'f', 'h']])
     })
-
-    // test(`${decorateDesc('`revoke` is called after getRemarkablePaths', useProxy)}`, () => {
-    //   const base = {
-    //     a: 1,
-    //     b: 2,
-    //     c: { d: 3, f: { h: 4 }}
-    //   }
-
-    //   const tracker = fn(base)
-    //   const f = tracker.c.f
-    //   const h = f.h
-    //   const x = f
-
-    //   tracker.getRemarkablePaths()
-    //   expect(() => {
-    //     const b = tracker.b
-    //   }).toThrowError()
-    // })
   })
 
   describe('create array object', () => {
@@ -252,19 +196,14 @@ function testTracker(useProxy) {
         b: 2,
         c: 3,
       }]
-
       const tracker = fn(base, { useScope: false })
+      const baseValue = tracker.getProp('base')
 
-      if (useProxy) {
-        expect(tracker[0].base).toEqual({ a: 1, b: 2, c: 3 })
-      } else {
-        expect(tracker[0][TRACKER].base).toEqual({ a: 1, b: 2, c: 3 })
-      }
+      expect(baseValue).toEqual([{ a: 1, b: 2, c: 3 }])
     })
 
     test(`${decorateDesc('access index', useProxy)}`, () => {
       const base = [4, 5, 6]
-
       const tracker = fn(base, { useScope: false })
 
       expect(tracker[0]).toBe(4)

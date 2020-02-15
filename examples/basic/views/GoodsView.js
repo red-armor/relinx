@@ -6,6 +6,7 @@ const GoodsView = () => {
   const [state] = useRelinx('goods')
   const { listData } = state
   const updateCount = useRef(0)
+  // console.log('list ', listData)
 
   updateCount.current = updateCount.current + 1
   const spanStyle = useRef({

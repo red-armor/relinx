@@ -1,4 +1,4 @@
-import { createES5Tracker } from '../es5'
+import createES5Tracker from '../es5'
 import { TRACKER } from '../commons'
 
 describe("create es5 tracker", () => {
