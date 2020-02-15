@@ -31,5 +31,5 @@ export default storeName => {
 
   const { trackerNode } = getData()
 
-  return [trackerNode.tracker, dispatch]
+  return [trackerNode.proxy, dispatch]
 }

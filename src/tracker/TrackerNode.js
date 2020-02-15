@@ -1,6 +1,6 @@
 import context from './context'
-import { createES5Tracker } from './es5'
-import { createTracker } from './proxy'
+import createES5Tracker from './es5'
+import createTracker from './proxy'
 
 let count = 0
 
@@ -25,8 +25,8 @@ class TrackerNode {
     this.parent = parent
     this.prevSibling = null
     this.nextSibling = null
-    this.tracker = null
-    this.id = `__TrackerNode_${count++}__`
+    this.proxy = null
+    this.id = `__TrackerNode_${count++}__` // eslint-disable-line
     this.isRevoked = false
 
     this.inScope = false
@@ -48,8 +48,9 @@ class TrackerNode {
   }
 
   enterTrackerScope() {
-    const fn = this.useProxy ? createTracker : createES5Tracker
-    this.tracker = fn(
+    this.enterContext()
+    const Fn = this.useProxy ? createTracker : createES5Tracker
+    this.proxy = new Fn(
       this.base,
       {
         useRevoke: this.useRevoke,
@@ -58,8 +59,6 @@ class TrackerNode {
       },
       this,
     )
-
-    this.enterContext()
   }
 
   enterContext() {
@@ -149,7 +148,7 @@ class TrackerNode {
 
   revokeSelf() {
     if (!this.isRevoked) {
-      this.tracker.revoke()
+      this.proxy.revoke()
       this.isRevoked = true
     }
 
@@ -165,7 +164,7 @@ class TrackerNode {
    */
   revoke() {
     if (this.parent) {
-      this.tracker.revoke()
+      this.proxy.revoke()
       context.trackerNode = this.parent
     }
   }

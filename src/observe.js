@@ -18,16 +18,27 @@ const Helper = ({ addListener }) => {
   return null
 }
 
-const DEBUG = true
+const DEBUG = false
 
-export default (WrappedComponent) => {
+const unmount = {}
+const rerender = {}
+
+const diff = (componentName, patcher, proxy) => {
+  const key1 = Object.keys(unmount)
+  if (key1.indexOf(componentName) !== -1) {
+    infoLog('invalid re-render', componentName, patcher, proxy)
+  }
+}
+
+export default WrappedComponent => {
   function NextComponent(props) {
     const state = useRef(0)
+    const shadowState = useRef(0)
     const [_, setState] = useState(state.current)
     const storeName = useRef()
     const isHydrated = useRef(false)
     const isInit = useRef(true)
-    // const occupied = useRef(false)
+    const patcherUpdated = useRef(0)
 
     const {
       application,
@@ -39,19 +50,24 @@ export default (WrappedComponent) => {
       ...rest
     } = useContext(context)
 
-    const incrementCount = useRef(count++)
+    const incrementCount = useRef(count++)  // eslint-disable-line
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`
-    const autoRunFn = () => {
-      state.current = state.current + 1
-      setState(state.current)
-    }
     const patcher = useRef()
     const trackerNode = useRef()
+
+    shadowState.current += 1
+
+    const autoRunFn = () => {
+      state.current += 1
+      setState(state.current)
+      rerender[componentName] = patcher.current
+      diff(componentName, patcher.current, trackerNode.current)
+    }
 
     useEffect(() => {
       if (!DEBUG) return
       if (isInit.current) {
-        infoLog('[Observe]', `${componentName} is inited`)
+        infoLog('[Observe]', `${componentName} is init`)
         isInit.current = false
       } else {
         infoLog('[Observe]', `${componentName} is re-rendered`)
@@ -85,54 +101,46 @@ export default (WrappedComponent) => {
     }
 
     // destroy `patcher` when component un-mount.
-    useEffect(() => {
-      return () => {
-        patcher.current && patcher.current.destroy()
-      }
+    useEffect(() => () => {
+      if (patcher.current) patcher.current.destroyPatcher()
+      unmount[componentName] = patcher.current
     }, [])
-
-    // useEffect(() => {
-    //   return () => {
-    //     if (useRelinkMode && (!name || isHydrated.current)) {
-    //       // onRelink mode... clean up original tracker
-    //       trackerNode.current.tracker.cleanup()
-    //     }
-    //   }
-    // })
 
     const getData = useCallback(() => ({
       trackerNode: trackerNode.current,
-      // occupied: occupied.current,
     }), [])
 
     // onUpdate, `relink` relative paths value....
-    if (trackerNode.current.tracker) {
-      const tracker = trackerNode.current.tracker
-      const {
-        propertyFromProps = [],
-        paths = []
-      } = tracker.getInternalPropExported(['propertyFromProps', 'paths'])
+    if (trackerNode.current.proxy) {
+      const proxy = trackerNode.current.proxy
+      // 为什么如果进行remove的话，`propProperties`已经将旧key删除了呢。。。
+      const propProperties = proxy.getProp('propProperties')
 
-      propertyFromProps.forEach(prop => {
-        const { path, source } = prop
-        const currentBase = application.getStoreData(source.rootPath[0])
-        source.relink(path, currentBase)
+      propProperties.forEach(prop => {
+        try {
+          const { source } = prop
+          const rootPath = source.getProp('rootPath')
+          const storeName = rootPath[0]
+          const currentBase = application.getStoreData(storeName)
+          source.runFn('rebase', currentBase)
+        } catch (err) {
+          infoLog('[observe rebase propProperties]', err)
+        }
       })
 
       if (useRelinkMode) {
         if (storeName.current) {
           const base = application.getStoreData(storeName.current)
-          paths.forEach(path => {
-            tracker.relink(path, base)
-          })
+          proxy.runFn('rebase', base)
         }
       }
 
-      trackerNode.current.tracker.cleanup()
+      trackerNode.current.proxy.runFn('cleanup')
     }
 
     // only run one time
     const attachStoreName = useCallback(name => {
+      // patcher.current.teardown()
       // occupied.current = true
       if (useRelinkMode) {
         if (name && !isHydrated.current) {
@@ -154,9 +162,13 @@ export default (WrappedComponent) => {
     }, [])
 
     const addListener = useCallback(() => {
-      const paths = trackerNode.current.tracker.getRemarkableFullPaths()
+      patcher.current.appendTo(parentPatcher) // maybe not needs
+      if (!trackerNode.current.proxy) return
+
+      const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths')
       patcher.current.update({ paths })
       application.addPatcher(patcher.current)
+      patcherUpdated.current += 1
       trackerNode.current.leaveContext()
     }, [])
 
@@ -188,4 +200,5 @@ export default (WrappedComponent) => {
     || 'ObservedComponent'
 
   return NextComponent
+  // return React.memo(props => <NextComponent {...props} />, () => true)
 }

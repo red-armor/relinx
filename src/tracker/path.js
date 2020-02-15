@@ -22,7 +22,7 @@ export const generateRemarkablePaths = paths => {
       if (isConsecutive) {
         accessMap[joinedPath] = count + 1
         path.pop()
-        continue
+        continue // eslint-disable-line
       }
 
       if (!count) {

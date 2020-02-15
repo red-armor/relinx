@@ -22,11 +22,12 @@ const combineReducers = reducers => state => (_, actions) => {
         changedValue,
       })
     } else {
-      console.warn(`Do not have action '${actionType}'`)
+      console.warn(`Do not have action '${actionType}'`) // eslint-disable-line
     }
 
     return changedValueGroup
   }, [])
+
   if (changedValues.length) return changedValues
   return []
 }

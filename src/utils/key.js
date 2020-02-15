@@ -1,12 +1,12 @@
 // https://github.com/facebook/draft-js/blob/master/src/model/keys/generateRandomKey.js
 
 const seenKeys = {};
-const MULTIPLIER = Math.pow(2, 24);
+const MULTIPLIER = Math.pow(2, 24) // eslint-disable-line
 
 export const generateNamespaceKey = () => {
   let key
 
-  while (key === undefined || seenKeys.hasOwnProperty(key) || !isNaN(+key)) {
+  while (key === undefined || seenKeys.hasOwnProperty(key) || !isNaN(+key)) { // eslint-disable-line
     key = Math.floor(Math.random() * MULTIPLIER).toString(32);
   }
 

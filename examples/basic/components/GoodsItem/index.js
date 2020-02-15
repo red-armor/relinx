@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { useDispatch, observe, useRelinx } from 'relinx'
 
 const styles = {
@@ -44,6 +44,14 @@ const GoodsItem = props => {
   const { index } = props
   const [dispatch] = useDispatch()
   const { data: { title, id, count } } = props
+  const updateCount = useRef(0)
+
+  const spanStyle = useRef({
+    color: 'grey',
+    marginLeft: '20px',
+  })
+
+  updateCount.current = updateCount.current + 1
 
   const increment = useCallback(() => {
     dispatch({
@@ -61,7 +69,13 @@ const GoodsItem = props => {
 
   return (
     <div style={styles.container}>
+
       <span style={styles.title}>{title}</span>
+
+      <span style={spanStyle.current}>
+        {`(item update ${updateCount.current})`}
+      </span>
+
       <div style={styles.counter}>
         <button style={styles.addon} onClick={increment}>+</button>
         <span style={styles.itemCount}>{count}</span>

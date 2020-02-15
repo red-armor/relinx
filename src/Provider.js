@@ -1,4 +1,9 @@
-import React, { useMemo, useRef, useReducer, useEffect } from 'react'
+import React, {
+  useMemo,
+  useRef,
+  useReducer,
+  useEffect,
+} from 'react'
 import context from './context'
 import Application from './Application'
 import { generateNamespaceKey } from './utils/key'
@@ -7,7 +12,7 @@ export default ({
   store,
   children,
   namespace,
-  useProxy = false,
+  useProxy = true,
   useRelinkMode = true,
 }) => {
   const { initialState, createReducer, createDispatch } = store
@@ -22,7 +27,7 @@ export default ({
   const combinedReducers = useMemo(() => createReducer(initialState), [])
   // no need to update value every time.
   const [value, setValue] = useReducer(combinedReducers, [])
-  let setState = setValue
+  const setState = setValue
   const dispatch = useMemo(() => createDispatch(setState), [])
 
   useEffect(() => {

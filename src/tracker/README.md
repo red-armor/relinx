@@ -23,4 +23,3 @@ function useTrack(fn) {
   return new Proxy({}, handler)
 }
 ```
-

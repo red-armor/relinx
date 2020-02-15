@@ -1,5 +1,6 @@
 import toString from './toString'
 
+const isPresent = o => typeof o !== 'undefined'
 const isObject = obj => toString(obj) === '[object Object]'
 const isArray = obj => toString(obj) === '[object Array]'
 
@@ -27,4 +28,5 @@ export {
   isMutable,
   isTypeEqual,
   hasEmptyItem,
+  isPresent,
 }
