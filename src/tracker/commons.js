@@ -60,7 +60,7 @@ export const createHiddenProperty = (target, prop, value) => {
   })
 }
 
-export const updateDescriptorToHidden = (target, prop) => {
+export const hideProperty = (target, prop) => {
   Object.defineProperty(target, prop, {
     enumerable: false,
     configurable: false,

@@ -10,6 +10,7 @@ function ProxyTracker({
   base,
   trackerNode,
   useRevoke,
+  useScope,
 }) {
   createHiddenProperty(this, 'id', `ProxyTracker_${count++}`) // eslint-disable-line
 
@@ -27,6 +28,7 @@ function ProxyTracker({
   createHiddenProperty(this, 'paths', [])
 
   createHiddenProperty(this, 'useRevoke', useRevoke)
+  createHiddenProperty(this, 'useScope', useScope)
 }
 
 inherit(ProxyTracker, internalFunctions)

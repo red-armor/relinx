@@ -40,6 +40,7 @@ function createES5Tracker(target, config, trackerNode) {
       configurable: false,
       get() {
         this.runFn('assertRevoke')
+        this.runFn('assertScope')
         const base = this.getProp('base')
         const accessPath = this.getProp('accessPath')
         const childProxies = this.getProp('childProxies')
@@ -76,6 +77,8 @@ function createES5Tracker(target, config, trackerNode) {
           accessPath: nextAccessPath,
           parentProxy: proxy,
           rootPath,
+          useRevoke,
+          useScope,
         }, trackerNode))
       },
     }
@@ -147,6 +150,7 @@ function createES5Tracker(target, config, trackerNode) {
     rootPath,
     trackerNode,
     useRevoke,
+    useScope,
   })
 
   createHiddenProperty(proxy, 'getProps', function () {

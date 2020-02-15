@@ -147,15 +147,14 @@ class TrackerNode {
   }
 
   revokeSelf() {
-    if (!this.isRevoked) {
-      this.proxy.revoke()
-      this.isRevoked = true
-    }
-
     if (this.children.length) {
       this.children.forEach(child => {
         if (!child.isRevoked) child.revokeSelf()
       })
+    }
+    if (!this.isRevoked) {
+      this.proxy.revoke()
+      this.isRevoked = true
     }
   }
 

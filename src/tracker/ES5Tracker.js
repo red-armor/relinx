@@ -10,6 +10,7 @@ function ES5Tracker({
   base,
   trackerNode,
   useRevoke,
+  useScope,
 }) {
   createHiddenProperty(this, 'id', `ES5Tracker_${count++}`) // eslint-disable-line
 
@@ -27,6 +28,7 @@ function ES5Tracker({
   createHiddenProperty(this, 'paths', [])
 
   createHiddenProperty(this, 'useRevoke', useRevoke)
+  createHiddenProperty(this, 'useScope', useScope)
 
   createHiddenProperty(this, 'isRevoked', false)
   createHiddenProperty(this, 'assertRevoke', function() {
