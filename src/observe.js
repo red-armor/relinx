@@ -122,7 +122,7 @@ export default WrappedComponent => {
           const rootPath = source.getProp('rootPath')
           const storeName = rootPath[0]
           const currentBase = application.getStoreData(storeName)
-          source.runFn('rebase', currentBase)
+          source.runFn('relinkBase', currentBase)
         } catch (err) {
           infoLog('[observe rebase propProperties]', err)
         }

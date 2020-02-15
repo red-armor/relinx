@@ -28,17 +28,6 @@ function createTracker(target, config, trackerNode) {
     rootPath = [],
   } = config || {}
 
-  const isRevoked = false
-  const assertRevokable = () => {
-    if (!useRevoke) return
-    if (isRevoked) {
-      throw new Error(
-        'Cannot use a proxy that has been revoked. Did you pass an object '
-        + 'to an async process? '
-      )
-    }
-  }
-
   if (!isObject(target)) {
     throw new TypeError('Cannot create proxy with a non-object as target or handler')
   }
@@ -47,11 +36,13 @@ function createTracker(target, config, trackerNode) {
 
   const internalProps = [
     TRACKER,
+    'revoke',
     'runFn',
     'unlink',
     'getProp',
     'setProp',
     'getProps',
+    'createChild',
   ]
 
   // can not use this in handler, should be `target`
@@ -59,21 +50,20 @@ function createTracker(target, config, trackerNode) {
     get: (target, prop, receiver) => {
       if (prop === TRACKER) return Reflect.get(target, prop, receiver)
       // assertScope(trackerNode, contextTrackerNode)
-      const tracker = target[TRACKER]
+      const base = target.getProp('base')
 
       // refer to immer...
       // if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
-      if (isInternalPropAccessed || !hasOwnProperty(tracker.base, prop)) {
+      if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
         return Reflect.get(target, prop, receiver)
       }
       const accessPath = target.getProp('accessPath')
       const nextAccessPath = accessPath.concat(prop)
       const isPeeking = target.getProp('isPeeking')
 
-      // const accessPath = tracker.accessPath.concat(prop)
-
       if (!isPeeking) {
+        // for relink return parent prop...
         if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
           const contextProxy = contextTrackerNode.proxy
           const propProperties = contextProxy.getProp('propProperties')
@@ -88,7 +78,6 @@ function createTracker(target, config, trackerNode) {
         target.runFn('reportAccessPath', nextAccessPath)
       }
       const childProxies = target.getProp('childProxies')
-      const base = target.getProp('base')
       const value = base[prop]
 
       if (!isTrackable(value)) return value
@@ -112,6 +101,8 @@ function createTracker(target, config, trackerNode) {
     parentProxy,
     accessPath,
     rootPath,
+    trackerNode,
+    useRevoke,
   })
 
   const { proxy, revoke } = Proxy.revocable(copy, handler)
@@ -138,6 +129,21 @@ function createTracker(target, config, trackerNode) {
   })
   createHiddenProperty(proxy, 'unlink', function () {
     return this.runFn('unlink')
+  })
+  createHiddenProperty(proxy, 'createChild', function() {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+    const target = args[0] || {}
+    const config = args[1] || {}
+    return createTracker(target, {
+      useRevoke,
+      useScope,
+      rootPath,
+      ...config
+    }, trackerNode)
+  })
+  createHiddenProperty(proxy, 'revoke', function() {
+    const useRevoke = this.getProp('useRevoke')
+    if (useRevoke) revoke()
   })
 
   createHiddenProperty(proxy, TRACKER, tracker)

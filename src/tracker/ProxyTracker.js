@@ -8,9 +8,12 @@ function ProxyTracker({
   parentProxy,
   rootPath,
   base,
+  trackerNode,
+  useRevoke,
 }) {
   createHiddenProperty(this, 'id', `ProxyTracker_${count++}`) // eslint-disable-line
 
+  createHiddenProperty(this, 'trackerNode', trackerNode)
   createHiddenProperty(this, 'accessPath', accessPath)
   createHiddenProperty(this, 'rootPath', rootPath)
   createHiddenProperty(this, 'type', Array.isArray(base) ? Type.Array : Type.Object)
@@ -19,10 +22,11 @@ function ProxyTracker({
   createHiddenProperty(this, 'parentProxy', parentProxy)
   createHiddenProperty(this, 'childProxies', {})
 
-  createHiddenProperty(this, 'isPeekValue', false)
+  createHiddenProperty(this, 'isPeeking', false)
   createHiddenProperty(this, 'propProperties', [])
   createHiddenProperty(this, 'paths', [])
-  // this.revoke = () => { isRevoked = true }
+
+  createHiddenProperty(this, 'useRevoke', useRevoke)
 }
 
 inherit(ProxyTracker, internalFunctions)

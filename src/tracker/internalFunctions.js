@@ -1,4 +1,11 @@
+import invariant from 'invariant'
+import {
+  isTrackable,
+  TRACKER,
+  updateDescriptorToHidden
+} from './commons'
 import { generateRemarkablePaths } from './path'
+import { trackerNode as contextTrackerNode } from './context'
 
 const peek = (proxy, accessPath) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur) => {
@@ -11,6 +18,23 @@ const peek = (proxy, accessPath) => { // eslint-disable-line
 
 function internalFunctions() {}
 const proto = internalFunctions.prototype
+
+proto.assertLink = function(fnName) {
+  const proxy = this
+  const trackerNode = proxy.getProp('trackerNode')
+
+  invariant(
+    trackerNode,
+    `You should not use \`${fnName}\` method with pure \`proxy\` object.\n` +
+    'which should be bind with an `trackerNode` object'
+  )
+
+  invariant(
+    contextTrackerNode !== trackerNode,
+    `\`${fnName}\` method is used to update \`proxy\` object from upstream.\n` +
+    'So it is not meaning to link proxy in current trackerNode scope'
+  )
+}
 
 proto.reportAccessPath = function (path) {
   const proxy = this // eslint-disable-line
@@ -34,6 +58,8 @@ proto.unlink = function () {
 
 proto.relink = function (path, baseValue) {
   try {
+    this.runFn('assertLink', 'relink')
+
     const proxy = this // eslint-disable-line
     let copy = path.slice()
     let last = copy.pop()
@@ -60,25 +86,31 @@ proto.relink = function (path, baseValue) {
 }
 
 proto.relinkProp = function (prop, newValue) {
+  this.runFn('assertLink', 'relinkProp')
+
   const proxy = this // eslint-disable-line
   const base = proxy.getProp('base')
-  // const childProxies = proxy.getProp('childProxies')
-  // const rootPath = proxy.getProp('rootPath')
-  // const accessPath = proxy.getProp('accessPath')
+  const childProxies = proxy.getProp('childProxies')
+  const accessPath = proxy.getProp('accessPath')
 
   if (Array.isArray(base)) {
     proxy.setProp('base', base.filter(v => v))
   }
-  base[prop] = newValue
+  // proxy.setProp('base', )
+  proxy.getProp('base')[prop] = newValue
 
-  // if (isTrackable(newValue)) {
-  // childProxies[prop] = createTracker(newValue, {
-  //   // do not forget `prop` param
-  //   accessPath: accessPath.concat(prop),
-  //   parentTrack: proxy,
-  //   rootPath,
-  // }, trackerNode)
-  // }
+
+  if (isTrackable(newValue)) {
+    childProxies[prop] = proxy.createChild(newValue, {
+      accessPath: accessPath.concat(prop),
+      parentProxy: proxy,
+    })
+  }
+}
+
+proto.relinkBase = function (baseValue) {
+  this.runFn('assertLink', 'rebase')
+  this.runFn('rebase', baseValue)
 }
 
 proto.rebase = function (baseValue) {
@@ -115,37 +147,14 @@ proto.getRemarkableFullPaths = function () {
   return internalPaths.concat(externalPaths)
 }
 
-Object.defineProperty(proto, 'reportAccessPath', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'cleanup', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'unlink', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'relink', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'relinkProp', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'setRemarkable', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'getRemarkableFullPaths', {
-  enumerable: false,
-  configurable: false,
-})
-Object.defineProperty(proto, 'rebase', {
-  enumerable: false,
-  configurable: false,
-})
+updateDescriptorToHidden(proto, 'reportAccessPath')
+updateDescriptorToHidden(proto, 'cleanup')
+updateDescriptorToHidden(proto, 'unlink')
+updateDescriptorToHidden(proto, 'relink')
+updateDescriptorToHidden(proto, 'relinkBase')
+updateDescriptorToHidden(proto, 'relinkProp')
+updateDescriptorToHidden(proto, 'setRemarkable')
+updateDescriptorToHidden(proto, 'getRemarkableFullPaths')
+updateDescriptorToHidden(proto, 'rebase')
 
 export default internalFunctions

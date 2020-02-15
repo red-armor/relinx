@@ -16,7 +16,7 @@ const store = createStore({
 }, applyMiddleware(thunk, logger))
 
 const Basic = () => (
-  <Provider store={store}>
+  <Provider store={store} useProxy={false}>
     <App />
   </Provider>
 )

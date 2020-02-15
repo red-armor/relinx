@@ -36,6 +36,7 @@ const ObservedItem = observe(Item)
 const Counter = () => {
   const [state, dispatch] = useRelinx('counterWithObserveItem')
   const { items, count } = state
+  console.log('state ', state)
 
   const increment = useCallback(() => {
     dispatch({ type: 'counterWithObserveItem/increment' })

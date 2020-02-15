@@ -59,3 +59,10 @@ export const createHiddenProperty = (target, prop, value) => {
     writable: true,
   })
 }
+
+export const updateDescriptorToHidden = (target, prop) => {
+  Object.defineProperty(target, prop, {
+    enumerable: false,
+    configurable: false,
+  })
+}

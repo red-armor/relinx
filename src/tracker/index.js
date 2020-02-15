@@ -1,7 +1,7 @@
-// import canIUseProxy from './utils/canIUseProxy'
 import { canIUseProxy, TRACKER } from './commons'
 import context from './context'
 import TrackerNode from './TrackerNode'
+import invariant from 'invariant'
 
 /**
  * resolve `reactivePaths`, and wrap `autoRunFunc`
@@ -11,10 +11,20 @@ const Tracker = ({
   base,
   parent,
   useProxy = true,
-  useRevoke = true,
+  useRevoke = false,
   useScope = true,
   rootPath = [],
 }) => {
+  const assertAccessibility = (useScope, useRevoke) => {
+    invariant(
+      useRevoke !== useScope,
+      '`useRevoke` or `useScope` should not be equal; and one must be true' +
+      'If you do not have any idea, please leave to use default value.'
+    )
+  }
+
+  assertAccessibility(useScope, useRevoke)
+
   const verifiedUseProxy = canIUseProxy() && useProxy
   const parentTrackerNode = typeof parent !== 'undefined' ? parent : context.trackerNode
   let isSibling = false
@@ -25,10 +35,6 @@ const Tracker = ({
       useRevoke && context.trackerNode.revokeUntil(parentTrackerNode) // eslint-disable-line
     }
   } else {
-    // if (!context.trackerNode) throw new Error(
-    //   'Maybe you are assign an invalid `parent`, which should define first'
-    // )
-
     if (parentTrackerNode === context.trackerNode) {
       // Add the first child, for sibling, intersection access is forbidden.
       useRevoke && parentTrackerNode && parentTrackerNode.revokeLastChild() // eslint-disable-line
