@@ -12,8 +12,8 @@ const peek = (proxy, accessPath) => { // eslint-disable-line
 function internalFunctions() {}
 const proto = internalFunctions.prototype
 
-proto.reportAccessPath = function(path) {
-  const proxy = this
+proto.reportAccessPath = function (path) {
+  const proxy = this // eslint-disable-line
   const paths = proxy.getProp('paths')
   const parentProxy = proxy.getProp('parentProxy')
   paths.push(path)
@@ -21,8 +21,8 @@ proto.reportAccessPath = function(path) {
   parentProxy.runFn('reportAccessPath', path)
 }
 
-proto.cleanup = function() {
-  const proxy = this
+proto.cleanup = function () {
+  const proxy = this // eslint-disable-line
   proxy.setProp('paths', [])
   proxy.setProp('propProperties', [])
 }
@@ -32,9 +32,9 @@ proto.unlink = function () {
   return proxy.getProp('base')
 }
 
-proto.relink = function(path, baseValue) {
+proto.relink = function (path, baseValue) {
   try {
-    const proxy = this
+    const proxy = this // eslint-disable-line
     let copy = path.slice()
     let last = copy.pop()
     const len = path.length
@@ -55,12 +55,12 @@ proto.relink = function(path, baseValue) {
     const nextProxy = peek(proxy, copy)
     nextProxy.relinkProp(last, nextBaseValue)
   } catch (err) {
-    infoLog('[proxy relink issue]', path, baseValue, err)
+    // infoLog('[proxy relink issue]', path, baseValue, err)
   }
 }
 
-proto.relinkProp = function(prop, newValue) {
-  const proxy = this
+proto.relinkProp = function (prop, newValue) {
+  const proxy = this // eslint-disable-line
   const base = proxy.getProp('base')
   // const childProxies = proxy.getProp('childProxies')
   // const rootPath = proxy.getProp('rootPath')
@@ -71,36 +71,36 @@ proto.relinkProp = function(prop, newValue) {
   }
   base[prop] = newValue
 
-  if (isTrackable(newValue)) {
-    // childProxies[prop] = createTracker(newValue, {
-    //   // do not forget `prop` param
-    //   accessPath: accessPath.concat(prop),
-    //   parentTrack: proxy,
-    //   rootPath,
-    // }, trackerNode)
-  }
+  // if (isTrackable(newValue)) {
+  // childProxies[prop] = createTracker(newValue, {
+  //   // do not forget `prop` param
+  //   accessPath: accessPath.concat(prop),
+  //   parentTrack: proxy,
+  //   rootPath,
+  // }, trackerNode)
+  // }
 }
 
-proto.rebase = function(baseValue) {
+proto.rebase = function (baseValue) {
   try {
-    const proxy = this
+    const proxy = this // eslint-disable-line
     proxy.setProp('base', baseValue)
-  } catch(err) {
-    infoLog('[proxy] rebase ', err)
+  } catch (err) {
+    // infoLog('[proxy] rebase ', err)
   }
 }
 
 proto.setRemarkable = function () {
-  const proxy = this
+  const proxy = this // eslint-disable-line
   const accessPath = proxy.getProp('accessPath')
   const parentProxy = proxy.getProp('parentProxy')
   if (!parentProxy) return false
-  parentProxy.runFn(reportAccessPath, accessPath)
+  parentProxy.runFn('reportAccessPath', accessPath)
   return true
 }
 
-proto.getRemarkableFullPaths = function() {
-  const proxy = this
+proto.getRemarkableFullPaths = function () {
+  const proxy = this // eslint-disable-line
   const paths = proxy.getProp('paths')
   const propProperties = proxy.getProp('propProperties')
   const rootPath = proxy.getProp('rootPath')

@@ -49,8 +49,8 @@ class TrackerNode {
 
   enterTrackerScope() {
     this.enterContext()
-    const fn = this.useProxy ? createTracker : createES5Tracker
-    this.proxy = new fn(
+    const Fn = this.useProxy ? createTracker : createES5Tracker
+    this.proxy = new Fn(
       this.base,
       {
         useRevoke: this.useRevoke,

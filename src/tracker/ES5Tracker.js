@@ -3,13 +3,13 @@ import { inherit, Type, createHiddenProperty } from './commons'
 
 let count = 0
 
-function ES5Tracker ({
+function ES5Tracker({
   accessPath,
   parentProxy,
   rootPath,
   base,
 }) {
-  createHiddenProperty(this, 'id', `ES5Tracker_${count++}`)
+  createHiddenProperty(this, 'id', `ES5Tracker_${count++}`) // eslint-disable-line
 
   createHiddenProperty(this, 'accessPath', accessPath)
   createHiddenProperty(this, 'rootPath', rootPath)

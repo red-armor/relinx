@@ -49,7 +49,7 @@ export function shallowCopy(o) {
 export const inherit = (subClass, superClass) => {
   subClass.prototype = Object.create(superClass.prototype)
   subClass.prototype.constructor = subClass
-  subClass.__proto__ = superClass
+  subClass.__proto__ = superClass // eslint-disable-line
 }
 
 export const createHiddenProperty = (target, prop, value) => {

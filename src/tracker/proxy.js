@@ -28,7 +28,7 @@ function createTracker(target, config, trackerNode) {
     rootPath = [],
   } = config || {}
 
-  let isRevoked = false
+  const isRevoked = false
   const assertRevokable = () => {
     if (!useRevoke) return
     if (isRevoked) {
@@ -48,6 +48,7 @@ function createTracker(target, config, trackerNode) {
   const internalProps = [
     TRACKER,
     'runFn',
+    'unlink',
     'getProp',
     'setProp',
     'getProps',
@@ -58,7 +59,7 @@ function createTracker(target, config, trackerNode) {
     get: (target, prop, receiver) => {
       if (prop === TRACKER) return Reflect.get(target, prop, receiver)
       // assertScope(trackerNode, contextTrackerNode)
-      let tracker = target[TRACKER]
+      const tracker = target[TRACKER]
 
       // refer to immer...
       // if (Array.isArray(tracker)) target = tracker[0]
@@ -97,45 +98,46 @@ function createTracker(target, config, trackerNode) {
       // be replaced
       if (childProxy && childProxy.base === value) {
         return childProxy
-      } else {
-        return (childProxies[prop] = createTracker(value, {
-          accessPath: nextAccessPath,
-          parentProxy: target,
-          rootPath,
-        }, trackerNode))
       }
-    }
+      return (childProxies[prop] = createTracker(value, {
+        accessPath: nextAccessPath,
+        parentProxy: target,
+        rootPath,
+      }, trackerNode))
+    },
   }
 
   const tracker = new ProxyTracker({
     base: target,
     parentProxy,
     accessPath,
-    rootPath
+    rootPath,
   })
 
   const { proxy, revoke } = Proxy.revocable(copy, handler)
 
-  createHiddenProperty(proxy, 'getProps', function() {
-    const args = Array.prototype.slice.call(arguments)
+  createHiddenProperty(proxy, 'getProps', function () {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     return args.map(prop => this[TRACKER][prop])
   })
-  createHiddenProperty(proxy, 'getProp', function() {
-    const args = Array.prototype.slice.call(arguments)
+  createHiddenProperty(proxy, 'getProp', function () {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     return this[TRACKER][args[0]]
   })
-  createHiddenProperty(proxy, 'setProp', function() {
-    const args = Array.prototype.slice.call(arguments)
+  createHiddenProperty(proxy, 'setProp', function () {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     const prop = args[0]
     const value = args[1]
     return this[TRACKER][prop] = value
   })
-  createHiddenProperty(proxy, 'runFn', function() {
-    const args = Array.prototype.slice.call(arguments)
+  createHiddenProperty(proxy, 'runFn', function () {
+    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     const fn = this[TRACKER][args[0]]
     const rest = args.slice(1)
     if (typeof fn === 'function') return fn.apply(this, rest)
-    return
+  })
+  createHiddenProperty(proxy, 'unlink', function () {
+    return this.runFn('unlink')
   })
 
   createHiddenProperty(proxy, TRACKER, tracker)

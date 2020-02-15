@@ -3,13 +3,13 @@ import { inherit, Type, createHiddenProperty } from './commons'
 
 let count = 0
 
-function ProxyTracker ({
+function ProxyTracker({
   accessPath,
   parentProxy,
   rootPath,
   base,
 }) {
-  createHiddenProperty(this, 'id', `ProxyTracker_${count++}`)
+  createHiddenProperty(this, 'id', `ProxyTracker_${count++}`) // eslint-disable-line
 
   createHiddenProperty(this, 'accessPath', accessPath)
   createHiddenProperty(this, 'rootPath', rootPath)
