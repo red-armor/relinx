@@ -2,7 +2,7 @@ import invariant from 'invariant'
 import {
   isTrackable,
   TRACKER,
-  updateDescriptorToHidden
+  hideProperty,
 } from './commons'
 import { generateRemarkablePaths } from './path'
 import { trackerNode as contextTrackerNode } from './context'
@@ -59,14 +59,13 @@ proto.unlink = function () {
 proto.relink = function (path, baseValue) {
   try {
     this.runFn('assertLink', 'relink')
-
     const proxy = this // eslint-disable-line
     let copy = path.slice()
     let last = copy.pop()
     const len = path.length
     let nextBaseValue = baseValue
 
-    // 修复 {a: { b: 1 }} => {a: {}} 时出现 nextBaseValue[key]为undefined
+    // fix: {a: { b: 1 }} => {a: {}}, nextBaseValue[key] is undefined
     for (let i = 0; i < len; i++) {
       const key = path[i]
       if (typeof nextBaseValue[key] !== 'undefined') {
@@ -74,7 +73,6 @@ proto.relink = function (path, baseValue) {
       } else {
         copy = path.slice(0, i - 1)
         last = path[i - 1]
-
         break;
       }
     }
@@ -87,7 +85,6 @@ proto.relink = function (path, baseValue) {
 
 proto.relinkProp = function (prop, newValue) {
   this.runFn('assertLink', 'relinkProp')
-
   const proxy = this // eslint-disable-line
   const base = proxy.getProp('base')
   const childProxies = proxy.getProp('childProxies')
@@ -96,9 +93,7 @@ proto.relinkProp = function (prop, newValue) {
   if (Array.isArray(base)) {
     proxy.setProp('base', base.filter(v => v))
   }
-  // proxy.setProp('base', )
   proxy.getProp('base')[prop] = newValue
-
 
   if (isTrackable(newValue)) {
     childProxies[prop] = proxy.createChild(newValue, {
@@ -147,14 +142,36 @@ proto.getRemarkableFullPaths = function () {
   return internalPaths.concat(externalPaths)
 }
 
-updateDescriptorToHidden(proto, 'reportAccessPath')
-updateDescriptorToHidden(proto, 'cleanup')
-updateDescriptorToHidden(proto, 'unlink')
-updateDescriptorToHidden(proto, 'relink')
-updateDescriptorToHidden(proto, 'relinkBase')
-updateDescriptorToHidden(proto, 'relinkProp')
-updateDescriptorToHidden(proto, 'setRemarkable')
-updateDescriptorToHidden(proto, 'getRemarkableFullPaths')
-updateDescriptorToHidden(proto, 'rebase')
+proto.assertScope = function() {
+  const useScope = this.getProp('useScope')
+  if (!useScope) return
+  const trackerNode = this.getProp('trackerNode')
+
+  // If `contextTrackerNode` is null, it means access top most data prop.
+  // console.log('context tracker node ', contextTrackerNode)
+  if (!trackerNode) {
+    console.warn(
+      'trackerNode is undefined, which means you are using createTracker function directly.' +
+      'Maybe you should create TrackerNode object.'
+    )
+  } else if (!trackerNode.contains(contextTrackerNode))
+    throw new Error(
+      trackerNode.id +
+      'is not child node of ' +
+      contextTrackerNode.id +
+      'Property only could be accessed by self node or parent node.'
+    )
+}
+
+hideProperty(proto, 'reportAccessPath')
+hideProperty(proto, 'cleanup')
+hideProperty(proto, 'unlink')
+hideProperty(proto, 'relink')
+hideProperty(proto, 'relinkBase')
+hideProperty(proto, 'relinkProp')
+hideProperty(proto, 'setRemarkable')
+hideProperty(proto, 'getRemarkableFullPaths')
+hideProperty(proto, 'rebase')
+hideProperty(proto, 'assertScope')
 
 export default internalFunctions

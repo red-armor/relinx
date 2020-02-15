@@ -48,6 +48,7 @@ function createTracker(target, config, trackerNode) {
   // can not use this in handler, should be `target`
   const handler = {
     get: (target, prop, receiver) => {
+      target.runFn('assertScope')
       if (prop === TRACKER) return Reflect.get(target, prop, receiver)
       // assertScope(trackerNode, contextTrackerNode)
       const base = target.getProp('base')
@@ -103,6 +104,7 @@ function createTracker(target, config, trackerNode) {
     rootPath,
     trackerNode,
     useRevoke,
+    useScope,
   })
 
   const { proxy, revoke } = Proxy.revocable(copy, handler)
