@@ -93,6 +93,8 @@ function createTracker(target, config, trackerNode) {
         accessPath: nextAccessPath,
         parentProxy: target,
         rootPath,
+        useRevoke,
+        useScope,
       }, trackerNode))
     },
   }

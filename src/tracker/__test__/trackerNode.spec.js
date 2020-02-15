@@ -1,4 +1,5 @@
 import Tracker from '../index'
+import context from '../context'
 
 testTracker(true)
 testTracker(false)
@@ -108,6 +109,7 @@ function testTracker(useProxy) {
 
       copyNode.proxy.runFn('relinkProp', '0', { ...base[0], a: 4 })
       expect(prop.a).toBe(4)
+      context.trackerNode = null
     })
 
     test("simulate proxy prop 3", () => {
@@ -146,6 +148,7 @@ function testTracker(useProxy) {
       })
       expect(prop.c.d).toBe(5)
       expect(prop.c.e[0].f).toBe(9)
+      context.trackerNode = null
     })
 
     test("simulate proxy prop 3", () => {
@@ -166,15 +169,18 @@ function testTracker(useProxy) {
           c3: { c31: [{ c311: 7 }]}
         },
       }
+      const useRevoke = true
+      const useScope = false
 
       expect(() => {
-        const trackerNodeA = Tracker({ base: store.a, useProxy })
-        const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy })
-        const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
-        const trackerNodeB = Tracker({ base: store.a.a3, parent: null, useProxy })
-        const trackerNodeB1 = Tracker({ base: store.a.a1, useProxy })
-        const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
-      }).toThrow('Assign a `revoked` parent is forbidden')
+        const trackerNodeA = Tracker({ base: store.a, useProxy, useRevoke, useScope })
+        const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy, useRevoke, useScope })
+        const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy, useRevoke, useScope })
+        const trackerNodeB = Tracker({ base: store.a.a3, parent: null, useProxy, useRevoke, useScope })
+        const trackerNodeB1 = Tracker({ base: store.a.a1, useProxy, useRevoke, useScope })
+        const trackerNodeB2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy, useRevoke, useScope })
+      }).toThrowError()
+      context.trackerNode = null
     })
 
     test("verify children", () => {
@@ -207,6 +213,7 @@ function testTracker(useProxy) {
 
       expect(trackerNodeA.children.length).toBe(3)
       expect(trackerNodeB.children.length).toBe(3)
+      context.trackerNode = null
     })
   })
 
@@ -240,17 +247,17 @@ function testTracker(useProxy) {
       const trackerNodeB1 = Tracker({ base: store.b.b1, useProxy })
       const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB, useProxy })
 
-      const b21 = trackerNodeB2.tracker.b21
+      const b21 = trackerNodeB2.proxy.b21
       const { b211 } = b21
-      const b_b1_b11 = trackerNodeB.tracker.b1.b11
-      const { b4, b5 } = trackerNodeB.tracker
-      const remarkable = trackerNodeB2.tracker.runFn('getRemarkableFullPaths')
-
+      const b_b1_b11 = trackerNodeB.proxy.b1.b11
+      const { b4, b5 } = trackerNodeB.proxy
+      const remarkable = trackerNodeB2.proxy.runFn('getRemarkableFullPaths')
+      context.trackerNode = null
       expect(remarkable).toEqual([
+        ["b21", "b211"],
         ['b5'],
         ['b4'],
         ["b1", "b11"],
-        ["b21", "b211"],
       ])
     })
   })
@@ -283,10 +290,11 @@ function testTracker(useProxy) {
       const trackerNodeB = Tracker({ base: store.b, parent: null, useProxy })
       const trackerNodeB1 = Tracker({ base: store.b.b1, useProxy })
       const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB, useProxy })
-      const b21 = trackerNodeB2.tracker.b21
+      const b21 = trackerNodeB2.proxy.b21
       const { b211 } = b21
-      const b_b1_b11 = trackerNodeB.tracker.b1.b11
+      const b_b1_b11 = trackerNodeB.proxy.b1.b11
       expect(b_b1_b11).toBe(1)
+      context.trackerNode = null
     })
 
     test("sibling node cross access is forbidden", () => {
@@ -307,6 +315,7 @@ function testTracker(useProxy) {
           c3: { c31: [{ c311: 7 }]}
         },
       }
+
       expect(() => {
         const trackerNodeA = Tracker({ base: store.a, useProxy })
         const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy })
@@ -316,16 +325,17 @@ function testTracker(useProxy) {
         const trackerNodeB = Tracker({ base: store.b, parent: null, useProxy })
         const trackerNodeB1 = Tracker({ base: store.b.b1, useProxy })
         const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB, useProxy })
-        const b21 = trackerNodeB2.tracker.b21
+        const b21 = trackerNodeB2.proxy.b21
         const { b211 } = b21
-        const b11 = trackerNodeB1.tracker.b11
-      }).toThrow('Cannot perform \'get\' on a proxy that has been revoked')
+        const b11 = trackerNodeB1.proxy.b11
+      }).toThrowError()
+      context.trackerNode = null
     })
   })
 
-  describe('revoke', () => {
-    test('revoked after enter into other node scop', () => {
-      const store = {
+  describe(`${decorateDesc('revoke', useProxy)}`, () => {
+    test('revoked after enter into other node scope', () => {
+      const ss = {
         a: {
           a1: { a11: 1 },
           a2: { a21: { a211: 9 }},
@@ -343,34 +353,38 @@ function testTracker(useProxy) {
         },
       }
 
-      const trackerNodeA = Tracker({ base: store.a, useProxy })
-      const trackerNodeA1 = Tracker({ base: store.a.a1, useProxy })
-      expect(trackerNodeA.isRevoked).toBe(false)
-      expect(trackerNodeA1.isRevoked).toBe(false)
+      const useRevoke = true
+      const useScope = false
 
-      const trackerNodeA2 = Tracker({ base: store.a.a2, parent: trackerNodeA, useProxy })
-      expect(trackerNodeA.isRevoked).toBe(false)
-      expect(trackerNodeA1.isRevoked).toBe(true)
-      expect(trackerNodeA2.isRevoked).toBe(false)
+      const trackerNodeA_1 = Tracker({ base: ss.a, useProxy, useRevoke, useScope})
+      const trackerNodeA1_1 = Tracker({ base: ss.a.a1, useProxy, useRevoke, useScope })
+      expect(trackerNodeA_1.isRevoked).toBe(false)
+      expect(trackerNodeA1_1.isRevoked).toBe(false)
 
-      const trackerNodeA3 = Tracker({ base: store.a.a3, parent: trackerNodeA, useProxy })
-      expect(trackerNodeA.isRevoked).toBe(false)
-      expect(trackerNodeA1.isRevoked).toBe(true)
-      expect(trackerNodeA2.isRevoked).toBe(true)
+      const trackerNodeA2_1 = Tracker({ base: ss.a.a2, parent: trackerNodeA_1, useProxy, useRevoke, useScope })
+      expect(trackerNodeA_1.isRevoked).toBe(false)
+      expect(trackerNodeA1_1.isRevoked).toBe(true)
+      expect(trackerNodeA2_1.isRevoked).toBe(false)
 
-      const trackerNodeB = Tracker({ base: store.b, parent: null, useProxy })
-      expect(trackerNodeA.isRevoked).toBe(true)
-      expect(trackerNodeA3.isRevoked).toBe(true)
-      expect(trackerNodeB.isRevoked).toBe(false)
+      const trackerNodeA3_1 = Tracker({ base: ss.a.a3, parent: trackerNodeA_1, useProxy, useRevoke, useScope })
+      expect(trackerNodeA_1.isRevoked).toBe(false)
+      expect(trackerNodeA1_1.isRevoked).toBe(true)
+      expect(trackerNodeA2_1.isRevoked).toBe(true)
 
-      const trackerNodeB1 = Tracker({ base: store.b.b1, useProxy })
-      expect(trackerNodeB.isRevoked).toBe(false)
-      expect(trackerNodeB1.isRevoked).toBe(false)
+      const trackerNodeB_1 = Tracker({ base: ss.b, parent: null, useProxy, useRevoke, useScope })
+      expect(trackerNodeA_1.isRevoked).toBe(true)
+      expect(trackerNodeA3_1.isRevoked).toBe(true)
+      expect(trackerNodeB_1.isRevoked).toBe(false)
 
-      const trackerNodeB2 = Tracker({ base: store.b.b2, parent: trackerNodeB, useProxy })
-      expect(trackerNodeB.isRevoked).toBe(false)
-      expect(trackerNodeB1.isRevoked).toBe(true)
-      expect(trackerNodeB2.isRevoked).toBe(false)
+      const trackerNodeB1_1 = Tracker({ base: ss.b.b1, useProxy, useRevoke, useScope })
+      expect(trackerNodeB_1.isRevoked).toBe(false)
+      expect(trackerNodeB1_1.isRevoked).toBe(false)
+
+      const trackerNodeB2_1 = Tracker({ base: ss.b.b2, parent: trackerNodeB_1, useProxy, useRevoke, useScope })
+      expect(trackerNodeB_1.isRevoked).toBe(false)
+      expect(trackerNodeB1_1.isRevoked).toBe(true)
+      expect(trackerNodeB2_1.isRevoked).toBe(false)
+      context.trackerNode = null
     })
   })
 }

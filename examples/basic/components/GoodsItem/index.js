@@ -46,8 +46,6 @@ const GoodsItem = props => {
   const { data: { title, id, count } } = props
   const updateCount = useRef(0)
 
-  console.log('props ', props.data)
-
   const spanStyle = useRef({
     color: 'grey',
     marginLeft: '20px',

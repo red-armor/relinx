@@ -144,11 +144,11 @@ proto.getRemarkableFullPaths = function () {
 
 proto.assertScope = function() {
   const useScope = this.getProp('useScope')
+
   if (!useScope) return
   const trackerNode = this.getProp('trackerNode')
 
   // If `contextTrackerNode` is null, it means access top most data prop.
-  // console.log('context tracker node ', contextTrackerNode)
   if (!trackerNode) {
     console.warn(
       'trackerNode is undefined, which means you are using createTracker function directly.' +

@@ -77,6 +77,8 @@ function createES5Tracker(target, config, trackerNode) {
           accessPath: nextAccessPath,
           parentProxy: proxy,
           rootPath,
+          useRevoke,
+          useScope,
         }, trackerNode))
       },
     }
