@@ -4,7 +4,7 @@ import GoodsItem from '../components/GoodsItem'
 
 const GoodsView = () => {
   const [state] = useRelinx('goods')
-  const { listData } = state
+  const { listData, totalCount } = state
   const updateCount = useRef(0)
 
   updateCount.current = updateCount.current + 1
@@ -18,7 +18,7 @@ const GoodsView = () => {
   return (
     <div>
       <span style={spanStyle.current}>
-        {`view update ${updateCount.current}`}
+        {`total count ${totalCount}; view update ${updateCount.current}`}
       </span>
       {listData.map((data, key) => (
         <GoodsItem

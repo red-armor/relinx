@@ -1,15 +1,19 @@
 export default () => ({
   state: {
     listData: [],
+    totalCount: 0,
   },
   reducers: {
     addGoods(state, { goodsList }) {
+      const totalCount = state.totalCount
+      const added = goodsList.reduce((sum, cur) => sum + cur.count, 0)
       return {
         listData: [].concat(state.listData, goodsList),
+        totalCount: totalCount + added,
       }
     },
     incrementItemCount(state, { id, index }) {
-      const { listData } = state
+      const { listData, totalCount } = state
       const item = listData[index]
       const next = [...listData]
       next[index] = {
@@ -17,11 +21,12 @@ export default () => ({
         count: item.count + 1
       }
       return {
-        listData: next
+        listData: next,
+        totalCount: totalCount + 1,
       }
     },
     decrementItemCount(state, { id, index }) {
-      const { listData } = state
+      const { listData, totalCount } = state
       const item = listData[index]
       const next = [...listData]
       const nextCount = item.count - 1
@@ -35,7 +40,8 @@ export default () => ({
       }
 
       return {
-        listData: next
+        listData: next,
+        totalCount: totalCount - 1,
       }
     },
   },

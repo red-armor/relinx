@@ -85,4 +85,4 @@ const GoodsItem = props => {
   )
 }
 
-export default observe(GoodsItem)
+export default React.memo(observe(GoodsItem), (prev, next) => prev.index === next.index)
