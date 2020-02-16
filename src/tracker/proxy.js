@@ -69,7 +69,7 @@ function createTracker(target, config, trackerNode) {
           propProperties.push({
             path: nextAccessPath,
             source: trackerNode.proxy,
-            target: contextTrackerNode.tracker
+            target
           })
           target.setProp("propProperties", propProperties)
           return peek(trackerNode.proxy, nextAccessPath)
