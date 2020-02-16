@@ -42,21 +42,16 @@ const base = {
   }
 }
 
-// On runtime, it means we have entered into baseNode's context scope.
 const baseNode = Tracker({base: base.a})
-// when get base value from 'baseNode', an access path ['a'] will be appended to
-// baseNode's TRACKER object
 const b = baseNode.proxy.b
 
-// Enter into nextBaseNode.
-const childBaseNode = Tracker({base: base.c})
-// access path ['a'] will be added to nextBaseNode's TRACKER object
-const c = childBaseNode.proxy.d
-const f = childBaseNode.proxy.e[0].f
-const item = childBaseNode.proxy.e[0]
+const childNode = Tracker({base: base.c})
+const c = childNode.proxy.d
+const f = childNode.proxy.e[0].f
+const item = childNode.proxy.e[0]
 
-const grandChildBaseNode = Tracker({base: base.g})
-const i = grandChildBaseNode.proxy.h.i
+const grandChildNode = Tracker({base: base.g})
+const i = grandChildNode.proxy.h.i
 const ff = item.f
 ```
 
