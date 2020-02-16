@@ -1,6 +1,6 @@
 {
   "name": "relinx",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A fast and easy use react state management base on reactive philosophy",
   "main": "index.js",
   "scripts": {
