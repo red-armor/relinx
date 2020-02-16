@@ -1,3 +1,3 @@
 const context = {
-	trackerNode: null
+  trackerNode: null
 }

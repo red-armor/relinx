@@ -3,33 +3,33 @@ import invariant from "invariant"
 import context from "../context"
 
 export default storeName => {
-	const {
-		dispatch,
-		getData,
-		attachStoreName
-		// occupied,
-	} = useContext(context)
+  const {
+    dispatch,
+    getData,
+    attachStoreName
+    // occupied,
+  } = useContext(context)
 
-	// const verifyOccupy = useRef(false)
+  // const verifyOccupy = useRef(false)
 
-	// if (!verifyOccupy.current) {
-	//   const { occupied } = getData()
-	//   console.log('occ ', occupied)
-	//   if (occupied) throw new Error('missing observe')
-	// }
+  // if (!verifyOccupy.current) {
+  //   const { occupied } = getData()
+  //   console.log('occ ', occupied)
+  //   if (occupied) throw new Error('missing observe')
+  // }
 
-	// useEffect(() => {
-	//   verifyOccupy.current = true
-	// }, [])
+  // useEffect(() => {
+  //   verifyOccupy.current = true
+  // }, [])
 
-	invariant(
-		typeof storeName === "string" && storeName !== "",
-		"`storeName` is required"
-	)
+  invariant(
+    typeof storeName === "string" && storeName !== "",
+    "`storeName` is required"
+  )
 
-	attachStoreName(storeName)
+  attachStoreName(storeName)
 
-	const {trackerNode} = getData()
+  const {trackerNode} = getData()
 
-	return [trackerNode.proxy, dispatch]
+  return [trackerNode.proxy, dispatch]
 }
