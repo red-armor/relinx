@@ -6,7 +6,7 @@
   "semi": false,
   "singleQuote": false,
   "trailingComma": "none",
-  "useTabs": true,
+  "useTabs": false,
   "overrides": [
     {
       "files": [".prettierrc", "*.json"],
