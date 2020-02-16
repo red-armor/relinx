@@ -1,7 +1,7 @@
 {
-  "name": "@xhs/relinx",
-  "version": "2.1.5",
-  "description": "Another redux state management using hooks",
+  "name": "relinx",
+  "version": "2.0.0",
+  "description": "A fast and easy use react state management base on reactive philosophy",
   "main": "index.js",
   "scripts": {
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
@@ -11,7 +11,13 @@
     "examples:simple": "DIR=simple EXT=js webpack-dev-server",
     "examples:immer": "DIR=immer EXT=js webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
-    "test": "jest --collect-coverage"
+    "test": "jest",
+    "coverage": "jest --coverage"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   },
   "config": {
     "commitizen": {
@@ -20,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@code.devops.xiaohongshu.com:fe/relinx.git"
+    "url": "git@github.com:ryuever/relinx.git"
   },
   "keywords": [
     "react",
@@ -42,10 +48,13 @@
     "ts-loader": "^6.0.4",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.7",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^3.8.0",
+    "prettier": "^1.19.1",
+    "pretty-quick": "^2.0.1",
+    "ts-jest": "^25.2.0"
   },
   "dependencies": {
-    "invariant": "^2.2.4",
-    "ts-jest": "^25.2.0"
+    "husky": "^4.2.3",
+    "invariant": "^2.2.4"
   }
 }
