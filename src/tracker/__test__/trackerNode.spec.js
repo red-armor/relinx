@@ -66,7 +66,7 @@ function testTracker(useProxy) {
       expect(prop.a).toBe(3)
     })
 
-    test("simulate proxy prop 2", () => {
+    test("To update prop base value directly", () => {
       const base = [{
         a: 1,
       }, {
@@ -88,7 +88,7 @@ function testTracker(useProxy) {
       expect(prop.a).toBe(4)
     })
 
-    test("simulate proxy prop: relinkProp", () => {
+    test("To test relinkProp function", () => {
       const base = [{
         a: 1,
       }, {
@@ -112,7 +112,35 @@ function testTracker(useProxy) {
       context.trackerNode = null
     })
 
-    test("simulate proxy prop 3", () => {
+    test("To test relinkProp function with remove key", () => {
+      const base = {
+        a: 1,
+        b: 2,
+        c: {
+          d: 4,
+          e: [{
+            f: 7
+          }]
+        }
+      }
+      const copy = base
+
+      const nest = {
+        e: 3,
+        f: 4,
+      }
+
+      const copyNode = Tracker({ base: copy, useProxy })
+      const nestNode = Tracker({ base: nest, useProxy })
+      const state = copyNode.proxy
+      const old = state.c.d
+
+      copyNode.proxy.runFn('relinkProp', 'c', { e:  old })
+      expect(state.c).toEqual({ e: old })
+      context.trackerNode = null
+    })
+
+    test("To relink primitive value or object", () => {
       const base = {
         a: 1,
         b: 2,
@@ -151,7 +179,7 @@ function testTracker(useProxy) {
       context.trackerNode = null
     })
 
-    test("simulate proxy prop 3", () => {
+    test("To throw error when access revoked object", () => {
       const store = {
         a: {
           a1: { a11: 1 },
@@ -385,6 +413,25 @@ function testTracker(useProxy) {
       expect(trackerNodeB1_1.isRevoked).toBe(true)
       expect(trackerNodeB2_1.isRevoked).toBe(false)
       context.trackerNode = null
+    })
+  })
+
+  describe('array: prototype function', () => {
+    test('empty array prop', () => {
+      const base = {
+        a: {
+          b: []
+        },
+        c: {
+          d: 1,
+        },
+      }
+
+      const A = Tracker({ base: base.a, useProxy })
+      const C = Tracker({ base: base.c, parent: A,  useProxy })
+      const mapValue = A.proxy.b.map(i => i)
+
+      expect(mapValue).toEqual([])
     })
   })
 }
