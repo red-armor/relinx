@@ -67,4 +67,17 @@ const Tracker = ({
   })
 }
 
+const base = {
+  a: {
+    b: 1
+  },
+  c: {
+    d: 2,
+    e: [{f: 1}]
+  },
+  g: {
+    h: {i: 4}
+  }
+}
+
 export default Tracker
