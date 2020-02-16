@@ -6,15 +6,5 @@
   "semi": false,
   "singleQuote": false,
   "trailingComma": "none",
-  "useTabs": false,
-  "overrides": [
-    {
-      "files": [".prettierrc", "*.json"],
-      "options": {
-        "printWidth": 200,
-        "tabWidth": 2,
-        "useTabs": false
-      }
-    }
-  ]
+  "useTabs": false
 }

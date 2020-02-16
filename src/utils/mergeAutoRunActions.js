@@ -153,33 +153,33 @@
 // 在一次`dispatch`中会存在同时操作`parent`和`children`的情况，
 // 这个时候只需要`parent`触发更新就好；
 const mergeAutoRunActions = computations => {
-	const len = computations.length
-	const remaining = []
+  const len = computations.length
+  const remaining = []
 
-	for (let i = 0; i < len; i++) {
-		const comp = computations[i]
-		let pathNumber = comp.pathNumber
-		let currentComp = comp
+  for (let i = 0; i < len; i++) {
+    const comp = computations[i]
+    let pathNumber = comp.pathNumber
+    let currentComp = comp
 
-		for (let j = i + 1; j < len; j++) {
-			const jComp = computations[j]
-			const jPath = jComp.pathNumber
+    for (let j = i + 1; j < len; j++) {
+      const jComp = computations[j]
+      const jPath = jComp.pathNumber
 
-			if (pathNumber.startsWith(jPath)) {
-				pathNumber = jPath
-				currentComp = jComp
-			} else if (jPath.startsWith(pathNumber)) {
-				jComp.resolved = true
-			}
-		}
+      if (pathNumber.startsWith(jPath)) {
+        pathNumber = jPath
+        currentComp = jComp
+      } else if (jPath.startsWith(pathNumber)) {
+        jComp.resolved = true
+      }
+    }
 
-		if (!currentComp.resolved) {
-			currentComp.resolved = true
-			remaining.push(currentComp)
-		}
-	}
+    if (!currentComp.resolved) {
+      currentComp.resolved = true
+      remaining.push(currentComp)
+    }
+  }
 
-	return remaining
+  return remaining
 }
 
 export default mergeAutoRunActions
