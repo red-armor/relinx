@@ -1,6 +1,10 @@
 const toString = Function.call.bind(Object.prototype.toString)
 const ownKeys = o =>
-  Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o))
+  typeof Reflect !== "undefined" && Reflect.ownKeys
+    ? Reflect.ownKeys(o)
+    : typeof Object.getOwnPropertySymbols !== "undefined"
+    ? Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o))
+    : Object.getOwnPropertyNames(o)
 
 export const emptyFunction = () => {}
 export const isObject = o =>
@@ -29,7 +33,7 @@ export function each(obj, iter) {
   if (Array.isArray(obj)) {
     obj.forEach((entry, index) => iter(index, entry, obj))
   } else if (isObject(obj)) {
-    Reflect.ownKeys(obj).forEach(key => iter(key, obj[key], obj))
+    ownKeys(obj).forEach(key => iter(key, obj[key], obj))
   }
 }
 
