@@ -27,8 +27,9 @@ Then it has following design rules:
 
 ### Implementation
 
+The following is an example about how to create an instance, and get its paths value. You can provide a `parent` param to specify the parent node, or the previous tracker will be considered as `parent`. The following image shows the basic logic implementation.
+
 ```js
-import Tracker from "./"
 const base = {
   a: {
     b: 1
@@ -44,15 +45,32 @@ const base = {
 
 const baseNode = Tracker({base: base.a})
 const b = baseNode.proxy.b
+baseNode.proxy.runFn("getRemarkableFullPaths") // [[ 'b' ]]
 
 const childNode = Tracker({base: base.c})
 const c = childNode.proxy.d
 const f = childNode.proxy.e[0].f
 const item = childNode.proxy.e[0]
+childNode.proxy.runFn("getRemarkableFullPaths") // [["e", "0"], ["e", "0", "f"], ['d']]
 
 const grandChildNode = Tracker({base: base.g})
 const i = grandChildNode.proxy.h.i
 const ff = item.f
+grandChildNode.proxy.runFn("getRemarkableFullPaths") // [["h", "i"], ["e", "0", "f"]]
 ```
 
 ![tree.png](./docs/tree.png)
+
+### What is relink
+
+The following two image provide a straightforward explanation of why relink needs and how it works. The first one describe a general scenario when write react component: A parent component pass a item (props property) to each of its child component.
+
+_note: for props property, please refer to definition listed on above_
+
+![component_1.png](./docs/component_1.png)
+
+Now one item's value update... So how to make a fine-grained rendering update...The answer could be `only trigger the updated value related component`.But there will come with a new issue, `{ count: 1 }` is a prop value passing from parent...If the parent component not re-render, how could I get the latest value..It's exactly the problem what `relink` attempt to resolve.
+
+`break the old connection, then re-build a new link with child component`
+
+![component_2.png](./docs/component_2.png)
