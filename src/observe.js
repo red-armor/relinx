@@ -79,6 +79,7 @@ export default WrappedComponent => {
         paths: [],
         autoRunFn,
         parent: parentPatcher,
+        displayName: NextComponent.displayName,
         key: generatePatcherKey({namespace, componentName})
       })
     }

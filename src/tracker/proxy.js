@@ -55,7 +55,14 @@ function createTracker(target, config, trackerNode) {
       // if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
-        return Reflect.get(target, prop, receiver)
+        const reflectValue = Reflect.get(target, prop, receiver)
+        if (typeof reflectValue === "undefined") {
+          // console.warn(
+          //   `Maybe you are using an un-declared props ${prop}\n` +
+          //   `You'd better declare this prop first, or the reported paths` +
+          //   'will not works well on `ES5`'
+          // )
+        } else return reflectValue
       }
       const accessPath = target.getProp("accessPath")
       const nextAccessPath = accessPath.concat(prop)
@@ -84,7 +91,7 @@ function createTracker(target, config, trackerNode) {
 
       // for rebase value, if base value change, the childProxy should
       // be replaced
-      if (childProxy && childProxy.base === value) {
+      if (childProxy && childProxy.getProp("base") === value) {
         return childProxy
       }
       return (childProxies[prop] = createTracker(

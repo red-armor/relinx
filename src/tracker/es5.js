@@ -68,7 +68,7 @@ function createES5Tracker(target, config, trackerNode) {
         const childProxy = childProxies[prop]
         // for rebase value, if base value change, the childProxy should
         // be replaced
-        if (childProxy && childProxy.base === value) {
+        if (childProxy && childProxy.getProp("base") === value) {
           return childProxy
         }
         return (childProxies[prop] = createES5Tracker(

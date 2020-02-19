@@ -1,13 +1,14 @@
 import invariant from "invariant"
 import PathNode from "./PathNode"
 import is from "./utils/is"
-import {isMutable, isTypeEqual, hasEmptyItem} from "./utils/ifType"
+import {isMutable, isTypeEqual} from "./utils/ifType"
 import infoLog from "./utils/infoLog"
-import {isPresent, isObject} from "./utils/ifType"
+import {isObject} from "./utils/ifType"
 import diffArraySimple from "./utils/diffArraySimple"
 import {generatePatcherId} from "./utils/key"
 
 const DEBUG = false
+const DEBUG_UNDEFINED = false
 const MINIMUS_RE_RENDER = false
 
 class Application {
@@ -90,6 +91,7 @@ class Application {
   treeShake({storeKey, changedValue}) {
     const branch = this.node.children[storeKey]
     const baseValue = this.base[storeKey]
+    const rootBaseValue = baseValue
     const nextValue = {...baseValue, ...changedValue}
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
@@ -158,8 +160,30 @@ class Application {
 
       keysToCompare.forEach(key => {
         const childBranch = branch.children[key]
-        const childBaseValue = baseValue[key]
-        // 当时一个对象，并且key被删除的时候，那么它的值就是undefined
+        if (!baseValue || typeof baseValue[key] === "undefined") {
+          DEBUG_UNDEFINED &&
+            childBranch.patchers.forEach(patcher => {
+              const displayName = patcher.displayName
+              console.warn("root base value ", rootBaseValue)
+              console.warn(
+                `Maybe you are using an un-declared props %c${collections
+                  .concat(key)
+                  .join(".")}` +
+                  ` %cin Component %c${displayName} %cYou'd better declare this prop in model first,` +
+                  `or component may not re-render when value changes on ES5.`,
+                "color: #ff4d4f; font-weight: bold",
+                "",
+                "color: #7cb305; font-weight: bold",
+                ""
+              )
+            })
+        }
+      })
+
+      keysToCompare.forEach(key => {
+        const childBranch = branch.children[key]
+        const childBaseValue = baseValue ? baseValue[key] : undefined
+        // 当一个对象中的key被删除的时候，那么它的值就是undefined
         const childNextValue = nextValue ? nextValue[key] : undefined
 
         compare(
