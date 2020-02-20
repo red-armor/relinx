@@ -16,13 +16,21 @@ _A fast, intuitive, access path based reactive react state management_
 
 遵照`React-Redux`的模式，包含`action`和`dispatch`；但是最终在结构上参考了[dva](https://github.com/dvajs/dva)中的基本概念，比如`model`, `reducers`和`effects`.相比于`dva`借助`redux-saga`实现副作用处理的多样性；目前 relinx 通过基于`redux-thunk`的中间件实现对异步数据的处理。
 
-Relinx 的底层路径搜集上受 functional reactive programming 很大的影响，实现上很大程度借鉴了[immer](https://github.com/immerjs/immer)对 Proxy 和`defineProperty`的处理方式。收集模块名字叫`Tracker`，借鉴了[Tracker - Meteor's reactive system](https://docs.meteor.com/api/tracker.html)的定义方式。
+Relinx 的底层路径搜集上受 functional reactive programming 很大的影响，实现上很大程度借鉴了[immer](https://github.com/immerjs/immer)对 Proxy 和`defineProperty`的处理方式。收集模块叫`Tracker`，借鉴了[Tracker - Meteor's reactive system](https://docs.meteor.com/api/tracker.html)的定义方式。
 
 Relinx 的设计理念很简单
 
 > 记录组件访问的具体属性路径，当源数据变化时触发对应节点上监听的组件
 
 ![flow](./docs/flow.png)
+
+### Tracker
+
+[Tracker - Track the getter action of wrapped object and provide ability to relink when upstream object's value changed](./src/tracker/README.md)支持 Relinx 进行 paths 收集的模块
+
+## 基本概念
+
+首先看下面一个最简单的例子
 
 ```js
 // index.js
@@ -88,86 +96,61 @@ export default observe(() => {
 })
 ```
 
-## 运行
-
-```bash
-$ yarn
-$ yarn examples:basic
-```
-
-## 基本概念
-
-```js
-import React from "react"
-import ReactDOM from "react-dom"
-import {Provider, createStore} from "relinx"
-import models from "./models"
-import App from "./views"
-
-const store = createStore({
-  models
-})
-
-const Basic = () => {
-  return (
-    <Provider store={store}>
-      <App />
-    </Provider>
-  )
-}
-
-ReactDOM.render(<Basic />, document.getElementById("app"))
-```
-
-核心上每一个`model`主要三部分组成：`state`, `reducers`和`effects`
-
 ### state
 
-状态对应着`UI`，state 的改变会触发`UI`的更新；通过`state.bottomBar.count`可以实现当前组件与`bottomBar` model 下`count`属性值改变的绑定。
-
-```js
-import React from "react"
-import {useRelinx} from "relinx"
-
-export default () => {
-  const [state] = useRelinx
-
-  return <div>{state.bottomBar.count}</div>
-}
-```
+在 component 中可以通过`useRelinx`方法返回一个 state. 这个是一个独立的`proxy`对象；每一次 property 的调用都会被记录下来作为当前 component 会访问到的 paths。
 
 ### action
 
-类同于比如`redux`, `rematch`以及`dva`等状态管理器；`action`是唯一触发`state`更改的方式；只有通过`dispatch(action)`的方式才能够进行状态的变化；
-
-```js
-{
-  type: 'increment',
-  payload: {},
-}
-```
-
-`action`主要是由两部分组成，`type`和`payload`；
-
-#### 如何产生 action
-
-- 用户在组件层面，在比如事件等场景下进行 dispatch 操作
-- 在`effects`中进行`dispatch`操作
+action 由两部分组成`type`和`payload`，和`Redux`中的概念一样，是 state 进行更新的唯一方式；然后通过`dispatch`进行调用
 
 ### reducers
 
-接受`action`并且返回通过`action`处理以后的结果；可以认为是数据进行更改的起点
-
-### dispatch
+进行同步的数据处理，与`action.type`相对应；对`action.payload`进行处理返回更改后的值
 
 ### effects
 
-通过异步的方式来返回一个`action`
+进行异步的数据处理，包含所有的 ajax 请求
 
-## 开发规范
+## API
 
-- `reducers`中的`state`应该是当前`model`的`state`
-- 如果说需要使用到其他 model 的值的话，这个时候需要通过 effects 来实现
+### observe(FunctionComponent)
+
+将一个 functional component 声明为 access path sensitive. component 只有在外层或者 parent component 进行 observe 函数封装以后才能够在 component 中使用`useRelinx`方法
+
+observe 的作用是创建一个 Tracker scope，同时可以认为是一个粒度化渲染的区域划分；同时为了方便进行 DEBUG 信息的显示，最好使用`name function component`
+
+```js
+const A = () => <span>hello world</span>
+const ObservedA = observe(A)
+```
+
+#### 什么时候使用 observe
+
+理论上，任何组件都可以进行 observe 的封装；observe 的调用会创建一个`Proxy State`的作用域，比如说子组件中的值更改，只想重新渲染子组件，这个时候就需要在子组件外层进行 observe 的封装
+
+### useRelinx
+
+```js
+;[state: Proxy, dispatch: Function] = useRelinx((modelName: String))
+```
+
+它返回包含长度为 2 的数组。第一个值是`state`，它的值是和`modelName`进行对应；同时需要注意调用`useRelinx`方法的组件外层最好有`observe`处理
+
+```js
+const A = observe(() => {
+  const [state] = useRelinx("app")
+  return <span>{state.count}</span>
+})
+```
+
+### useDispatch
+
+```js
+;[dispatch: Function] = useDispatch()
+```
+
+针对一个组件不需要 state 的情况下，只返回一个`dispatch`函数
 
 ## Redux vs Relinx
 
@@ -181,20 +164,6 @@ export default () => {
 - `dispatch`处理的数据类型；`redux`可以支持`action`以及`function`的`dispatch`操作；`Relinx`只支持`action`的处理，`dispatch function`可以通过提供对应的`action`和`payload`实现调用
 - `dispatch`用法上的区别；在`redux`中可以连续的进行`dispatch`操作；而对于`relinx`如果说想要连续操作两个或者以上的`action`的话，需要通过数组的形式来提供`dispatch([...actions])`否则中间的改变值会被抹掉
 - `reducer`返回值的区别；在`redux`中每一个`reducer`返回的应该是一个全量的`state`，所以它的返回形式是`{...state, [updatedKey]: updatedValue }`；而对于`Relinx`它返回的是当前`model`中变化的部分也就是`{[updatedKey]: updatedValue}`
-
-## 特点
-
-1. 提供轻量型响应式的 UI 更新
-2. 写法上尽量减少文件跨度，避免了`redux`造成了繁琐性
-3. diff 策略上，实现了尽可能少的组件更新
-
-## 解决的问题
-
-- 通过`new Context API`解决 props 的跨层级问题
-- 解决`Provider`数据源会触发所有`Consumer`进行`update`的问题
-- 组件层面`reactive field`的数据绑定，组件只会对使用到的`field`进行`re-render`；可以粒度化到`object.property`程度
-- 提供处理同步以及异步数据源的能力
-- 提供 app 开发层面的实践模式
 
 ## QA
 
@@ -256,6 +225,8 @@ const TodoView = observer(({todo, editorState}) => {
   )
 })
 ```
+
+## 问题
 
 ### 如何实现对 Array 的响应式
 
