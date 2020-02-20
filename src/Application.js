@@ -8,15 +8,15 @@ import diffArraySimple from "./utils/diffArraySimple"
 import {generatePatcherId} from "./utils/key"
 
 const DEBUG = false
-const DEBUG_UNDEFINED = false
 const MINIMUS_RE_RENDER = false
 
 class Application {
-  constructor({base, namespace}) {
+  constructor({base, namespace, strictMode}) {
     this.base = base
     this.node = new PathNode()
     this.pendingPatchers = []
     this.namespace = namespace
+    this.strictMode = strictMode
   }
 
   update(values) {

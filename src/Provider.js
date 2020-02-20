@@ -8,14 +8,16 @@ export default ({
   children,
   namespace,
   useProxy = true,
-  useRelinkMode = true
+  useRelinkMode = true,
+  strictMode = false
 }) => {
   const {initialState, createReducer, createDispatch} = store
   const namespaceRef = useRef(namespace || generateNamespaceKey())
   const application = useRef(
     new Application({
       base: initialState,
-      namespace: namespaceRef.current
+      namespace: namespaceRef.current,
+      strictMode
     })
   )
 
