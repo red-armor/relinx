@@ -39,7 +39,9 @@ const base = {
     e: [{f: 1}]
   },
   g: {
-    h: {i: 4}
+    h: {i: 4},
+    j: 5,
+    k: 6
   }
 }
 
@@ -63,14 +65,28 @@ grandChildNode.proxy.runFn("getRemarkableFullPaths") // [["h", "i"], ["e", "0", 
 
 ### What is relink
 
-The following two image provide a straightforward explanation of why relink needs and how it works. The first one describe a general scenario when write react component: A parent component pass a item (props property) to each of its child component.
+The following two images provide a straightforward explanation of why relink needs and how it works. The first one describe a general scenario when write a react component: A parent component pass a item (props property) to each of its child component.
 
 _note: for props property, please refer to definition listed on above_
 
 ![component_1.png](./docs/component_1.png)
 
-Now one item's value update... So how to make a fine-grained rendering update...The answer could be `only trigger the updated value related component`.But there will come with a new issue, `{ count: 1 }` is a prop value passing from parent...If the parent component not re-render, how could I get the latest value..It's exactly the problem what `relink` attempt to resolve.
+A user dispatch an action which update the value of `item[0]` to `{ count: 3 }`. So how to make a fine-grained rendering update...
+
+The basic method is to trigger parent component's re-render, then the consecutive child components will be updated.for this kind, it will cause huge performance issue. As we know, `selector` could be helpful on this condition..
+
+`selector` is a function to let store know what kind of properties it listen to. According to Tracker's original idea, it has helped us reach this step automatically.But there will come with a new issue, `{ count: 1 }` is a prop value passing from parent. If the parent component not re-render, how could I get the latest value. It's exactly the problem what `relink` attempt to resolve.
 
 `break the old connection, then re-build a new link with child component`
 
 ![component_2.png](./docs/component_2.png)
+
+## Relink functions
+
+It's meaningful only when we define `Tracker` node...
+
+### relink
+
+### relinkProp
+
+### rebase
