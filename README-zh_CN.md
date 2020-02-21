@@ -158,49 +158,19 @@ const [dispatch: Function] = useDispatch()
 
 针对一个组件不需要 state 的情况下，只返回一个`dispatch`函数
 
-## Redux vs Relinx
+### Props
 
-### 相同点
+#### useProxy
 
-- 对于`action`的处理方式上都是一致的；`dispatch`是所有`action`的原动力；
+控制 Tracker 对于 path 的搜集机制是通过`Proxy`还是还是`defineProperty`；默认为 true，同时 Relinx 也会自己判断是否支持`Proxy`以确保运行无误
 
-### 不同点
+#### strictMode
 
-- 数据绑定的方式，`redux`主要是通过`mapStateToProps`，`mapDispatchToProps`以及`connect`实现组件层面和数据源的绑定；当`Provider`层数据源发生变化时，调用变化数据部分`connect`组件。`Relinx`是基于`Proxy`提供的`trap`来实现，对于组件中使用到的[`get(proxy[foo]和proxy.bar)`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/get)进行`reactive path`的订阅，当`reactive path`被命中时就触发当前组件的更新
-- `dispatch`处理的数据类型；`redux`可以支持`action`以及`function`的`dispatch`操作；`Relinx`只支持`action`的处理，`dispatch function`可以通过提供对应的`action`和`payload`实现调用
-- `dispatch`用法上的区别；在`redux`中可以连续的进行`dispatch`操作；而对于`relinx`如果说想要连续操作两个或者以上的`action`的话，需要通过数组的形式来提供`dispatch([...actions])`否则中间的改变值会被抹掉
-- `reducer`返回值的区别；在`redux`中每一个`reducer`返回的应该是一个全量的`state`，所以它的返回形式是`{...state, [updatedKey]: updatedValue }`；而对于`Relinx`它返回的是当前`model`中变化的部分也就是`{[updatedKey]: updatedValue}`
+默认为 false，在开发模式下为了提示 component 中使用到了哪些在 model 中未声明的字段，以确保 ES5 和 ES6 表现是一致的
 
-### 如何实现`object.property`粒度化的响应式
+#### namespace
 
-比如说一个场景，渲染`list`为了尽量不更改`list.item`中的数据；如果说存储`item`是否被选中；在`Redux`中的实现方式一般如下；它存在的问题是每一次`isItemsSelected`发生变化的话，所有的`item`其实都会被`re-render`；（对于这个问题其实有其它的方式来解决了）
-
-```js
-const Item = props => {
-  const {isItemsSelected, itemIndex} = props
-
-  return <div>{isItemsSelected[itemIndex] ? <Selected /> : <Unselected />}</div>
-}
-
-const mapStateToProps = state => {
-  return {
-    isItemsSelected: state.isItemsSelected
-  }
-}
-```
-
-`mobx`中的实现方式是通过[`expr`](https://mobx.js.org/refguide/expr.html)
-
-```js
-const TodoView = observer(({todo, editorState}) => {
-  const isSelected = mobxUtils.expr(() => editorState.selection === todo)
-  return (
-    <div className={isSelected ? "todo todo-selected" : "todo"}>
-      {todo.title}
-    </div>
-  )
-})
-```
+可选填，如果不填的话，Relinx 会对当前的 application 生成一个 key 以确保在多 application 模式下能够正常的运行。
 
 ## 问题
 
@@ -218,12 +188,12 @@ dispatch([action, action, action])
 
 ### 数据比较的原则
 
-1. primitive value 的话，直接对比字面值是否一样
-2. 数组和对象首先比较引用，为了提高对比的效率如果一样就不再进行它的 properties 的对比
+1. primitive type value 的话，直接对比字面值是否一样
+2. 数组和对象首先比较引用，如果一样就直接结束对比；不一样的话就进行 property 的对比，一直穷尽`pathNode`上的所有节点
 
 ### 对 Map 和 Set 的支持
 
-目前支持 primitive type，array 和 object 等数据类型，暂不支持 Map 和 Set 数据结构，
+目前只支持 primitive type，array 和 object 等数据类型，暂不支持 Map 和 Set 数据结构，
 
 ### 对 ES5 支持存在的问题
 
@@ -275,4 +245,30 @@ Tracker 对 Array 的`prototype` function 进行了覆盖，比如`map`,`filter`
 
 ### 如何防止 memory leak
 
-### 如何进行 array item 的粒度化渲染控制
+问题可以转换为如何移除订阅，目前在 Relinx 中，订阅只发生在`patcher`与`pathNode`的绑定；当`pathNode`发现对应的`property`值发生变化的时候，会进行以下操作
+
+1. 如果是 primitive type 的话，比较字面值是否一样，不一样的话，将 patchers 加入到`pendingDispatchers`同时将数组中的 patcher 从所有其他`PathNode`移除
+2. 如果是 Array，并且元素增加；将 patchers 加入到`pendingDispatchers`同时将数组中的 patcher 从所有其他`PathNode`移除
+3. 如果是 Array，并且元素减少；将 patchers 加入到`pendingDispatchers`，这些被移除的 item 中的 field 不会再进行 compare 比较，在最后将 pathNode 下的所有节点进行销毁
+4. 如果是 object，出现 key 被删除并且 key 对应有 pathNode，将 patchers 加入到`pendingDispatchers`；对于被删除的 key 会继续进行比较，最后对被删除的 pathNode 进行销毁
+5. component 进行 unmount 时，会对它对应的 patcher 进行销毁
+
+当 component 进行 re-render 的时候，会对 patcher 的 path 进行更新，重新和`pathNode`创建订阅关系
+
+### 对 Array 的渲染控制
+
+对于 Array 的渲染主要体现在两个方面：`length`或者`item[key]`发生变化
+
+#### length changed
+
+`length`的变化，都会触发`items`所在 component 的重新渲染；因为 React 的渲染机制，父组件的更新会触发子组件的更新，这个只能够通过对子组件进行`React.memo`的封装处理避免再次渲染
+
+#### item[key] changed
+
+如果子父组件都被 observe 调用的话，父组件和子组件在渲染上是隔离的；子组件所需属性的变化，不会触发父组件的渲染。
+
+### Compared key
+
+相比于`Redux`通过`shallowEqual`进行判断是否数据发生变化，`mapStateToProps`会在每一次`state`发生变化的时候执行一次，就会造成大量无关属性的判断，在性能有一定的损耗，一般的优化方式就是通过[reselect](https://github.com/reduxjs/reselect)来进行实现，只比较关心的属性
+
+Relinx 的话，本身实现机制就是只对访问到的属性创建`pathNode`，只有`pathNode`上的`property`才会进行 diff 判断，在这一层面具备了`reselect`对应功能。

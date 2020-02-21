@@ -46,7 +46,6 @@ export default WrappedComponent => {
       namespace,
       patcher: parentPatcher,
       trackerNode: parentTrackerNode,
-      useRelinkMode,
       ...rest
     } = useContext(context)
 
@@ -135,11 +134,9 @@ export default WrappedComponent => {
         }
       })
 
-      if (useRelinkMode) {
-        if (storeName.current) {
-          const base = application.getStoreData(storeName.current)
-          proxy.runFn("rebase", base)
-        }
+      if (storeName.current) {
+        const base = application.getStoreData(storeName.current)
+        proxy.runFn("rebase", base)
       }
 
       trackerNode.current.proxy.runFn("cleanup")
@@ -149,16 +146,7 @@ export default WrappedComponent => {
     const attachStoreName = useCallback(name => {
       // patcher.current.teardown()
       // occupied.current = true
-      if (useRelinkMode) {
-        if (name && !isHydrated.current) {
-          storeName.current = name
-          const initialState = application.getStoreData(storeName.current)
-          trackerNode.current.hydrate(initialState, {
-            rootPath: [storeName.current]
-          })
-          isHydrated.current = true
-        }
-      } else {
+      if (name && !isHydrated.current) {
         storeName.current = name
         const initialState = application.getStoreData(storeName.current)
         trackerNode.current.hydrate(initialState, {
@@ -185,7 +173,6 @@ export default WrappedComponent => {
       application,
       useProxy,
       namespace,
-      useRelinkMode,
       patcher: patcher.current,
       trackerNode: trackerNode.current,
       attachStoreName
