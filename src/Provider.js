@@ -8,7 +8,6 @@ export default ({
   children,
   namespace,
   useProxy = true,
-  useRelinkMode = true,
   strictMode = false
 }) => {
   const {initialState, createReducer, createDispatch} = store
@@ -34,7 +33,6 @@ export default ({
   const contextValue = useRef({
     dispatch,
     useProxy,
-    useRelinkMode,
     namespace: namespaceRef.current,
     application: application.current
   })
