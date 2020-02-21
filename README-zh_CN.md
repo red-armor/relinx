@@ -28,6 +28,12 @@ Relinx 的设计理念很简单
 
 [Tracker - Track the getter action of wrapped object and provide ability to relink when upstream object's value changed](./src/tracker/README.md)支持 Relinx 进行 paths 收集的模块
 
+## 安装
+
+```bash
+$ npm install relinx --save
+```
+
 ## 基本概念
 
 首先看下面一个最简单的例子
@@ -132,7 +138,7 @@ const ObservedA = observe(A)
 ### useRelinx
 
 ```js
-;[state: Proxy, dispatch: Function] = useRelinx((modelName: String))
+const [state: Proxy, dispatch: Function] = useRelinx((modelName: String))
 ```
 
 它返回包含长度为 2 的数组。第一个值是`state`，它的值是和`modelName`进行对应；同时需要注意调用`useRelinx`方法的组件外层最好有`observe`处理
@@ -147,7 +153,7 @@ const A = observe(() => {
 ### useDispatch
 
 ```js
-;[dispatch: Function] = useDispatch()
+const [dispatch: Function] = useDispatch()
 ```
 
 针对一个组件不需要 state 的情况下，只返回一个`dispatch`函数
@@ -164,36 +170,6 @@ const A = observe(() => {
 - `dispatch`处理的数据类型；`redux`可以支持`action`以及`function`的`dispatch`操作；`Relinx`只支持`action`的处理，`dispatch function`可以通过提供对应的`action`和`payload`实现调用
 - `dispatch`用法上的区别；在`redux`中可以连续的进行`dispatch`操作；而对于`relinx`如果说想要连续操作两个或者以上的`action`的话，需要通过数组的形式来提供`dispatch([...actions])`否则中间的改变值会被抹掉
 - `reducer`返回值的区别；在`redux`中每一个`reducer`返回的应该是一个全量的`state`，所以它的返回形式是`{...state, [updatedKey]: updatedValue }`；而对于`Relinx`它返回的是当前`model`中变化的部分也就是`{[updatedKey]: updatedValue}`
-
-## QA
-
-### dispatch([...actions])
-
-对于多个`actions`为什么先进行聚合再进行`dispatch`操作；详见 Dan 的描述
-
-https://twitter.com/dan_abramov/status/1096898096011886592?lang=en
-
-```js
-dispatch(increment)
-dispatch(increment)
-dispatch(increment)
-```
-
-比如对于上面的形式，你尽管在`reducer`中可以看到值进行`0 -> 1 ->2`的变化，但是在`useEffect`层面你最终只能够拿到`2`对于其中的中间值会被做掉；对于`redux`的而言，因为它的`reducer`每一次返回都是一个全量的`state`,并且每一次的 dispatch 实际上是生效了，对它而言`useEffect`合并`result`其实是一个优化的效果；但是对于`Relinx`，因为它的`reducer`返回的是一个`partial state(当前model发生改变的部分)`，同时`reducer`的值并不会直接映射到`state`，如果说中间状态被做掉的话，就会出现中间部分数据对应的组件没有响应。所以对于上面的形式`Relinx`对应的写法
-
-```js
-dispatch([
-  {
-    type: "increment"
-  },
-  {
-    type: "increment"
-  },
-  {
-    type: "increment"
-  }
-])
-```
 
 ### 如何实现`object.property`粒度化的响应式
 
@@ -228,9 +204,75 @@ const TodoView = observer(({todo, editorState}) => {
 
 ## 问题
 
-### 如何实现对 Array 的响应式
+### dispatch actions
 
-## TODO
+当存在多个 actions 时，不能够连续调用 dispatch；因为中间 action 会被覆盖掉；具体可以参考 Dan 的描述https://twitter.com/dan_abramov/status/1096898096011886592?lang=en
 
-1. 对传递的`proxy` data 设置作用域；它的变化应该对应的是消费该字段的子组件
-2. 提供 middleware 机制，比如 logger 观察目前更改的数据，以及对应的组件
+![dan](./docs/dan.png)
+
+在 Relinx 可以通过数组的形式来解决这个问题
+
+```js
+dispatch([action, action, action])
+```
+
+### 数据比较的原则
+
+1. primitive value 的话，直接对比字面值是否一样
+2. 数组和对象首先比较引用，为了提高对比的效率如果一样就不再进行它的 properties 的对比
+
+### 对 Map 和 Set 的支持
+
+目前支持 primitive type，array 和 object 等数据类型，暂不支持 Map 和 Set 数据结构，
+
+### 对 ES5 支持存在的问题
+
+#### 使用到的 property 必须都声明
+
+因为`defineProperty`不支持对未声明属性的 getter trap，如果说希望 ES5 和 ES6 表现一致的话，需要再 model 中对需要使用到的 property 都进行声明，否则会出现在 ES5 中某一个字段更新但是没有重新渲染的问题。
+
+```js
+// appModel.js
+export default () => ({
+  state: {location: {}}
+})
+
+// view.js
+const A = observe(() => {
+  const [state] = useRelinx("app")
+  return <span>{state.location.city}</span>
+})
+```
+
+需要更改为下面的形式
+
+```js
+// appModel.js
+export default () => ({
+  state: {
+    location: {city: null}
+  }
+})
+```
+
+_对于空值要定义为`null`，而不是`undefined`；Relinx 会通过比较 type 是否是`undefined`来确定这个 property 是否是声明过的_
+
+如何知道哪些字段没有声明过？
+
+Provider 支持`strictMode`属性，可以在开发阶段设置为 true
+
+```js
+<Provider strictMode>
+  <App />
+</Provider>
+```
+
+### ES5 对 Array 处理的支持
+
+Tracker 对 Array 的`prototype` function 进行了覆盖，比如`map`,`filter`...等函数调用的时候，都会自动将`length`作为 component 的监听对象；所以组件是可以对 array 的`length`变化进行响应的
+
+唯一存在的问题是，当使用`for`语句时不能够对`array.length`进行监听；因为`array.length`的`configurable`属性是`false`；不能够对它的`descriptor`进行重载
+
+### 如何防止 memory leak
+
+### 如何进行 array item 的粒度化渲染控制
