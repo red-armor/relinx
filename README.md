@@ -21,7 +21,7 @@ On handle side effect, In order to simply learning curve and leverage usage comp
 
 The Relinx design principle is very simple
 
-> Collect accessed properties paths of component, then re-render component if base value update on its bind path node.
+> Collect accessed properties paths of component, then re-render component if bind pathNode detect value change.
 
 ![flow](./docs/flow.png)
 
@@ -266,7 +266,7 @@ For `memory leaks`, it always talk about how to remove unused subscriptions. In 
 5. When component is un-mount, its related patcher will be destroyed.
 6. When component is re-rendered, the paths of patcher will be updated, and re-bind `patcher` to `pathNode`
 
-### How to control array re-render
+### How to optimize array re-render
 
 For array's re-render, basically it caused by two factors: `length` change or `item[key]` change.
 
@@ -278,7 +278,7 @@ In general, the change of length value will cause `items`'s component to re-rend
 
 It is recommend that parent and child component should be wrapped with `observe` function. If `item[key]` changes, it will only trigger corresponding child component to re-render.
 
-### Compared key
+### How to perform selector on compared Object
 
 Comparing with `Redux`, it use `shallowEqual` to verify value's update. `mapStateToProps` will be called on every time `state` changes which cause unnecessary keys' comparison or make performance issue. `React-Redux` official suggest to use [reselect](https://github.com/reduxjs/reselect) to avoid this kind of issue.
 
