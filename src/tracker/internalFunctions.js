@@ -1,5 +1,5 @@
 import invariant from "invariant"
-import {isTrackable, TRACKER, hideProperty} from "./commons"
+import {isTrackable, hideProperty} from "./commons"
 import {generateRemarkablePaths} from "./path"
 import {trackerNode as contextTrackerNode} from "./context"
 
@@ -151,6 +151,7 @@ proto.assertScope = function() {
   // If `contextTrackerNode` is null, it means access top most data prop.
   if (!trackerNode) {
     console.warn(
+      // eslint-disable-line
       "trackerNode is undefined, which means you are using createTracker function directly." +
         "Maybe you should create TrackerNode object."
     )

@@ -20,5 +20,16 @@ module.exports = {
     sourceType: "module"
   },
   plugins: ["react"],
-  rules: {}
+  rules: {
+    "consistent-return": 0,
+    "no-shadow": 0,
+    "no-nested-ternary": 0,
+    "no-param-reassign": 0,
+    "no-plusplus": 0,
+    "func-names": 0,
+    "no-restricted-globals": 0,
+    "no-return-assign": 0,
+    "import/prefer-default-export": 0,
+    "no-prototype-builtins": 0
+  }
 }

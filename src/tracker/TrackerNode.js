@@ -172,7 +172,9 @@ class TrackerNode {
   hydrate(base, config = {}) {
     this.base = base || this.base
     const keys = Object.keys(config)
-    keys.forEach(key => (this[key] = config[key]))
+    keys.forEach(key => {
+      this[key] = config[key]
+    })
     this.enterTrackerScope()
   }
 }

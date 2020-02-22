@@ -1,4 +1,4 @@
-export default ({getState, dispatch, reducers, effects}) => next => (
+export default ({getState, dispatch, effects}) => next => (
   actions,
   storeKey
 ) => {
@@ -38,11 +38,10 @@ export default ({getState, dispatch, reducers, effects}) => next => (
     })
     .forEach(action => {
       try {
-        const {type, payload} = action
+        const {type} = action
         const parts = type.split("/")
         const storeKey = parts[0]
         const actionType = parts[1]
-        const currentReducers = reducers[storeKey] || {}
 
         const currentEffects = effects[storeKey]
 

@@ -1,5 +1,5 @@
 import invariant from "invariant"
-import {canIUseProxy, TRACKER} from "./commons"
+import {canIUseProxy} from "./commons"
 import context from "./context"
 import TrackerNode from "./TrackerNode"
 
