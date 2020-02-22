@@ -36,8 +36,8 @@ function ES5Tracker({
 
   createHiddenProperty(this, "isRevoked", false)
   createHiddenProperty(this, "assertRevoke", function() {
-    const useRevoke = this.getProp("useRevoke")
-    if (!useRevoke) return
+    const falsy = this.getProp("useRevoke")
+    if (!falsy) return
     const isRevoked = this.getProp("isRevoked")
     if (isRevoked) {
       throw new Error(

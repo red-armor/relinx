@@ -11,7 +11,7 @@
 
 /* eslint-disable no-self-compare */
 
-const hasOwnProperty = Object.prototype.hasOwnProperty
+const {hasOwnProperty} = Object.prototype
 
 /**
  * inlined Object.is polyfill to avoid requiring consumers ship their own

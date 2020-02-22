@@ -8,17 +8,16 @@ import {
 } from "./commons"
 import ProxyTracker from "./ProxyTracker"
 
-import {trackerNode as contextTrackerNode} from "./context"
+import context from "./context"
 
-const peek = (proxy, accessPath) => {
+const peek = (proxy, accessPath) =>
   // eslint-disable-line
-  return accessPath.reduce((proxy, cur) => {
+  accessPath.reduce((proxy, cur) => {
     proxy.setProp("isPeeking", true)
     const nextProxy = proxy[cur]
     proxy.setProp("isPeeking", false)
     return nextProxy
   }, proxy)
-}
 
 function createTracker(target, config, trackerNode) {
   const {accessPath = [], parentProxy, useRevoke, useScope, rootPath = []} =
@@ -48,7 +47,7 @@ function createTracker(target, config, trackerNode) {
     get: (target, prop, receiver) => {
       target.runFn("assertScope")
       if (prop === TRACKER) return Reflect.get(target, prop, receiver)
-      // assertScope(trackerNode, contextTrackerNode)
+      // assertScope(trackerNode, context.trackerNode)
       const base = target.getProp("base")
 
       // refer to immer...
@@ -70,8 +69,8 @@ function createTracker(target, config, trackerNode) {
 
       if (!isPeeking) {
         // for relink return parent prop...
-        if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-          const contextProxy = contextTrackerNode.proxy
+        if (context.trackerNode && trackerNode.id !== context.trackerNode.id) {
+          const contextProxy = context.trackerNode.proxy
           const propProperties = contextProxy.getProp("propProperties")
           propProperties.push({
             path: nextAccessPath,

@@ -110,7 +110,7 @@ class TrackerNode {
   contains(childNode) {
     if (childNode === this) return true
     if (!childNode) return false
-    const parent = childNode.parent
+    const {parent} = childNode
     if (!parent) return false
     if (parent === this) return true
     return this.contains(parent)
@@ -172,7 +172,9 @@ class TrackerNode {
   hydrate(base, config = {}) {
     this.base = base || this.base
     const keys = Object.keys(config)
-    keys.forEach(key => (this[key] = config[key]))
+    keys.forEach(key => {
+      this[key] = config[key]
+    })
     this.enterTrackerScope()
   }
 }

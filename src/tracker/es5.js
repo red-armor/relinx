@@ -8,17 +8,16 @@ import {
 } from "./commons"
 import ES5Tracker from "./ES5Tracker"
 
-import {trackerNode as contextTrackerNode} from "./context"
+import context from "./context"
 
-const peek = (proxy, accessPath) => {
+const peek = (proxy, accessPath) =>
   // eslint-disable-line
-  return accessPath.reduce((proxy, cur) => {
+  accessPath.reduce((proxy, cur) => {
     proxy.setProp("isPeeking", true)
     const nextProxy = proxy[cur]
     proxy.setProp("isPeeking", false)
     return nextProxy
   }, proxy)
-}
 
 function createES5Tracker(target, config, trackerNode) {
   const {accessPath = [], parentProxy, useRevoke, useScope, rootPath = []} =
@@ -50,13 +49,16 @@ function createES5Tracker(target, config, trackerNode) {
 
         if (!isPeeking) {
           // for relink return parent prop...
-          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-            const contextProxy = contextTrackerNode.proxy
+          if (
+            context.trackerNode &&
+            trackerNode.id !== context.trackerNode.id
+          ) {
+            const contextProxy = context.trackerNode.proxy
             const propProperties = contextProxy.getProp("propProperties")
             propProperties.push({
               path: nextAccessPath,
               source: trackerNode.proxy,
-              target: contextTrackerNode.tracker
+              target: context.trackerNode.tracker
             })
             this.setProp("propProperties", propProperties)
             return peek(trackerNode.proxy, nextAccessPath)
@@ -90,7 +92,7 @@ function createES5Tracker(target, config, trackerNode) {
 
   each(target, prop => {
     const desc = Object.getOwnPropertyDescriptor(target, prop)
-    const enumerable = desc.enumerable
+    const {enumerable} = desc
     proxyProperty(proxy, prop, enumerable)
   })
 
@@ -109,15 +111,15 @@ function createES5Tracker(target, config, trackerNode) {
 
           if (!isPeeking) {
             if (
-              contextTrackerNode &&
-              trackerNode.id !== contextTrackerNode.id
+              context.trackerNode &&
+              trackerNode.id !== context.trackerNode.id
             ) {
-              const contextProxy = contextTrackerNode.proxy
+              const contextProxy = context.trackerNode.proxy
               const propProperties = contextProxy.getProp("propProperties")
               propProperties.push({
                 path: nextAccessPath,
                 source: trackerNode.proxy,
-                target: contextTrackerNode.tracker
+                target: context.trackerNode.tracker
               })
 
               this.setProp("propProperties", propProperties)
