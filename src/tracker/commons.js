@@ -24,10 +24,9 @@ export const canIUseProxy = () => {
 
 export const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop) // eslint-disable-line
 
-export const isTrackable = o => {
+export const isTrackable = o =>
   // eslint-disable-line
-  return ["[object Object]", "[object Array]"].indexOf(toString(o)) !== -1
-}
+  ["[object Object]", "[object Array]"].indexOf(toString(o)) !== -1
 
 export function each(obj, iter) {
   if (Array.isArray(obj)) {

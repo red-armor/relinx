@@ -1,7 +1,7 @@
+import invariant from "invariant"
 import {canIUseProxy, TRACKER} from "./commons"
 import context from "./context"
 import TrackerNode from "./TrackerNode"
-import invariant from "invariant"
 
 /**
  * resolve `reactivePaths`, and wrap `autoRunFunc`

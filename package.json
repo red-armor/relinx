@@ -12,7 +12,9 @@
     "examples:immer": "DIR=immer EXT=js webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "lint": "./node_modules/.bin/eslint ./src/**/*.js",
+    "lint-fix": "./node_modules/.bin/eslint --fix ./src/**/*.js"
   },
   "husky": {
     "hooks": {
@@ -41,18 +43,26 @@
     "@babel/preset-react": "^7.0.0",
     "babel-jest": "^25.1.0",
     "babel-loader": "^8.0.6",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-prettier": "^3.1.2",
+    "eslint-plugin-react": "^7.18.3",
+    "eslint-plugin-react-hooks": "^1.7.0",
     "html-webpack-plugin": "^3.2.0",
+    "husky": "^4.2.3",
     "jest": "^24.9.0",
+    "prettier": "^1.19.1",
+    "pretty-quick": "^2.0.1",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
+    "ts-jest": "^25.2.0",
     "ts-loader": "^6.0.4",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.7",
-    "webpack-dev-server": "^3.8.0",
-    "prettier": "^1.19.1",
-    "pretty-quick": "^2.0.1",
-    "husky": "^4.2.3",
-    "ts-jest": "^25.2.0"
+    "webpack-dev-server": "^3.8.0"
   },
   "dependencies": {
     "invariant": "^2.2.4"

@@ -3,15 +3,14 @@ import {isTrackable, TRACKER, hideProperty} from "./commons"
 import {generateRemarkablePaths} from "./path"
 import {trackerNode as contextTrackerNode} from "./context"
 
-const peek = (proxy, accessPath) => {
+const peek = (proxy, accessPath) =>
   // eslint-disable-line
-  return accessPath.reduce((proxy, cur) => {
+  accessPath.reduce((proxy, cur) => {
     proxy.setProp("isPeeking", true)
     const nextProxy = proxy[cur]
     proxy.setProp("isPeeking", false)
     return nextProxy
   }, proxy)
-}
 
 function internalFunctions() {}
 const proto = internalFunctions.prototype
@@ -155,13 +154,11 @@ proto.assertScope = function() {
       "trackerNode is undefined, which means you are using createTracker function directly." +
         "Maybe you should create TrackerNode object."
     )
-  } else if (!trackerNode.contains(contextTrackerNode))
+  } else if (!trackerNode.contains(contextTrackerNode)) {
     throw new Error(
-      trackerNode.id +
-        "is not child node of " +
-        contextTrackerNode.id +
-        "Property only could be accessed by self node or parent node."
+      `${trackerNode.id}is not child node of ${contextTrackerNode.id}Property only could be accessed by self node or parent node.`
     )
+  }
 }
 
 hideProperty(proto, "reportAccessPath")

@@ -158,7 +158,7 @@ const mergeAutoRunActions = computations => {
 
   for (let i = 0; i < len; i++) {
     const comp = computations[i]
-    let pathNumber = comp.pathNumber
+    let {pathNumber} = comp
     let currentComp = comp
 
     for (let j = i + 1; j < len; j++) {

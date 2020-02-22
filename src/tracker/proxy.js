@@ -10,15 +10,14 @@ import ProxyTracker from "./ProxyTracker"
 
 import {trackerNode as contextTrackerNode} from "./context"
 
-const peek = (proxy, accessPath) => {
+const peek = (proxy, accessPath) =>
   // eslint-disable-line
-  return accessPath.reduce((proxy, cur) => {
+  accessPath.reduce((proxy, cur) => {
     proxy.setProp("isPeeking", true)
     const nextProxy = proxy[cur]
     proxy.setProp("isPeeking", false)
     return nextProxy
   }, proxy)
-}
 
 function createTracker(target, config, trackerNode) {
   const {accessPath = [], parentProxy, useRevoke, useScope, rootPath = []} =
