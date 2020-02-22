@@ -1,7 +1,7 @@
 import invariant from "invariant"
 import {isTrackable, hideProperty} from "./commons"
 import {generateRemarkablePaths} from "./path"
-import {trackerNode as contextTrackerNode} from "./context"
+import context from "./context"
 
 const peek = (proxy, accessPath) =>
   // eslint-disable-line
@@ -26,7 +26,7 @@ proto.assertLink = function(fnName) {
   )
 
   invariant(
-    contextTrackerNode !== trackerNode,
+    context.trackerNode !== trackerNode,
     `\`${fnName}\` method is used to update \`proxy\` object from upstream.\n` +
       "So it is not meaning to link proxy in current trackerNode scope"
   )
@@ -142,25 +142,27 @@ proto.getRemarkableFullPaths = function() {
   return internalPaths.concat(externalPaths)
 }
 
+/* eslint-disable no-console */
 proto.assertScope = function() {
   const useScope = this.getProp("useScope")
 
   if (!useScope) return
   const trackerNode = this.getProp("trackerNode")
 
-  // If `contextTrackerNode` is null, it means access top most data prop.
+  // If `context.trackerNode` is null, it means access top most data prop.
   if (!trackerNode) {
     console.warn(
       // eslint-disable-line
       "trackerNode is undefined, which means you are using createTracker function directly." +
         "Maybe you should create TrackerNode object."
     )
-  } else if (!trackerNode.contains(contextTrackerNode)) {
+  } else if (!trackerNode.contains(context.trackerNode)) {
     throw new Error(
-      `${trackerNode.id}is not child node of ${contextTrackerNode.id}Property only could be accessed by self node or parent node.`
+      `${trackerNode.id}is not child node of ${context.trackerNode.id}Property only could be accessed by self node or parent node.`
     )
   }
 }
+/* eslint-enable no-console */
 
 hideProperty(proto, "reportAccessPath")
 hideProperty(proto, "cleanup")

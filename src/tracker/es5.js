@@ -8,7 +8,7 @@ import {
 } from "./commons"
 import ES5Tracker from "./ES5Tracker"
 
-import {trackerNode as contextTrackerNode} from "./context"
+import context from "./context"
 
 const peek = (proxy, accessPath) =>
   // eslint-disable-line
@@ -49,13 +49,16 @@ function createES5Tracker(target, config, trackerNode) {
 
         if (!isPeeking) {
           // for relink return parent prop...
-          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-            const contextProxy = contextTrackerNode.proxy
+          if (
+            context.trackerNode &&
+            trackerNode.id !== context.trackerNode.id
+          ) {
+            const contextProxy = context.trackerNode.proxy
             const propProperties = contextProxy.getProp("propProperties")
             propProperties.push({
               path: nextAccessPath,
               source: trackerNode.proxy,
-              target: contextTrackerNode.tracker
+              target: context.trackerNode.tracker
             })
             this.setProp("propProperties", propProperties)
             return peek(trackerNode.proxy, nextAccessPath)
@@ -108,15 +111,15 @@ function createES5Tracker(target, config, trackerNode) {
 
           if (!isPeeking) {
             if (
-              contextTrackerNode &&
-              trackerNode.id !== contextTrackerNode.id
+              context.trackerNode &&
+              trackerNode.id !== context.trackerNode.id
             ) {
-              const contextProxy = contextTrackerNode.proxy
+              const contextProxy = context.trackerNode.proxy
               const propProperties = contextProxy.getProp("propProperties")
               propProperties.push({
                 path: nextAccessPath,
                 source: trackerNode.proxy,
-                target: contextTrackerNode.tracker
+                target: context.trackerNode.tracker
               })
 
               this.setProp("propProperties", propProperties)

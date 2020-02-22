@@ -1,4 +1,4 @@
 const context = {
-  // eslint-disable-line
   trackerNode: null
 }
+export default context
