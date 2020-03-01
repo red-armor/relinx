@@ -186,7 +186,7 @@ By default, its value is `true`. It makes `backend` Tracker to use `Proxy` or `d
 
 #### strictMode
 
-By default, its value is false. Normally, it is used on dev condition. It helps to log the undeclared properties used by `state`. It's meaningful when `ES5` should be supported. [The below section have made a detail explanation](do-not-use-undeclared-properties)
+By default, its value is false. Normally, it is used on dev condition. It helps to log the undeclared properties used by `state`. It's meaningful when `ES5` should be supported. [The below section have made a detail explanation](#do-not-use-undeclared-properties)
 
 #### namespace
 

@@ -36,6 +36,12 @@
     "state-management",
     "reactive"
   ],
+  "files": [
+    "README.md",
+    "README-zh_CN.md",
+    "src/",
+    "index.js"
+  ],
   "author": "youchaoliu@xiaohongshu.com",
   "devDependencies": {
     "@babel/core": "^7.5.5",
