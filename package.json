@@ -40,7 +40,7 @@
     "README.md",
     "README-zh_CN.md",
     "src/hooks/*.js",
-    "src/middleware/*.js",
+    "src/middleware/**/*.js",
     "src/tracker/*.js",
     "src/utils/*.js",
     "src/*.js",
