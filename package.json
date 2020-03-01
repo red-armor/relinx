@@ -39,7 +39,11 @@
   "files": [
     "README.md",
     "README-zh_CN.md",
-    "src/",
+    "src/hooks/*.js",
+    "src/middleware/*.js",
+    "src/tracker/*.js",
+    "src/utils/*.js",
+    "src/*.js",
     "index.js"
   ],
   "author": "youchaoliu@xiaohongshu.com",
