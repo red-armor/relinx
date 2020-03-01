@@ -9,7 +9,7 @@ import {generatePatcherId} from "./utils/key"
 
 const DEBUG = false
 const MINIMUS_RE_RENDER = false
-
+const DEBUG_UNDEFINED = false
 class Application {
   constructor({base, namespace, strictMode}) {
     this.base = base
