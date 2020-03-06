@@ -26,9 +26,7 @@ export default ({
   const setState = setValue
   const dispatch = useMemo(() => createDispatch(setState), [])
 
-  useEffect(() => {
-    application.current.update(value)
-  }, [value])
+  application.current.update(value)
 
   const contextValue = useRef({
     dispatch,
