@@ -54,14 +54,18 @@ function createTracker(target, config, trackerNode) {
       // if (Array.isArray(tracker)) target = tracker[0]
       const isInternalPropAccessed = internalProps.indexOf(prop) !== -1
       if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
-        const reflectValue = Reflect.get(target, prop, receiver)
-        if (typeof reflectValue === "undefined") {
-          // console.warn(
-          //   `Maybe you are using an un-declared props ${prop}\n` +
-          //   `You'd better declare this prop first, or the reported paths` +
-          //   'will not works well on `ES5`'
-          // )
-        } else return reflectValue
+        // Basically, access path is meaningful only if it's state value's own property.
+        // In this condition, it should be Symbol access like `symbol.tostringtag` or
+        // `symbol.iterator`
+        return Reflect.get(target, prop, receiver)
+
+        // if (typeof reflectValue === "undefined") {
+        //   // console.warn(
+        //   //   `Maybe you are using an un-declared props ${prop}\n` +
+        //   //   `You'd better declare this prop first, or the reported paths` +
+        //   //   'will not works well on `ES5`'
+        //   // )
+        // } else return reflectValue
       }
       const accessPath = target.getProp("accessPath")
       const nextAccessPath = accessPath.concat(prop)
