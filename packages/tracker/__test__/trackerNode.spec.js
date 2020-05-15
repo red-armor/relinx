@@ -1,5 +1,5 @@
-import Tracker from "../index"
-import context from "../context"
+import Tracker from "../src"
+import context from "../src/context"
 
 testTracker(true)
 testTracker(false)

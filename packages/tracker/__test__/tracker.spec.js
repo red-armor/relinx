@@ -1,6 +1,6 @@
-import createES5Tracker from "../es5"
-import createTracker from "../proxy"
-import {TRACKER} from "../commons"
+import createES5Tracker from "../src/es5"
+import createTracker from "../src/proxy"
+import {TRACKER} from "../src/commons"
 
 testTracker(true)
 testTracker(false)
