@@ -4,17 +4,8 @@
   "description": "A fast and easy use react state management base on reactive philosophy",
   "main": "index.js",
   "scripts": {
-    "examples:basic": "DIR=basic EXT=js webpack-dev-server",
-    "examples:memo": "DIR=memo EXT=js webpack-dev-server",
-    "examples:nest-update": "DIR=nest-update EXT=js webpack-dev-server",
-    "examples:nest-update-memo": "DIR=nest-update-memo EXT=js webpack-dev-server",
-    "examples:simple": "DIR=simple EXT=js webpack-dev-server",
-    "examples:immer": "DIR=immer EXT=js webpack-dev-server",
-    "flow-check": "flow check --show-all-errors",
     "test": "jest",
-    "coverage": "jest --coverage",
-    "lint": "./node_modules/.bin/eslint ./src/**/*.js",
-    "lint-fix": "./node_modules/.bin/eslint --fix ./src/**/*.js"
+    "coverage": "jest --coverage"
   },
   "husky": {
     "hooks": {
@@ -30,22 +21,6 @@
     "type": "git",
     "url": "git@github.com:ryuever/relinx.git"
   },
-  "keywords": [
-    "react",
-    "hooks",
-    "state-management",
-    "reactive"
-  ],
-  "files": [
-    "README.md",
-    "README-zh_CN.md",
-    "src/hooks/*.js",
-    "src/middleware/**/*.js",
-    "src/tracker/*.js",
-    "src/utils/*.js",
-    "src/*.js",
-    "index.js"
-  ],
   "author": "youchaoliu@xiaohongshu.com",
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -61,20 +36,15 @@
     "eslint-plugin-prettier": "^3.1.2",
     "eslint-plugin-react": "^7.18.3",
     "eslint-plugin-react-hooks": "^1.7.0",
-    "html-webpack-plugin": "^3.2.0",
     "husky": "^4.2.3",
     "jest": "^24.9.0",
+    "lerna": "^3.16.4",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
     "ts-jest": "^25.2.0",
-    "ts-loader": "^6.0.4",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.7",
-    "webpack-dev-server": "^3.8.0"
+    "ts-loader": "^6.0.4"
   },
   "dependencies": {
-    "invariant": "^2.2.4",
-    "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "invariant": "^2.2.4"
   }
 }

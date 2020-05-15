@@ -6,7 +6,7 @@ import React, {
   useCallback
 } from "react"
 import context from "./context"
-import Tracker from "./tracker"
+import Tracker from "@relinx/tracker"
 import {generatePatcherKey} from "./utils/key"
 import Patcher from "./Patcher"
 import infoLog from "./utils/infoLog"
