@@ -1,0 +1,6 @@
+export { default as Provider } from './src/Provider'
+export { default as applyMiddleware } from './src/applyMiddleware'
+export { default as createStore } from './src/createStore'
+export { default as useRelinx } from './src/hooks/useRelinx'
+export { default as useDispatch } from './src/hooks/useDispatch'
+export { default as observe } from './src/observe'

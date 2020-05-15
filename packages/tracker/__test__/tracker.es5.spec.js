@@ -1,5 +1,5 @@
-import createES5Tracker from "../es5"
-import {TRACKER} from "../commons"
+import createES5Tracker from "../src/es5"
+import {TRACKER} from "../src/commons"
 
 describe("test prototype functions", () => {
   test("normal array", () => {

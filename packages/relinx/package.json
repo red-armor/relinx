@@ -1,0 +1,39 @@
+{
+  "name": "relinx",
+  "version": "0.0.0",
+  "description": "relinx core",
+  "main": "lib/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest",
+    "lint": "./node_modules/.bin/eslint ./src/**/*.js",
+    "lint-fix": "./node_modules/.bin/eslint --fix ./src/**/*.js"
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "state-management",
+    "reactive"
+  ],
+  "files": [
+    "README.md",
+    "README-zh_CN.md",
+    "src/hooks/*.js",
+    "src/middleware/**/*.js",
+    "src/tracker/*.js",
+    "src/utils/*.js",
+    "src/*.js",
+    "index.js"
+  ],
+  "author": "youchaoliu@gmail.com",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "dependencies": {
+    "@relinx/tracker": "^1.0.0"
+  }
+}

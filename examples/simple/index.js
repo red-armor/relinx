@@ -1,19 +1,17 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-import {
-  logger,
-  Provider,
-  createStore,
-  applyMiddleware,
-  thunk,
-} from 'relinx'
-import Models from './models'
+import React from "react"
+import ReactDOM from "react-dom"
+import {Provider, createStore, applyMiddleware} from "relinx"
+import {thunk, logger} from "@relinx/middleware"
+import createModel from "./models"
 
-import App from './container/app'
+import App from "./container/app"
 
-const store = createStore({
-  models: new Models(),
-}, applyMiddleware(thunk, logger))
+const store = createStore(
+  {
+    models: createModel()
+  },
+  applyMiddleware(thunk, logger)
+)
 
 const Basic = () => (
   <Provider store={store} useProxy={false}>
@@ -21,4 +19,4 @@ const Basic = () => (
   </Provider>
 )
 
-ReactDOM.render(<Basic />, document.getElementById('app'))
+ReactDOM.render(<Basic />, document.getElementById("app"))

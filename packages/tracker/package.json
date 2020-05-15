@@ -1,0 +1,21 @@
+{
+  "name": "@relinx/tracker",
+  "version": "1.0.0",
+  "description": "Track the getter action of wrapped object and provide ability to `relink` when upstream object's value changed",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/red-armor/relinx/packages/tracker"
+  },
+  "keywords": [
+    "tracker"
+  ],
+  "author": "youchaoliu@gmail.com",
+  "license": "ISC"
+}

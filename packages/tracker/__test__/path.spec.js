@@ -1,7 +1,7 @@
-import createTracker from "../proxy"
-import createES5Tracker from "../es5"
-import {generateRemarkablePaths} from "../path"
-import {TRACKER} from "../commons"
+import createTracker from "../src/proxy"
+import createES5Tracker from "../src/es5"
+import {generateRemarkablePaths} from "../src/path"
+import {TRACKER} from "../src/commons"
 
 testTracker(true)
 testTracker(false)
