@@ -1,7 +1,7 @@
-import { canIUseProxy, TRACKER } from './commons'
-import context from './context'
-import TrackerNode from './TrackerNode'
-import invariant from 'invariant'
+import { canIUseProxy, TRACKER } from './commons';
+import context from './context';
+import TrackerNode from './TrackerNode';
+import invariant from 'invariant';
 
 /**
  * resolve `reactivePaths`, and wrap `autoRunFunc`
@@ -19,36 +19,40 @@ const Tracker = ({
     invariant(
       useRevoke !== useScope,
       '`useRevoke` or `useScope` should not be equal; and one must be true' +
-      'If you do not have any idea, please leave to use default value.'
-    )
-  }
+        'If you do not have any idea, please leave to use default value.'
+    );
+  };
 
-  assertAccessibility(useScope, useRevoke)
+  assertAccessibility(useScope, useRevoke);
 
-  const verifiedUseProxy = canIUseProxy() && useProxy
-  const parentTrackerNode = typeof parent !== 'undefined' ? parent : context.trackerNode
-  let isSibling = false
+  const verifiedUseProxy = canIUseProxy() && useProxy;
+  const parentTrackerNode =
+    typeof parent !== 'undefined' ? parent : context.trackerNode;
+  let isSibling = false;
 
   // re-create a top most node
   if (!parentTrackerNode) {
     // start another top level branch...like
     // { a: { b: 1 }} => { a: { b: 1 }, c: {d: 2 }}
     if (context.trackerNode && useRevoke) {
-      context.trackerNode.revokeUntil(parentTrackerNode)
+      context.trackerNode.revokeUntil(parentTrackerNode);
     }
   } else {
     if (parentTrackerNode === context.trackerNode) {
       // Add a child, for sibling, intersection access is forbidden.
       if (useRevoke) {
-        parentTrackerNode.revokeLastChild()
+        parentTrackerNode.revokeLastChild();
       }
-    } else if (useRevoke && context.trackerNode){
+    } else if (useRevoke && context.trackerNode) {
       // Add a parentTrackerNode's sibling, so `revokeUntil` is required.
-      context.trackerNode.revokeUntil(parentTrackerNode)
+      context.trackerNode.revokeUntil(parentTrackerNode);
     }
 
-    if (context.trackerNode && parentTrackerNode === context.trackerNode.parent) {
-      isSibling = true
+    if (
+      context.trackerNode &&
+      parentTrackerNode === context.trackerNode.parent
+    ) {
+      isSibling = true;
     }
   }
 
@@ -60,7 +64,7 @@ const Tracker = ({
     useScope,
     useProxy: verifiedUseProxy,
     rootPath,
-  })
-}
+  });
+};
 
-export default Tracker
+export default Tracker;

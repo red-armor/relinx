@@ -1,12 +1,12 @@
 export default (a = [], b = []) => {
-  const parts = []
+  const parts = [];
 
   for (let i = 0; i < a.length; i++) {
-    const key = a[i]
+    const key = a[i];
     if (b.indexOf(key) === -1) {
-      parts.push(key)
+      parts.push(key);
     }
   }
 
-  return parts
-}
+  return parts;
+};

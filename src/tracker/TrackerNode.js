@@ -1,8 +1,8 @@
-import context from './context'
-import createES5Tracker from './es5'
-import createTracker from './proxy'
+import context from './context';
+import createES5Tracker from './es5';
+import createTracker from './proxy';
 
-let count = 0
+let count = 0;
 
 class TrackerNode {
   constructor({
@@ -14,42 +14,42 @@ class TrackerNode {
     useProxy,
     rootPath,
   }) {
-    this.base = base
-    this.useRevoke = useRevoke
-    this.useScope = useScope
-    this.useProxy = useProxy
+    this.base = base;
+    this.useRevoke = useRevoke;
+    this.useScope = useScope;
+    this.useProxy = useProxy;
 
-    this.rootPath = rootPath
+    this.rootPath = rootPath;
 
-    this.children = []
-    this.parent = parent
-    this.prevSibling = null
-    this.nextSibling = null
-    this.proxy = null
+    this.children = [];
+    this.parent = parent;
+    this.prevSibling = null;
+    this.nextSibling = null;
+    this.proxy = null;
     this.id = `__TrackerNode_${count++}__` // eslint-disable-line
-    this.isRevoked = false
+    this.isRevoked = false;
 
-    this.inScope = false
+    this.inScope = false;
 
-    this.updateParent()
+    this.updateParent();
     if (isSibling) {
-      this.initPrevSibling()
+      this.initPrevSibling();
     }
 
     if (this.base) {
-      this.enterTrackerScope()
+      this.enterTrackerScope();
     }
   }
 
   updateParent() {
     if (this.parent) {
-      this.parent.children.push(this)
+      this.parent.children.push(this);
     }
   }
 
   enterTrackerScope() {
-    this.enterContext()
-    const Fn = this.useProxy ? createTracker : createES5Tracker
+    this.enterContext();
+    const Fn = this.useProxy ? createTracker : createES5Tracker;
     this.proxy = new Fn(
       this.base,
       {
@@ -57,68 +57,68 @@ class TrackerNode {
         useScope: this.useScope,
         rootPath: this.rootPath,
       },
-      this,
-    )
+      this
+    );
   }
 
   enterContext() {
-    context.trackerNode = this
-    this.inScope = true
+    context.trackerNode = this;
+    this.inScope = true;
   }
 
   leaveContext() {
     if (this.inScope) {
-      this.inScope = false
-      context.trackerNode = null
+      this.inScope = false;
+      context.trackerNode = null;
     }
 
     if (this.parent && this.parent.inScope) {
-      context.trackerNode = this.parent
+      context.trackerNode = this.parent;
     }
   }
 
   initPrevSibling() {
     if (this.parent) {
-      const childNodes = this.parent.children
-      const lastChild = childNodes[childNodes.length - 1]
-      this.prevSibling = lastChild
+      const childNodes = this.parent.children;
+      const lastChild = childNodes[childNodes.length - 1];
+      this.prevSibling = lastChild;
       if (lastChild) {
-        lastChild.nextSibling = this
+        lastChild.nextSibling = this;
       }
     }
   }
 
   destroy() {
     if (this.parent) {
-      const index = this.parent.children.indexOf(this)
-      this.parent.children.splice(index, 1)
+      const index = this.parent.children.indexOf(this);
+      this.parent.children.splice(index, 1);
     }
-    const prev = this.prevSibling
-    const next = this.nextSibling
+    const prev = this.prevSibling;
+    const next = this.nextSibling;
 
     if (prev) {
-      if (next) prev.nextSibling = next
-      else prev.nextSibling = null
+      if (next) prev.nextSibling = next;
+      else prev.nextSibling = null;
     }
 
     if (next) {
-      if (prev) next.prevSibling = prev
-      else next.prevSibling = null
+      if (prev) next.prevSibling = prev;
+      else next.prevSibling = null;
     }
   }
 
   contains(childNode) {
-    if (childNode === this) return true
-    if (!childNode) return false
-    const parent = childNode.parent
-    if (!parent) return false
-    if (parent === this) return true
-    return this.contains(parent)
+    if (childNode === this) return true;
+    if (!childNode) return false;
+    const parent = childNode.parent;
+    if (!parent) return false;
+    if (parent === this) return true;
+    return this.contains(parent);
   }
 
   revokeLastChild() {
     if (this.children.length) {
-      this.children[this.children.length - 1].revoke()
+      this.children[this.children.length - 1].revoke();
     }
   }
 
@@ -127,10 +127,11 @@ class TrackerNode {
    * @param {null | TrackerNode} parent, null value means revoke until to top most.
    */
   revokeUntil(parent) {
-    if (parent === this) return true
+    if (parent === this) return true;
 
     if (parent) {
-      if (parent.isRevoked) throw new Error('Assign a `revoked` parent is forbidden')
+      if (parent.isRevoked)
+        throw new Error('Assign a `revoked` parent is forbidden');
     }
 
     if (this.parent) {
@@ -139,22 +140,22 @@ class TrackerNode {
       // the top most node, still can not find `parent` node
       // if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
       if (this.parent) {
-        this.parent.revokeUntil(parent)
+        this.parent.revokeUntil(parent);
       }
     }
 
-    this.revokeSelf()
+    this.revokeSelf();
   }
 
   revokeSelf() {
     if (this.children.length) {
       this.children.forEach(child => {
-        if (!child.isRevoked) child.revokeSelf()
-      })
+        if (!child.isRevoked) child.revokeSelf();
+      });
     }
     if (!this.isRevoked) {
-      this.proxy.revoke()
-      this.isRevoked = true
+      this.proxy.revoke();
+      this.isRevoked = true;
     }
   }
 
@@ -163,17 +164,17 @@ class TrackerNode {
    */
   revoke() {
     if (this.parent) {
-      this.proxy.revoke()
-      context.trackerNode = this.parent
+      this.proxy.revoke();
+      context.trackerNode = this.parent;
     }
   }
 
   hydrate(base, config = {}) {
-    this.base = base || this.base
-    const keys = Object.keys(config)
-    keys.forEach(key => this[key] = config[key])
-    this.enterTrackerScope()
+    this.base = base || this.base;
+    const keys = Object.keys(config);
+    keys.forEach(key => (this[key] = config[key]));
+    this.enterTrackerScope();
   }
 }
 
-export default TrackerNode
+export default TrackerNode;

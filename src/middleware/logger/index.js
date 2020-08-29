@@ -1,12 +1,12 @@
-import print from './print'
+import print from './print';
 
 export default ({ getState }) => next => actions => {
-  const startTime = Date.now()
-  const prevState = JSON.parse(JSON.stringify(getState()))
+  const startTime = Date.now();
+  const prevState = JSON.parse(JSON.stringify(getState()));
 
-  next(actions)
+  next(actions);
 
-  const endTime = Date.now()
+  const endTime = Date.now();
 
   print({
     actions,
@@ -14,8 +14,8 @@ export default ({ getState }) => next => actions => {
     initialActions: actions,
     startTime,
     endTime,
-  })
-}
+  });
+};
 
 // 结束的时间点。。。
 // 如果同步的reducers的话，最外层运行结束就是一个结点

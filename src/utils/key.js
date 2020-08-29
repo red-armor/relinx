@@ -4,29 +4,29 @@ const seenKeys = {};
 const MULTIPLIER = Math.pow(2, 24) // eslint-disable-line
 
 export const generateNamespaceKey = () => {
-  let key
+  let key;
 
   while (key === undefined || seenKeys.hasOwnProperty(key) || !isNaN(+key)) { // eslint-disable-line
     key = Math.floor(Math.random() * MULTIPLIER).toString(32);
   }
 
-  seenKeys[key] = true
-  return key
-}
+  seenKeys[key] = true;
+  return key;
+};
 
-const patcherIds = {}
+const patcherIds = {};
 export const generatePatcherId = ({ namespace }) => {
-  const count = patcherIds[namespace] || 0
-  const next = count + 1
-  patcherIds[namespace] = next
-  return `${namespace}_patcherId_${count}`
-}
+  const count = patcherIds[namespace] || 0;
+  const next = count + 1;
+  patcherIds[namespace] = next;
+  return `${namespace}_patcherId_${count}`;
+};
 
-const patcherSeenKeys = {}
+const patcherSeenKeys = {};
 export const generatePatcherKey = ({ namespace, componentName }) => {
-  if (!patcherSeenKeys[namespace]) patcherSeenKeys[namespace] = {}
-  const count = patcherSeenKeys[namespace][componentName] || 0
-  const next = count + 1
-  patcherSeenKeys[namespace][componentName] = next
-  return `${namespace}_${componentName}_patcher_${count}`
-}
+  if (!patcherSeenKeys[namespace]) patcherSeenKeys[namespace] = {};
+  const count = patcherSeenKeys[namespace][componentName] || 0;
+  const next = count + 1;
+  patcherSeenKeys[namespace][componentName] = next;
+  return `${namespace}_${componentName}_patcher_${count}`;
+};

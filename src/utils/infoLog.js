@@ -5,4 +5,4 @@ function infoLog(...args) {
   console.log('**DEBUG**', ...args); // eslint-disable-line
 }
 
-export default infoLog
+export default infoLog;

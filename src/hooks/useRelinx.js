@@ -1,6 +1,6 @@
-import { useContext, useEffect, useRef } from 'react'
-import invariant from 'invariant'
-import context from '../context'
+import { useContext, useEffect, useRef } from 'react';
+import invariant from 'invariant';
+import context from '../context';
 
 export default storeName => {
   const {
@@ -8,7 +8,7 @@ export default storeName => {
     getData,
     attachStoreName,
     // occupied,
-  } = useContext(context)
+  } = useContext(context);
 
   // const verifyOccupy = useRef(false)
 
@@ -25,11 +25,11 @@ export default storeName => {
   invariant(
     typeof storeName === 'string' && storeName !== '',
     '`storeName` is required'
-  )
+  );
 
-  attachStoreName(storeName)
+  attachStoreName(storeName);
 
-  const { trackerNode } = getData()
+  const { trackerNode } = getData();
 
-  return [trackerNode.proxy, dispatch]
-}
+  return [trackerNode.proxy, dispatch];
+};
