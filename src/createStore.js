@@ -5,13 +5,10 @@ const combineReducers = reducers => state => (_, actions) => {
 
   const changedValues = nextActions.reduce((changedValueGroup, action) => {
     const { type, payload } = action
-
-    if (type.startsWith('@init')) return changedValueGroup
-
     const [storeKey, actionType] = type.split('/')
     const usedReducer = reducers[storeKey]
 
-    invariant(usedReducer, 'Reducer missing for type `${type}`') // eslint-disable-line
+    invariant(usedReducer, `Reducer missing for type \`${type}\``) // eslint-disable-line
 
     const currentState = state[storeKey]
     if (usedReducer[actionType]) {
@@ -37,7 +34,7 @@ export default function createStore(configs, enhancer) {
     return enhancer(createStore)(configs)
   }
 
-  const { models } = configs
+  const { models, initialValue = {} } = configs
   const keys = Object.keys(models)
   const globalState = {}
   const globalReducers = {}
@@ -45,7 +42,8 @@ export default function createStore(configs, enhancer) {
 
   keys.forEach(key => {
     const { state, reducers, effects } = models[key]
-    globalState[key] = state
+    const initial = initialValue[key] || {}
+    globalState[key] = { ...state, ...initial }
     globalReducers[key] = reducers
     globalEffects[key] = effects
   })

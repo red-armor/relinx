@@ -34,7 +34,7 @@ export default WrappedComponent => {
   function NextComponent(props) {
     const state = useRef(0)
     const shadowState = useRef(0)
-    const [_, setState] = useState(state.current)
+    const [_, setState] = useState(state.current) // eslint-disable-line
     const storeName = useRef()
     const isHydrated = useRef(false)
     const isInit = useRef(true)
@@ -80,6 +80,7 @@ export default WrappedComponent => {
         autoRunFn,
         parent: parentPatcher,
         key: generatePatcherKey({ namespace, componentName }),
+        displayName: NextComponent.displayName,
       })
     }
 

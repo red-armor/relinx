@@ -1,13 +1,13 @@
 export default ({
   getState,
   dispatch,
-  reducers,
   effects,
 }) => next => (actions, storeKey) => {
   if (typeof actions === 'function') {
     const nextDispatch = (...args) => {
-      const nextArgs = [].concat(...args)
+      const nextArgs = [].concat(...args) || []
       const actions = nextArgs.map(action => {
+        if (!action) return
         const { type, payload } = action
         const parts = [storeKey].concat(type.split('/')).slice(-2)
         const nextAction = {
@@ -19,7 +19,7 @@ export default ({
 
         return nextAction
       })
-      dispatch(actions)
+      if (actions.length) dispatch(actions)
     }
     return actions(nextDispatch, getState)
   }
@@ -38,21 +38,17 @@ export default ({
     return false
   }).forEach(action => {
     try {
-      const { type, payload } = action
+      const { type } = action
       const parts = type.split('/')
       const storeKey = parts[0]
       const actionType = parts[1]
-      const currentReducers = reducers[storeKey] || {}
-
       const currentEffects = effects[storeKey]
 
       if (currentEffects && currentEffects[actionType]) {
         return effectActions.push(action)
       }
 
-      // if (currentReducers[actionType]) {
       return reducerActions.push(action)
-      // }
     } catch (info) {
       // console.error(info)
       // info process action fails

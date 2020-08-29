@@ -2,7 +2,6 @@ import React, {
   useMemo,
   useRef,
   useReducer,
-  useEffect,
 } from 'react'
 import context from './context'
 import Application from './Application'
@@ -14,6 +13,7 @@ export default ({
   namespace,
   useProxy = true,
   useRelinkMode = true,
+  strictMode = false,
 }) => {
   const { initialState, createReducer, createDispatch } = store
   const namespaceRef = useRef(namespace || generateNamespaceKey())
@@ -21,6 +21,7 @@ export default ({
     new Application({
       base: initialState,
       namespace: namespaceRef.current,
+      strictMode,
     })
   )
 
@@ -30,9 +31,7 @@ export default ({
   const setState = setValue
   const dispatch = useMemo(() => createDispatch(setState), [])
 
-  useEffect(() => {
-    application.current.update(value)
-  }, [value])
+  application.current.update(value)
 
   const contextValue = useRef({
     dispatch,

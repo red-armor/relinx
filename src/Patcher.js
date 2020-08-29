@@ -4,6 +4,7 @@ class Patcher {
     autoRunFn,
     key,
     parent,
+    displayName,
   }) {
     this.autoRunFn = autoRunFn
     this.paths = paths
@@ -11,6 +12,7 @@ class Patcher {
     this.removers = []
     this.dirty = false
     this.id = key
+    this.displayName = displayName
     this.parent = parent
     this.children = []
 

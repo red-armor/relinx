@@ -91,9 +91,9 @@ const renderPrevState = state => {
   renderState(state)
 }
 
-const renderNextState = state => {
-  renderState(state, true)
-}
+// const renderNextState = state => {
+//   renderState(state, true)
+// }
 
 const paint = (tree, flag) => {
   const {
@@ -139,7 +139,6 @@ const paintActions = actions => {
 export default props => {
   const {
     prevState = {},
-    nextState = {},
     actions,
   } = props
 
