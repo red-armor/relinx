@@ -7,4 +7,5 @@ const defaultValue = {
   dispatch: () => {},
 };
 
+// @ts-ignore
 export default createContext(defaultValue, calculateChangeBits);

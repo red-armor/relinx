@@ -1,5 +1,5 @@
-const toString = Function.call.bind(Object.prototype.toString);
-const ownKeys = o =>
+const toString = Function.call.bind<Function>(Object.prototype.toString);
+const ownKeys = (o: any) =>
   typeof Reflect !== 'undefined' && Reflect.ownKeys
     ? Reflect.ownKeys(o)
     : typeof Object.getOwnPropertySymbols !== 'undefined'
@@ -7,9 +7,11 @@ const ownKeys = o =>
     : Object.getOwnPropertyNames(o);
 
 export const emptyFunction = () => {};
-export const isObject = o => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
+export const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 export const hasSymbol = typeof Symbol !== 'undefined';
-export const TRACKER = hasSymbol ? Symbol('tracker') : '__tracker__';
+export const TRACKER: unique symbol = hasSymbol
+  ? Symbol('tracker')
+  : ('__tracker__' as any);
 
 export const canIUseProxy = () => {
   try {
@@ -23,11 +25,11 @@ export const canIUseProxy = () => {
 
 export const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop) // eslint-disable-line
 
-export const isTrackable = o => { // eslint-disable-line
+export const isTrackable = (o: any) => { // eslint-disable-line
   return ['[object Object]', '[object Array]'].indexOf(toString(o)) !== -1;
 };
 
-export function each(obj, iter) {
+export function each(obj: Array<any> | object, iter: Function) {
   if (Array.isArray(obj)) {
     obj.forEach((entry, index) => iter(index, entry, obj));
   } else if (isObject(obj)) {
@@ -40,7 +42,7 @@ export const Type = {
   Array: 'array',
 };
 
-export function shallowCopy(o) {
+export function shallowCopy(o: any) {
   if (Array.isArray(o)) return o.slice();
   const value = Object.create(Object.getPrototypeOf(o));
   ownKeys(o).forEach(key => {
@@ -50,13 +52,25 @@ export function shallowCopy(o) {
   return value;
 }
 
-export const inherit = (subClass, superClass) => {
+export const inherit = (
+  subClass: {
+    prototype: any;
+    // __proto__: any;
+  },
+  superClass: {
+    prototype: any;
+  }
+) => {
   subClass.prototype = Object.create(superClass.prototype);
   subClass.prototype.constructor = subClass;
-  subClass.__proto__ = superClass // eslint-disable-line
+  // subClass.__proto__ = superClass // eslint-disable-line
 };
 
-export const createHiddenProperty = (target, prop, value) => {
+export const createHiddenProperty = (
+  target: object,
+  prop: PropertyKey,
+  value: any
+) => {
   Object.defineProperty(target, prop, {
     value,
     enumerable: false,
@@ -64,7 +78,7 @@ export const createHiddenProperty = (target, prop, value) => {
   });
 };
 
-export const hideProperty = (target, prop) => {
+export const hideProperty = (target: object, prop: PropertyKey) => {
   Object.defineProperty(target, prop, {
     enumerable: false,
     configurable: false,

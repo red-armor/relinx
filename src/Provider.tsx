@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useReducer } from 'react';
 import context from './context';
 import Application from './Application';
 import { generateNamespaceKey } from './utils/key';
+import { ProviderProps } from './types';
 
 export default ({
   store,
@@ -10,7 +11,7 @@ export default ({
   useProxy = true,
   useRelinkMode = true,
   strictMode = false,
-}) => {
+}: ProviderProps) => {
   const { initialState, createReducer, createDispatch } = store;
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(

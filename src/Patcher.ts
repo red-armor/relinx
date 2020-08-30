@@ -1,5 +1,28 @@
-class Patcher {
-  constructor({ paths, autoRunFn, key, parent, displayName }) {
+import { IPatcher } from './types';
+
+class Patcher implements IPatcher {
+  public autoRunFn: Function;
+  public paths: Array<Array<string>>;
+  public removers: Array<Function>;
+  public dirty: boolean;
+  public id: string;
+  public displayName: string;
+  public parent: null | Patcher;
+  public children: Array<any>;
+
+  constructor({
+    paths,
+    autoRunFn,
+    key,
+    parent,
+    displayName,
+  }: {
+    paths: Array<Array<string>>;
+    autoRunFn: Function;
+    key: string;
+    parent: Patcher;
+    displayName: string;
+  }) {
     this.autoRunFn = autoRunFn;
     this.paths = paths;
 
@@ -27,7 +50,7 @@ class Patcher {
     this.parent = null;
   }
 
-  appendTo(parent) {
+  appendTo(parent: null | Patcher) {
     if (this.parent) {
       this.parent.removeChild(this);
     }
@@ -41,7 +64,7 @@ class Patcher {
     }
   }
 
-  belongs(parent) {
+  belongs(parent: null | Patcher): boolean {
     if (!parent) return false;
 
     if (this.parent) {
@@ -54,18 +77,18 @@ class Patcher {
     return false;
   }
 
-  removeChild(child) {
+  removeChild(child: Patcher) {
     const index = this.children.indexOf(child);
     if (index !== -1) this.children.splice(index, 1);
   }
 
-  update({ paths }) {
+  update({ paths }: { paths: Array<Array<string>> }) {
     this.paths = paths;
     this.dirty = false;
     this.teardown();
   }
 
-  addRemover(remover) {
+  addRemover(remover: Function) {
     this.removers.push(remover);
   }
 

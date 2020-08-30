@@ -1,8 +1,12 @@
-const joinPath = path => path.join('_');
+const joinPath = (path: Array<string>) => path.join('_');
 
-export const generateRemarkablePaths = paths => {
+interface AccessMap {
+  [key: string]: number;
+}
+
+export const generateRemarkablePaths = (paths: Array<Array<string>>) => {
   const copy = paths.slice();
-  const accessMap = {};
+  const accessMap: AccessMap = {};
   const len = copy.length;
   const remarkablePaths = [];
 

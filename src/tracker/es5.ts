@@ -7,10 +7,15 @@ import {
   createHiddenProperty,
 } from './commons';
 import ES5Tracker from './ES5Tracker';
+import context from './context';
+import {
+  IES5Tracker,
+  ES5TrackerInterface,
+  ES5TrackerConfig,
+  TrackerNode,
+} from './types';
 
-import { trackerNode as contextTrackerNode } from './context';
-
-const peek = (proxy, accessPath) => { // eslint-disable-line
+const peek = (proxy: IES5Tracker, accessPath: Array<string>) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur) => {
     proxy.setProp('isPeeking', true);
     const nextProxy = proxy[cur];
@@ -19,7 +24,11 @@ const peek = (proxy, accessPath) => { // eslint-disable-line
   }, proxy);
 };
 
-function createES5Tracker(target, config, trackerNode) {
+function createES5Tracker(
+  target: any,
+  config: ES5TrackerConfig,
+  trackerNode: TrackerNode
+): IES5Tracker {
   const { accessPath = [], parentProxy, useRevoke, useScope, rootPath = [] } =
     config || {};
 
@@ -29,13 +38,17 @@ function createES5Tracker(target, config, trackerNode) {
     );
   }
 
-  const proxy = shallowCopy(target);
+  const proxy: IES5Tracker = shallowCopy(target);
 
-  function proxyProperty(proxy, prop, enumerable) {
+  function proxyProperty(
+    proxy: IES5Tracker,
+    prop: PropertyKey,
+    enumerable: boolean
+  ) {
     const desc = {
       enumerable,
       configurable: false,
-      get() {
+      get(this: IES5Tracker) {
         this.runFn('assertRevoke');
         this.runFn('assertScope');
         const base = this.getProp('base');
@@ -45,20 +58,24 @@ function createES5Tracker(target, config, trackerNode) {
         const value = base[prop];
         // For es5, the prop in array index getter is integer; when use proxy,
         // `prop` will be string.
-        const nextAccessPath = accessPath.concat(`${prop}`);
+        const nextAccessPath = accessPath.concat(`${prop as string}`);
 
         if (!isPeeking) {
           // for relink return parent prop...
-          if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-            const contextProxy = contextTrackerNode.proxy;
-            const propProperties = contextProxy.getProp('propProperties');
+          if (
+            context.trackerNode &&
+            trackerNode.id !== context.trackerNode.id
+          ) {
+            const contextProxy = context.trackerNode.proxy;
+            const propProperties = contextProxy?.getProp('propProperties');
             propProperties.push({
               path: nextAccessPath,
               source: trackerNode.proxy,
-              target: contextTrackerNode.tracker,
+              target: context.trackerNode.tracker,
             });
             this.setProp('propProperties', propProperties);
-            return peek(trackerNode.proxy, nextAccessPath);
+            if (trackerNode.proxy)
+              return peek(trackerNode.proxy as IES5Tracker, nextAccessPath);
           }
           this.runFn('reportAccessPath', nextAccessPath);
         }
@@ -87,9 +104,9 @@ function createES5Tracker(target, config, trackerNode) {
     Object.defineProperty(proxy, prop, desc);
   }
 
-  each(target, prop => {
+  each(target, (prop: PropertyKey) => {
     const desc = Object.getOwnPropertyDescriptor(target, prop);
-    const enumerable = desc.enumerable;
+    const enumerable = desc?.enumerable || false;
     proxyProperty(proxy, prop, enumerable);
   });
 
@@ -97,8 +114,12 @@ function createES5Tracker(target, config, trackerNode) {
     const descriptors = Object.getPrototypeOf([]);
     const keys = Object.getOwnPropertyNames(descriptors);
 
-    const handler = (func, context, lengthGetter = true) =>
-      function() {
+    const handler = (
+      func: Function,
+      functionContext: IES5Tracker,
+      lengthGetter = true
+    ) =>
+      function(this: IES5Tracker) {
       const args = Array.prototype.slice.call(arguments) // eslint-disable-line
         this.runFn('assertRevoke');
         if (lengthGetter) {
@@ -108,15 +129,15 @@ function createES5Tracker(target, config, trackerNode) {
 
           if (!isPeeking) {
             if (
-              contextTrackerNode &&
-              trackerNode.id !== contextTrackerNode.id
+              context.trackerNode &&
+              trackerNode.id !== context.trackerNode.id
             ) {
-              const contextProxy = contextTrackerNode.proxy;
-              const propProperties = contextProxy.getProp('propProperties');
+              const contextProxy = context.trackerNode.proxy;
+              const propProperties = contextProxy?.getProp('propProperties');
               propProperties.push({
                 path: nextAccessPath,
                 source: trackerNode.proxy,
-                target: contextTrackerNode.tracker,
+                target: context.trackerNode.tracker,
               });
 
               this.setProp('propProperties', propProperties);
@@ -125,7 +146,7 @@ function createES5Tracker(target, config, trackerNode) {
           }
         }
 
-        return func.apply(context, args);
+        return func.apply(functionContext, args);
       };
 
     keys.forEach(key => {
@@ -181,31 +202,36 @@ function createES5Tracker(target, config, trackerNode) {
     useScope,
   });
 
-  createHiddenProperty(proxy, 'getProps', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'getProps', function(this: IES5Tracker) {
+    const args: Array<keyof ES5TrackerInterface> = Array.prototype.slice.call(
+      arguments
+    );
     return args.map(prop => this[TRACKER][prop]);
   });
-  createHiddenProperty(proxy, 'getProp', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'getProp', function(this: IES5Tracker) {
+    const args: Array<keyof ES5TrackerInterface> = Array.prototype.slice.call(
+      arguments
+    );
     return this[TRACKER][args[0]];
   });
-  createHiddenProperty(proxy, 'setProp', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'setProp', function(this: IES5Tracker) {
+    const args = Array.prototype.slice.call(arguments);
     const prop = args[0];
     const value = args[1];
+    // @ts-ignore
     return (this[TRACKER][prop] = value);
   });
-  createHiddenProperty(proxy, 'runFn', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
-    const fn = this[TRACKER][args[0]];
+  createHiddenProperty(proxy, 'runFn', function(this: IES5Tracker) {
+    const args = Array.prototype.slice.call(arguments);
+    const fn = this[TRACKER][args[0] as keyof ES5TrackerInterface];
     const rest = args.slice(1);
-    if (typeof fn === 'function') return fn.apply(this, rest);
+    if (typeof fn === 'function') return (fn as Function).apply(this, rest);
   });
-  createHiddenProperty(proxy, 'unlink', function() {
+  createHiddenProperty(proxy, 'unlink', function(this: IES5Tracker) {
     return this.runFn('unlink');
   });
-  createHiddenProperty(proxy, 'createChild', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'createChild', function(this: IES5Tracker) {
+    const args = Array.prototype.slice.call(arguments);
     const target = args[0] || {};
     const config = args[1] || {};
     return createES5Tracker(
@@ -219,14 +245,14 @@ function createES5Tracker(target, config, trackerNode) {
       trackerNode
     );
   });
-  createHiddenProperty(proxy, 'revoke', function() {
+  createHiddenProperty(proxy, 'revoke', function(this: IES5Tracker) {
     const useRevoke = this.getProp('useRevoke');
     if (useRevoke) this.setProp('isRevoked', true);
   });
 
   createHiddenProperty(proxy, TRACKER, tracker);
 
-  return proxy;
+  return proxy as IES5Tracker;
 }
 
 export default createES5Tracker;

@@ -1,4 +1,4 @@
-import { canIUseProxy, TRACKER } from './commons';
+import { canIUseProxy } from './commons';
 import context from './context';
 import TrackerNode from './TrackerNode';
 import invariant from 'invariant';
@@ -14,8 +14,15 @@ const Tracker = ({
   useRevoke = false,
   useScope = true,
   rootPath = [],
+}: {
+  base: object;
+  parent: null | TrackerNode;
+  useProxy: boolean;
+  useRevoke: boolean;
+  useScope: boolean;
+  rootPath: Array<string>;
 }) => {
-  const assertAccessibility = (useScope, useRevoke) => {
+  const assertAccessibility = (useScope: boolean, useRevoke: boolean) => {
     invariant(
       useRevoke !== useScope,
       '`useRevoke` or `useScope` should not be equal; and one must be true' +
@@ -35,7 +42,7 @@ const Tracker = ({
     // start another top level branch...like
     // { a: { b: 1 }} => { a: { b: 1 }, c: {d: 2 }}
     if (context.trackerNode && useRevoke) {
-      context.trackerNode.revokeUntil(parentTrackerNode);
+      context.trackerNode.revokeUntil();
     }
   } else {
     if (parentTrackerNode === context.trackerNode) {

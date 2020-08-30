@@ -1,10 +1,11 @@
 import invariant from 'invariant';
-import { isTrackable, TRACKER, hideProperty } from './commons';
+import { isTrackable, hideProperty } from './commons';
 import { generateRemarkablePaths } from './path';
-import { trackerNode as contextTrackerNode } from './context';
+import context from './context';
+import { IProxyTracker, IES5Tracker } from './types';
 
-const peek = (proxy, accessPath) => { // eslint-disable-line
-  return accessPath.reduce((proxy, cur) => {
+const peek = (proxy: IProxyTracker | IES5Tracker, accessPath: Array<string>) => { // eslint-disable-line
+  return accessPath.reduce((proxy, cur: string) => {
     proxy.setProp('isPeeking', true);
     const nextProxy = proxy[cur];
     proxy.setProp('isPeeking', false);
@@ -15,7 +16,7 @@ const peek = (proxy, accessPath) => { // eslint-disable-line
 function internalFunctions() {}
 const proto = internalFunctions.prototype;
 
-proto.assertLink = function(fnName) {
+proto.assertLink = function(fnName: string) {
   const proxy = this;
   const trackerNode = proxy.getProp('trackerNode');
 
@@ -26,13 +27,13 @@ proto.assertLink = function(fnName) {
   );
 
   invariant(
-    contextTrackerNode !== trackerNode,
+    context.trackerNode !== trackerNode,
     `\`${fnName}\` method is used to update \`proxy\` object from upstream.\n` +
       'So it is not meaning to link proxy in current trackerNode scope'
   );
 };
 
-proto.reportAccessPath = function(path) {
+proto.reportAccessPath = function(path: string) {
   const proxy = this // eslint-disable-line
   const paths = proxy.getProp('paths');
   const parentProxy = proxy.getProp('parentProxy');
@@ -52,14 +53,16 @@ proto.unlink = function() {
   return proxy.getProp('base');
 };
 
-proto.relink = function(path, baseValue) {
+proto.relink = function(path: Array<string>, baseValue: object) {
   try {
     this.runFn('assertLink', 'relink');
     const proxy = this // eslint-disable-line
     let copy = path.slice();
     let last = copy.pop();
     const len = path.length;
-    let nextBaseValue = baseValue;
+    let nextBaseValue: {
+      [key: string]: any;
+    } = baseValue;
 
     // fix: {a: { b: 1 }} => {a: {}}, nextBaseValue[key] is undefined
     for (let i = 0; i < len; i++) {
@@ -79,7 +82,7 @@ proto.relink = function(path, baseValue) {
   }
 };
 
-proto.relinkProp = function(prop, newValue) {
+proto.relinkProp = function(prop: string, newValue: object) {
   this.runFn('assertLink', 'relinkProp');
   const proxy = this // eslint-disable-line
   const base = proxy.getProp('base');
@@ -102,12 +105,12 @@ proto.relinkProp = function(prop, newValue) {
   }
 };
 
-proto.relinkBase = function(baseValue) {
+proto.relinkBase = function(baseValue: object) {
   this.runFn('assertLink', 'rebase');
   this.runFn('rebase', baseValue);
 };
 
-proto.rebase = function(baseValue) {
+proto.rebase = function(baseValue: object) {
   try {
     const proxy = this // eslint-disable-line
     proxy.setProp('base', baseValue);
@@ -116,7 +119,7 @@ proto.rebase = function(baseValue) {
   }
 };
 
-proto.setRemarkable = function() {
+proto.setRemarkable = function(): boolean {
   const proxy = this // eslint-disable-line
   const accessPath = proxy.getProp('accessPath');
   const parentProxy = proxy.getProp('parentProxy');
@@ -154,15 +157,16 @@ proto.assertScope = function() {
       'trackerNode is undefined, which means you are using createTracker function directly.' +
         'Maybe you should create TrackerNode object.'
     );
-  } else if (!trackerNode.contains(contextTrackerNode))
+  } else if (!trackerNode.contains(context.trackerNode) && context.trackerNode)
     throw new Error(
       trackerNode.id +
         'is not child node of ' +
-        contextTrackerNode.id +
+        context.trackerNode.id +
         'Property only could be accessed by self node or parent node.'
     );
 };
 
+hideProperty(proto, 'assertLink');
 hideProperty(proto, 'reportAccessPath');
 hideProperty(proto, 'cleanup');
 hideProperty(proto, 'unlink');

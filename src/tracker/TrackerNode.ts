@@ -2,9 +2,30 @@ import context from './context';
 import createES5Tracker from './es5';
 import createTracker from './proxy';
 
+import {
+  TrackerNodeConstructorProps,
+  HydrateConfig,
+  IProxyTracker,
+  IES5Tracker,
+} from './types';
+
 let count = 0;
 
 class TrackerNode {
+  public base: object;
+  public useRevoke: boolean;
+  public useScope: boolean;
+  public useProxy: boolean;
+  public rootPath: Array<string>;
+  public children: Array<any>;
+  public parent: null | TrackerNode;
+  public prevSibling: null | TrackerNode;
+  public nextSibling: null | TrackerNode;
+  public proxy: null | IProxyTracker | IES5Tracker;
+  public id: string;
+  public isRevoked: boolean;
+  public inScope: boolean;
+
   constructor({
     parent,
     isSibling,
@@ -13,13 +34,13 @@ class TrackerNode {
     useScope,
     useProxy,
     rootPath,
-  }) {
+  }: TrackerNodeConstructorProps) {
     this.base = base;
     this.useRevoke = useRevoke;
     this.useScope = useScope;
     this.useProxy = useProxy;
 
-    this.rootPath = rootPath;
+    this.rootPath = rootPath || [];
 
     this.children = [];
     this.parent = parent;
@@ -49,8 +70,8 @@ class TrackerNode {
 
   enterTrackerScope() {
     this.enterContext();
-    const Fn = this.useProxy ? createTracker : createES5Tracker;
-    this.proxy = new Fn(
+    const fn = this.useProxy ? createTracker : createES5Tracker;
+    this.proxy = fn(
       this.base,
       {
         useRevoke: this.useRevoke,
@@ -107,7 +128,7 @@ class TrackerNode {
     }
   }
 
-  contains(childNode) {
+  contains(childNode: TrackerNode): boolean {
     if (childNode === this) return true;
     if (!childNode) return false;
     const parent = childNode.parent;
@@ -126,7 +147,7 @@ class TrackerNode {
    *
    * @param {null | TrackerNode} parent, null value means revoke until to top most.
    */
-  revokeUntil(parent) {
+  revokeUntil(parent?: TrackerNode): boolean {
     if (parent === this) return true;
 
     if (parent) {
@@ -140,23 +161,24 @@ class TrackerNode {
       // the top most node, still can not find `parent` node
       // if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
       if (this.parent) {
-        this.parent.revokeUntil(parent);
+        return this.parent.revokeUntil(parent);
       }
     }
 
-    this.revokeSelf();
+    return this.revokeSelf();
   }
 
-  revokeSelf() {
+  revokeSelf(): boolean {
     if (this.children.length) {
       this.children.forEach(child => {
         if (!child.isRevoked) child.revokeSelf();
       });
     }
     if (!this.isRevoked) {
-      this.proxy.revoke();
+      this.proxy?.revoke();
       this.isRevoked = true;
     }
+    return true;
   }
 
   /**
@@ -164,15 +186,21 @@ class TrackerNode {
    */
   revoke() {
     if (this.parent) {
-      this.proxy.revoke();
+      this.proxy?.revoke();
       context.trackerNode = this.parent;
     }
   }
 
-  hydrate(base, config = {}) {
+  hydrate(base: object, config: HydrateConfig = {}) {
     this.base = base || this.base;
-    const keys = Object.keys(config);
-    keys.forEach(key => (this[key] = config[key]));
+    const keys = Object.keys(config || ({} as HydrateConfig));
+    // Object.keys always return 'string[]', So it need to
+    // convert explicitly
+    // https://stackoverflow.com/a/52856805/2006805
+    (keys as Array<keyof HydrateConfig>).forEach(key => {
+      // @ts-ignore
+      this[key] = config[key];
+    });
     this.enterTrackerScope();
   }
 }

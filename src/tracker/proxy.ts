@@ -6,20 +6,30 @@ import {
   hasOwnProperty,
   createHiddenProperty,
 } from './commons';
-import ProxyTracker from './ProxyTracker';
+import ProxyTracker from './proxyTracker';
+import context from './context';
+import {
+  IProxyTracker,
+  ProxyTrackerInterface,
+  TrackerNode,
+  ProxyTrackerConfig,
+  ProxyTrackerFunctions,
+} from './types';
 
-import { trackerNode as contextTrackerNode } from './context';
-
-const peek = (proxy, accessPath) => { // eslint-disable-line
+const peek = (proxy: IProxyTracker, accessPath: Array<string>) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur) => {
     proxy.setProp('isPeeking', true);
-    const nextProxy = proxy[cur];
+    const nextProxy = proxy[cur] as any;
     proxy.setProp('isPeeking', false);
     return nextProxy;
   }, proxy);
 };
 
-function createTracker(target, config, trackerNode) {
+function createTracker(
+  target: any,
+  config: ProxyTrackerConfig,
+  trackerNode: TrackerNode
+): IProxyTracker {
   const { accessPath = [], parentProxy, useRevoke, useScope, rootPath = [] } =
     config || {};
 
@@ -44,10 +54,10 @@ function createTracker(target, config, trackerNode) {
 
   // can not use this in handler, should be `target`
   const handler = {
-    get: (target, prop, receiver) => {
+    get: (target: IProxyTracker, prop: PropertyKey, receiver: any) => {
       target.runFn('assertScope');
       if (prop === TRACKER) return Reflect.get(target, prop, receiver);
-      // assertScope(trackerNode, contextTrackerNode)
+      // assertScope(trackerNode, context.trackerNode)
       const base = target.getProp('base');
 
       // refer to immer...
@@ -62,16 +72,17 @@ function createTracker(target, config, trackerNode) {
 
       if (!isPeeking) {
         // for relink return parent prop...
-        if (contextTrackerNode && trackerNode.id !== contextTrackerNode.id) {
-          const contextProxy = contextTrackerNode.proxy;
-          const propProperties = contextProxy.getProp('propProperties');
+        if (context.trackerNode && trackerNode.id !== context.trackerNode.id) {
+          const contextProxy = context.trackerNode.proxy;
+          const propProperties = contextProxy?.getProp('propProperties');
           propProperties.push({
             path: nextAccessPath,
             source: trackerNode.proxy,
-            target: contextTrackerNode.tracker,
+            target: context.trackerNode?.tracker,
           });
           target.setProp('propProperties', propProperties);
-          return peek(trackerNode.proxy, nextAccessPath);
+          if (trackerNode.proxy)
+            return peek(trackerNode.proxy as IProxyTracker, nextAccessPath);
         }
         target.runFn('reportAccessPath', nextAccessPath);
       }
@@ -110,32 +121,38 @@ function createTracker(target, config, trackerNode) {
     useScope,
   });
 
-  const { proxy, revoke } = Proxy.revocable(copy, handler);
+  const { proxy, revoke } = Proxy.revocable<IProxyTracker>(copy, handler);
 
-  createHiddenProperty(proxy, 'getProps', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'getProps', function(this: IProxyTracker) {
+    const args: Array<keyof ProxyTrackerInterface> = Array.prototype.slice.call(
+      arguments
+    );
     return args.map(prop => this[TRACKER][prop]);
   });
-  createHiddenProperty(proxy, 'getProp', function() {
-    const args = Array.prototype.slice.call(arguments) // eslint-disable-line
+  createHiddenProperty(proxy, 'getProp', function(this: IProxyTracker) {
+    const args: Array<keyof ProxyTrackerInterface> = Array.prototype.slice.call(
+      arguments
+    );
     return this[TRACKER][args[0]];
   });
-  createHiddenProperty(proxy, 'setProp', function() {
+  createHiddenProperty(proxy, 'setProp', function(this: IProxyTracker) {
     const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     const prop = args[0];
     const value = args[1];
+    // this[TRACKER][prop as keyof ProxyTrackerInterface] = value
+    // @ts-ignore
     return (this[TRACKER][prop] = value);
   });
-  createHiddenProperty(proxy, 'runFn', function() {
+  createHiddenProperty(proxy, 'runFn', function(this: IProxyTracker): any {
     const args = Array.prototype.slice.call(arguments) // eslint-disable-line
-    const fn = this[TRACKER][args[0]];
+    const fn = this[TRACKER][args[0] as keyof ProxyTrackerFunctions];
     const rest = args.slice(1);
-    if (typeof fn === 'function') return fn.apply(this, rest);
+    if (typeof fn === 'function') return (fn as Function).apply(this, rest);
   });
-  createHiddenProperty(proxy, 'unlink', function() {
+  createHiddenProperty(proxy, 'unlink', function(this: IProxyTracker) {
     return this.runFn('unlink');
   });
-  createHiddenProperty(proxy, 'createChild', function() {
+  createHiddenProperty(proxy, 'createChild', function(this: IProxyTracker) {
     const args = Array.prototype.slice.call(arguments) // eslint-disable-line
     const target = args[0] || {};
     const config = args[1] || {};
@@ -150,14 +167,14 @@ function createTracker(target, config, trackerNode) {
       trackerNode
     );
   });
-  createHiddenProperty(proxy, 'revoke', function() {
+  createHiddenProperty(proxy, 'revoke', function(this: IProxyTracker) {
     const useRevoke = this.getProp('useRevoke');
     if (useRevoke) revoke();
   });
 
   createHiddenProperty(proxy, TRACKER, tracker);
 
-  return proxy;
+  return proxy as IProxyTracker;
 }
 
 export default createTracker;

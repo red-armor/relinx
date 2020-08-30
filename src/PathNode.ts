@@ -1,9 +1,19 @@
 import infoLog from './utils/infoLog';
+import Patcher from './Patcher';
 
 const DEBUG = false;
 
+interface Children {
+  [key: string]: PathNode;
+}
+
 class PathNode {
-  constructor(prop, parent) {
+  private parent: PathNode | undefined;
+  public patchers: Array<Patcher>;
+  public children: Children;
+  private prop: string;
+
+  constructor(prop: string | undefined, parent: PathNode | undefined) {
     this.prop = prop || 'root';
 
     this.parent = parent;
@@ -11,9 +21,9 @@ class PathNode {
     this.patchers = [];
   }
 
-  addPathNode(path, patcher) {
+  addPathNode(path: Array<string>, patcher: Patcher) {
     const len = path.length;
-    path.reduce((node, cur, index) => {
+    path.reduce<PathNode>((node: PathNode, cur: string, index: number) => {
       // path中前面的值都是为了让我们定位到最后的需要关心的位置
       if (!node.children[cur]) node.children[cur] = new PathNode(cur, node);
       // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加

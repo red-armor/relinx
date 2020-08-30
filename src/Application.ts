@@ -1,17 +1,42 @@
 import invariant from 'invariant';
 import PathNode from './PathNode';
 import is from './utils/is';
-import { isMutable, isTypeEqual } from './utils/ifType';
 import infoLog from './utils/infoLog';
-import { isObject } from './utils/ifType';
+import { isObject, isMutable, isTypeEqual } from './utils/ifType';
 import diffArraySimple from './utils/diffArraySimple';
-import { generatePatcherId } from './utils/key';
+import {
+  IApplication,
+  GenericState,
+  PendingPatcher,
+  UpdateValue,
+  Operation,
+} from './types';
+import Patcher from './Patcher';
 
 const DEBUG = false;
 const MINIMUS_RE_RENDER = false;
 
-class Application {
-  constructor({ base, namespace, strictMode }) {
+class Application<
+  T extends {
+    [key: string]: object;
+  },
+  K extends keyof T
+> implements IApplication<T, K> {
+  public base: GenericState<T, K>;
+  public node: PathNode;
+  public pendingPatchers: Array<PendingPatcher>;
+  public namespace: string;
+  public strictMode: boolean;
+
+  constructor({
+    base,
+    namespace,
+    strictMode,
+  }: {
+    base: GenericState<T, K>;
+    namespace: string;
+    strictMode: boolean;
+  }) {
     this.base = base;
     this.node = new PathNode();
     this.pendingPatchers = [];
@@ -19,7 +44,7 @@ class Application {
     this.strictMode = strictMode;
   }
 
-  update(values) {
+  update(values: Array<UpdateValue<K>>) {
     this.pendingPatchers = [];
 
     if (DEBUG) {
@@ -42,6 +67,7 @@ class Application {
       const l = finalPatchers.length;
       let found = false;
       for (let y = 0; y < l; y++) {
+        // @ts-ignore
         const base = finalPatchers[y];
         if (current.belongs(base)) {
           found = true;
@@ -60,9 +86,9 @@ class Application {
     if (MINIMUS_RE_RENDER) {
       finalPatchers.forEach(patcher => patcher.triggerAutoRun());
     } else if (this.pendingPatchers.length) {
-      const patcherId = generatePatcherId({ namespace: this.namespace });
+      // const patcherId = generatePatcherId({ namespace: this.namespace });
       this.pendingPatchers.forEach(({ patcher }) => {
-        patcher.triggerAutoRun(patcherId);
+        patcher.triggerAutoRun();
       });
     }
 
@@ -81,12 +107,24 @@ class Application {
     }
   }
 
-  updateBase({ storeKey, changedValue }) {
+  updateBase({
+    storeKey,
+    changedValue,
+  }: {
+    storeKey: keyof K;
+    changedValue: object;
+  }) {
     const origin = this.base[storeKey];
     this.base[storeKey] = { ...origin, ...changedValue };
   }
 
-  treeShake({ storeKey, changedValue }) {
+  treeShake({
+    storeKey,
+    changedValue,
+  }: {
+    storeKey: keyof K;
+    changedValue: object;
+  }) {
     const branch = this.node.children[storeKey];
     const baseValue = this.base[storeKey];
     const rootBaseValue = baseValue;
@@ -95,8 +133,14 @@ class Application {
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
     if (!branch) return;
 
-    const toDestroy = [];
-    const compare = (branch, baseValue, nextValue, collections, operation) => {
+    const toDestroy: Array<Function> = [];
+    const compare = (
+      branch: PathNode,
+      baseValue: object,
+      nextValue: object,
+      collections: Array<string | keyof K>,
+      operation: Array<Operation>
+    ) => {
       if (is(baseValue, nextValue)) return;
 
       // TODO, add description...only primitive type react...
@@ -114,12 +158,12 @@ class Application {
 
       const caredKeys = Object.keys(branch.children);
       let keysToCompare = caredKeys;
-      let keysToDestroy = [];
-      const currentOperation = [];
+      let keysToDestroy: Array<string> = [];
+      const currentOperation: Array<Operation> = [];
 
       // 处理，如果说array中的一项被删除了。。。。
       if (isTypeEqual(baseValue, nextValue) && Array.isArray(nextValue)) {
-        const baseLength = baseValue.length;
+        const baseLength = (baseValue as any).length;
         const nextLength = nextValue.length;
 
         if (nextLength < baseLength) {
@@ -146,7 +190,7 @@ class Application {
 
         if (removed.length) {
           toDestroy.push(
-            ((branch, removed) => {
+            ((branch: PathNode, removed: Array<string>) => {
               removed.forEach(key => {
                 const childBranch = branch.children[key];
                 if (childBranch) childBranch.destroyPathNode();
@@ -195,7 +239,7 @@ class Application {
 
       if (keysToDestroy.length) {
         toDestroy.push(
-          ((branch, keysToDestroy) => {
+          ((branch: PathNode, keysToDestroy: Array<string>) => {
             keysToDestroy.forEach(key => {
               const childBranch = branch.children[key];
               if (childBranch) childBranch.destroyPathNode();
@@ -209,7 +253,7 @@ class Application {
     toDestroy.forEach(fn => fn());
   }
 
-  addPatcher(patcher) {
+  addPatcher(patcher: Patcher) {
     const paths = patcher.paths;
 
     paths.forEach(fullPath => {
@@ -217,7 +261,7 @@ class Application {
     });
   }
 
-  getStoreData(storeName) {
+  getStoreData(storeName: keyof K): T[K] {
     const storeValue = this.base[storeName];
 
     // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')

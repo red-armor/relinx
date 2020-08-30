@@ -1,3 +1,0 @@
-const context = {
-  trackerNode: null,
-};

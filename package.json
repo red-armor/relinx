@@ -12,6 +12,10 @@
     "node": ">=10"
   },
   "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "lint": "tsdx lint --fix",
+    "prepare": "tsdx build",
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
     "examples:memo": "DIR=memo EXT=js webpack-dev-server",
     "examples:nest-update": "DIR=nest-update EXT=js webpack-dev-server",
@@ -71,6 +75,7 @@
     "webpack-dev-server": "^3.8.0"
   },
   "dependencies": {
+    "@types/invariant": "^2.2.33",
     "invariant": "^2.2.4",
     "ts-jest": "^25.2.0"
   }
