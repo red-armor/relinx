@@ -1,180 +1,274 @@
 # Relinx
 
-## 运行
+[![npm version](https://img.shields.io/npm/v/relinx.svg?style=flat)](https://www.npmjs.com/package/relinx) [![NPM downloads](https://img.shields.io/npm/dm/relinx.svg?style=flat-square)](http://www.npmtrends.com/relinx) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+
+_A fast, intuitive, access path based reactive react state management_
+
+## Features
+
+1. 支持 ES5 和 ES6，通过`Proxy`或者`defineProperty`等 trap 函数，自动记录当前组件所需要响应的属性路径
+2. 当源数据发生变化时，只对其对应的 Proxy 对象进行 relink 替换，尽量减少 Proxy 对象的创建
+3. 对 PathNode 进行创建时，只会对那些被使用到的属性才进行创建，从而在进行 diff 遍历时提高性能
+4. 为了更好的拥抱社区，中间件是基于 Redux-middleware 来实现，可以很快的接入 Redux 社区丰富的中间件库
+5. 通过 access paths 的记录，可以更精准的知道组件具体需要的属性以实现粒度化渲染的控制
+
+## Introduction
+
+遵照`React-Redux`的模式，包含`action`和`dispatch`；但是最终在结构上参考了[dva](https://github.com/dvajs/dva)中的基本概念，比如`model`, `reducers`和`effects`.相比于`dva`借助`redux-saga`实现副作用处理的多样性；目前 relinx 通过基于`redux-thunk`的中间件实现对异步数据的处理。
+
+Relinx 的底层路径搜集上受 functional reactive programming 很大的影响，实现上很大程度借鉴了[immer](https://github.com/immerjs/immer)对 Proxy 和`defineProperty`的处理方式。收集模块叫`Tracker`，借鉴了[Tracker - Meteor's reactive system](https://docs.meteor.com/api/tracker.html)的定义方式。
+
+Relinx 的设计理念很简单
+
+> 记录组件访问的具体属性路径，当源数据变化时触发对应节点上监听的组件
+
+![flow](./docs/flow.png)
+
+### Tracker
+
+[Tracker - Track the getter action of wrapped object and provide ability to relink when upstream object's value changed](./src/tracker/README.md)支持 Relinx 进行 paths 收集的模块
+
+## 安装
 
 ```bash
-$ yarn
-$ yarn examples:basic
+$ npm install relinx --save
 ```
 
 ## 基本概念
 
+首先看下面一个最简单的例子
+
 ```js
-import React from 'react'
-import ReactDOM from 'react-dom'
-import { Provider, createStore } from 'relinx'
-import models from './models'
-import App from './views'
+// index.js
+import React from "react"
+import ReactDOM from "react-dom"
+import {logger, Provider, createStore, applyMiddleware, thunk} from "relinx"
+import Models from "./models"
 
-const store = createStore({
-  models
-})
+import App from "./views"
 
-const Basic = () => {
-  return (
-    <Provider store={store}>
-      <App />
-    </Provider>
-  )
-}
+const store = createStore(
+  {
+    models: new Models()
+  },
+  applyMiddleware(thunk, logger)
+)
 
-ReactDOM.render(<Basic />, document.getElementById('app'))
+const Simple = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+)
+
+ReactDOM.render(<Simple />, document.getElementById("app"))
 ```
 
-核心上每一个`model`主要三部分组成：`state`, `reducers`和`effects`
+```js
+// models.js
+import appModel from "./appModel"
+
+export default () => ({
+  app: new appModel()
+})
+```
+
+```js
+// appModel.js
+export default () => ({
+  state: {count: 0},
+  reducers: {
+    increment: state => ({count: state.count + 1})
+  }
+})
+```
+
+```js
+// app.js
+import React, {useCallback} from "react"
+import {useRelinx, observe} from "relinx"
+
+export default observe(() => {
+  const [state, dispatch] = useRelinx("app")
+
+  const {count} = state
+  const handleClick = useCallback(() => dispatch({type: "increment"}), [])
+
+  return (
+    <div>
+      <span>{count}</span>
+      <button onclick={handleClick}>+</button>
+    </div>
+  )
+})
+```
 
 ### state
 
-状态对应着`UI`，state的改变会触发`UI`的更新；通过`state.bottomBar.count`可以实现当前组件与`bottomBar` model下`count`属性值改变的绑定。
-
-```js
-import React from 'react'
-import { useRelinx } from 'relinx'
-
-export default () => {
-  const [state] = useRelinx
-
-  return (
-    <div>
-      {state.bottomBar.count}
-    </div>
-  )
-}
-```
+在 component 中可以通过`useRelinx`方法返回一个 state. 这个是一个独立的`proxy`对象；每一次 property 的调用都会被记录下来作为当前 component 会访问到的 paths。
 
 ### action
 
-类同于比如`redux`, `rematch`以及`dva`等状态管理器；`action`是唯一触发`state`更改的方式；只有通过`dispatch(action)`的方式才能够进行状态的变化；
-
-```js
-{
-  type: 'increment',
-  payload: {},
-}
-```
-
-`action`主要是由两部分组成，`type`和`payload`；
-
-#### 如何产生action
-
-- 用户在组件层面，在比如事件等场景下进行dispatch操作
-- 在`effects`中进行`dispatch`操作
+action 由两部分组成`type`和`payload`，和`Redux`中的概念一样，是 state 进行更新的唯一方式；然后通过`dispatch`进行调用
 
 ### reducers
 
-接受`action`并且返回通过`action`处理以后的结果；可以认为是数据进行更改的起点
-
-### dispatch
-
-
+进行同步的数据处理，与`action.type`相对应；对`action.payload`进行处理返回更改后的值
 
 ### effects
 
-通过异步的方式来返回一个`action`
+进行异步的数据处理，包含所有的 ajax 请求
 
-## 开发规范
+## API
 
-- `reducers`中的`state`应该是当前`model`的`state`
-- 如果说需要使用到其他model的值的话，这个时候需要通过effects来实现
+### observe(FunctionComponent)
 
-## Redux vs Relinx
+将一个 functional component 声明为 access path sensitive. component 只有在外层或者 parent component 进行 observe 函数封装以后才能够在 component 中使用`useRelinx`方法
 
-### 相同点
-
-- 对于`action`的处理方式上都是一致的；`dispatch`是所有`action`的原动力；
-
-### 不同点
-
-- 数据绑定的方式，`redux`主要是通过`mapStateToProps`，`mapDispatchToProps`以及`connect`实现组件层面和数据源的绑定；当`Provider`层数据源发生变化时，调用变化数据部分`connect`组件。`Relinx`是基于`Proxy`提供的`trap`来实现，对于组件中使用到的[`get(proxy[foo]和proxy.bar)`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/get)进行`reactive path`的订阅，当`reactive path`被命中时就触发当前组件的更新
-- `dispatch`处理的数据类型；`redux`可以支持`action`以及`function`的`dispatch`操作；`Relinx`只支持`action`的处理，`dispatch function`可以通过提供对应的`action`和`payload`实现调用
-- `dispatch`用法上的区别；在`redux`中可以连续的进行`dispatch`操作；而对于`relinx`如果说想要连续操作两个或者以上的`action`的话，需要通过数组的形式来提供`dispatch([...actions])`否则中间的改变值会被抹掉
-- `reducer`返回值的区别；在`redux`中每一个`reducer`返回的应该是一个全量的`state`，所以它的返回形式是`{...state, [updatedKey]: updatedValue }`；而对于`Relinx`它返回的是当前`model`中变化的部分也就是`{[updatedKey]: updatedValue}`
-
-## 特点
-
-1. 提供轻量型响应式的UI更新
-2. 写法上尽量减少文件跨度，避免了`redux`造成了繁琐性
-3. diff策略上，实现了尽可能少的组件更新
-
-## 解决的问题
-
-- 通过`new Context API`解决props的跨层级问题
-- 解决`Provider`数据源会触发所有`Consumer`进行`update`的问题
-- 组件层面`reactive field`的数据绑定，组件只会对使用到的`field`进行`re-render`；可以粒度化到`object.property`程度
-- 提供处理同步以及异步数据源的能力
-- 提供app开发层面的实践模式
-
-## QA
-
-### dispatch([...actions])
-
-对于多个`actions`为什么先进行聚合再进行`dispatch`操作；详见Dan的描述
-
-https://twitter.com/dan_abramov/status/1096898096011886592?lang=en
+observe 的作用是创建一个 Tracker scope，同时可以认为是一个粒度化渲染的区域划分；同时为了方便进行 DEBUG 信息的显示，最好使用`name function component`
 
 ```js
-dispatch(increment)
-dispatch(increment)
-dispatch(increment)
+const A = () => <span>hello world</span>
+const ObservedA = observe(A)
 ```
 
-比如对于上面的形式，你尽管在`reducer`中可以看到值进行`0 -> 1 ->2`的变化，但是在`useEffect`层面你最终只能够拿到`2`对于其中的中间值会被做掉；对于`redux`的而言，因为它的`reducer`每一次返回都是一个全量的`state`,并且每一次的dispatch实际上是生效了，对它而言`useEffect`合并`result`其实是一个优化的效果；但是对于`Relinx`，因为它的`reducer`返回的是一个`partial state(当前model发生改变的部分)`，同时`reducer`的值并不会直接映射到`state`，如果说中间状态被做掉的话，就会出现中间部分数据对应的组件没有响应。所以对于上面的形式`Relinx`对应的写法
+#### 什么时候使用 observe
+
+理论上，任何组件都可以进行 observe 的封装；observe 的调用会创建一个`Proxy State`的作用域，比如说子组件中的值更改，只想重新渲染子组件，这个时候就需要在子组件外层进行 observe 的封装
+
+### useRelinx
 
 ```js
-dispatch([{
-  type: 'increment',
-}, {
-  type: 'increment',
-}, {
-  type: 'increment'
-}])
+const [state: Proxy, dispatch: Function] = useRelinx((modelName: String))
 ```
 
-### 如何实现`object.property`粒度化的响应式
-
-比如说一个场景，渲染`list`为了尽量不更改`list.item`中的数据；如果说存储`item`是否被选中；在`Redux`中的实现方式一般如下；它存在的问题是每一次`isItemsSelected`发生变化的话，所有的`item`其实都会被`re-render`；（对于这个问题其实有其它的方式来解决了）
+它返回包含长度为 2 的数组。第一个值是`state`，它的值是和`modelName`进行对应；同时需要注意调用`useRelinx`方法的组件外层最好有`observe`处理
 
 ```js
-const Item = props => {
-	const { isItemsSelected, itemIndex } = props
+const A = observe(() => {
+  const [state] = useRelinx("app")
+  return <span>{state.count}</span>
+})
+```
 
-  return (
-    <div>
-    	{isItemsSelected[itemIndex] ? <Selected /> : <Unselected />}
-    </div>
-  )
-}
+### useDispatch
 
-const mapStateToProps = state => {
-  return {
-    isItemsSelected: state.isItemsSelected
+```js
+const [dispatch: Function] = useDispatch()
+```
+
+针对一个组件不需要 state 的情况下，只返回一个`dispatch`函数
+
+### Props
+
+#### useProxy
+
+控制 Tracker 对于 path 的搜集机制是通过`Proxy`还是还是`defineProperty`；默认为 true，同时 Relinx 也会自己判断是否支持`Proxy`以确保运行无误
+
+#### strictMode
+
+默认为 false，在开发模式下为了提示 component 中使用到了哪些在 model 中未声明的字段，以确保 ES5 和 ES6 表现是一致的
+
+#### namespace
+
+可选填，如果不填的话，Relinx 会对当前的 application 生成一个 key 以确保在多 application 模式下能够正常的运行。
+
+## 问题
+
+### dispatch actions
+
+当存在多个 actions 时，不能够连续调用 dispatch；因为中间 action 会被覆盖掉；具体可以参考 Dan 的描述https://twitter.com/dan_abramov/status/1096898096011886592?lang=en
+
+![dan](./docs/dan.png)
+
+在 Relinx 可以通过数组的形式来解决这个问题
+
+```js
+dispatch([action, action, action])
+```
+
+### 数据比较的原则
+
+1. primitive type value 的话，直接对比字面值是否一样
+2. 数组和对象首先比较引用，如果一样就直接结束对比；不一样的话就进行 property 的对比，一直穷尽`pathNode`上的所有节点
+
+### 对 Map 和 Set 的支持
+
+目前只支持 primitive type，array 和 object 等数据类型，暂不支持 Map 和 Set 数据结构，
+
+### 对 ES5 支持存在的问题
+
+#### 使用到的 property 必须都声明
+
+因为`defineProperty`不支持对未声明属性的 getter trap，如果说希望 ES5 和 ES6 表现一致的话，需要再 model 中对需要使用到的 property 都进行声明，否则会出现在 ES5 中某一个字段更新但是没有重新渲染的问题。
+
+```js
+// appModel.js
+export default () => ({
+  state: {location: {}}
+})
+
+// view.js
+const A = observe(() => {
+  const [state] = useRelinx("app")
+  return <span>{state.location.city}</span>
+})
+```
+
+需要更改为下面的形式
+
+```js
+// appModel.js
+export default () => ({
+  state: {
+    location: {city: null}
   }
-}
+})
 ```
 
-`mobx`中的实现方式是通过[`expr`](https://mobx.js.org/refguide/expr.html)
+_对于空值要定义为`null`，而不是`undefined`；Relinx 会通过比较 type 是否是`undefined`来确定这个 property 是否是声明过的_
+
+如何知道哪些字段没有声明过？
+
+Provider 支持`strictMode`属性，可以在开发阶段设置为 true
 
 ```js
-const TodoView = observer(({todo, editorState}) => {
-    const isSelected = mobxUtils.expr(() => editorState.selection === todo);
-    return <div className={isSelected ? "todo todo-selected" : "todo"}>{todo.title}</div>;
-});
+<Provider strictMode>
+  <App />
+</Provider>
 ```
 
-### 如何实现对Array的响应式
+### ES5 对 Array 处理的支持
 
-## TODO
+Tracker 对 Array 的`prototype` function 进行了覆盖，比如`map`,`filter`...等函数调用的时候，都会自动将`length`作为 component 的监听对象；所以组件是可以对 array 的`length`变化进行响应的
 
-1. 对传递的`proxy` data设置作用域；它的变化应该对应的是消费该字段的子组件
-2. 提供middleware机制，比如logger观察目前更改的数据，以及对应的组件
+唯一存在的问题是，当使用`for`语句时不能够对`array.length`进行监听；因为`array.length`的`configurable`属性是`false`；不能够对它的`descriptor`进行重载
 
+### 如何防止 memory leak
+
+问题可以转换为如何移除订阅，目前在 Relinx 中，订阅只发生在`patcher`与`pathNode`的绑定；当`pathNode`发现对应的`property`值发生变化的时候，会进行以下操作
+
+1. 如果是 primitive type 的话，比较字面值是否一样，不一样的话，将 patchers 加入到`pendingDispatchers`同时将数组中的 patcher 从所有其他`PathNode`移除
+2. 如果是 Array，并且元素增加；将 patchers 加入到`pendingDispatchers`同时将数组中的 patcher 从所有其他`PathNode`移除
+3. 如果是 Array，并且元素减少；将 patchers 加入到`pendingDispatchers`，这些被移除的 item 中的 field 不会再进行 compare 比较，在最后将 pathNode 下的所有节点进行销毁
+4. 如果是 object，出现 key 被删除并且 key 对应有 pathNode，将 patchers 加入到`pendingDispatchers`；对于被删除的 key 会继续进行比较，最后对被删除的 pathNode 进行销毁
+5. component 进行 unmount 时，会对它对应的 patcher 进行销毁
+
+当 component 进行 re-render 的时候，会对 patcher 的 path 进行更新，重新和`pathNode`创建订阅关系
+
+### 对 Array 的渲染控制
+
+对于 Array 的渲染主要体现在两个方面：`length`或者`item[key]`发生变化
+
+#### length changed
+
+`length`的变化，都会触发`items`所在 component 的重新渲染；因为 React 的渲染机制，父组件的更新会触发子组件的更新，这个只能够通过对子组件进行`React.memo`的封装处理避免再次渲染
+
+#### item[key] changed
+
+如果子父组件都被 observe 调用的话，父组件和子组件在渲染上是隔离的；子组件所需属性的变化，不会触发父组件的渲染。
+
+### Compared key
+
+相比于`Redux`通过`shallowEqual`进行判断是否数据发生变化，`mapStateToProps`会在每一次`state`发生变化的时候执行一次，就会造成大量无关属性的判断，在性能有一定的损耗，一般的优化方式就是通过[reselect](https://github.com/reduxjs/reselect)来进行实现，只比较关心的属性
+
+Relinx 的话，本身实现机制就是只对访问到的属性创建`pathNode`，只有`pathNode`上的`property`才会进行 diff 判断，在这一层面具备了`reselect`对应功能。
