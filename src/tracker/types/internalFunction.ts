@@ -1,3 +1,4 @@
+import { IProxyTracker, IES5Tracker } from './';
 export interface InternalFunction {
   reportAccessPath(path: string): void;
   cleanup(): void;
@@ -9,4 +10,9 @@ export interface InternalFunction {
   setRemarkable(): boolean;
   getRemarkableFullPaths(): Array<string>;
   assertScope(): void;
+}
+
+export interface PropProperty {
+  path: Array<string>;
+  source: IProxyTracker | IES5Tracker | null;
 }

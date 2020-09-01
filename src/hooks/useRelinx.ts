@@ -1,8 +1,8 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useContext } from 'react';
 import invariant from 'invariant';
 import context from '../context';
 
-export default storeName => {
+export default (storeName: string) => {
   const { dispatch, getData, attachStoreName } = useContext(context);
 
   invariant(

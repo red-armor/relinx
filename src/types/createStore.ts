@@ -7,30 +7,6 @@ export type GenericState<T, K extends keyof T> = {
   [key in keyof K]: T[K];
 };
 
-export interface State {
-  [key: string]: object;
-}
-
-export interface Effect {
-  [key: string]: Function;
-}
-
-export interface Reducer {
-  [key: string]: (currentState: object, payload?: object) => object;
-}
-
-export interface StateMap {
-  [key: string]: State;
-}
-
-export interface ReducerMap {
-  [key: string]: Reducer;
-}
-
-export interface EffectMap {
-  [key: string]: Effect;
-}
-
 export interface ChangedValueGroup {
   storeKey: string;
   changedValue: object;
@@ -93,4 +69,28 @@ export interface Configs<
   initialValue?: {
     [key in K]: object;
   };
+}
+
+export interface State {
+  [key: string]: object;
+}
+
+export interface Effect {
+  [key: string]: Function;
+}
+
+export interface Reducer {
+  [key: string]: (currentState: object, payload?: object) => object;
+}
+
+export interface StateMap {
+  [key: string]: State;
+}
+
+export interface ReducerMap {
+  [key: string]: Reducer;
+}
+
+export interface EffectMap {
+  [key: string]: Effect;
 }

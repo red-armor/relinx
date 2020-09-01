@@ -23,7 +23,7 @@ export const canIUseProxy = () => {
   return true;
 };
 
-export const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop) // eslint-disable-line
+export const hasOwnProperty = (o: object, prop: PropertyKey) => o.hasOwnProperty(prop) // eslint-disable-line
 
 export const isTrackable = (o: any) => { // eslint-disable-line
   return ['[object Object]', '[object Array]'].indexOf(toString(o)) !== -1;

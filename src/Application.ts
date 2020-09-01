@@ -16,12 +16,7 @@ import Patcher from './Patcher';
 const DEBUG = false;
 const MINIMUS_RE_RENDER = false;
 
-class Application<
-  T extends {
-    [key: string]: object;
-  },
-  K extends keyof T
-> implements IApplication<T, K> {
+class Application<T, K extends keyof T> implements IApplication<T, K> {
   public base: GenericState<T, K>;
   public node: PathNode;
   public pendingPatchers: Array<PendingPatcher>;

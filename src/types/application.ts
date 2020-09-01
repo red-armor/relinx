@@ -2,12 +2,7 @@ import PathNode from '../PathNode';
 import Patcher from '../Patcher';
 import { GenericState } from './';
 
-export type IApplication<
-  T extends {
-    [key: string]: object;
-  },
-  K extends keyof T
-> = {
+export type IApplication<T, K extends keyof T> = {
   base: GenericState<T, K>;
   node: PathNode;
   pendingPatchers: Array<PendingPatcher>;

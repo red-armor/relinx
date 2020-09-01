@@ -1,15 +1,17 @@
+import { Action } from '../types';
+
 export default ({ getState, dispatch, effects }) => next => (
-  actions,
-  storeKey
+  actions: Array<Action> | Function,
+  storeKey: string
 ) => {
   if (typeof actions === 'function') {
-    const nextDispatch = (...args) => {
-      const nextArgs = [].concat(...args) || [];
+    const nextDispatch = (...args: Array<Action>) => {
+      const nextArgs = ([] as Array<Action>).concat(...args) || [];
       const actions = nextArgs.map(action => {
         if (!action) return;
         const { type, payload } = action;
         const parts = [storeKey].concat(type.split('/')).slice(-2);
-        const nextAction = {
+        const nextAction: Action = {
           type: parts.join('/'),
         };
         if (payload) {
@@ -23,9 +25,9 @@ export default ({ getState, dispatch, effects }) => next => (
     return actions(nextDispatch, getState);
   }
 
-  const nextActions = [].concat(actions);
-  const reducerActions = [];
-  const effectActions = [];
+  const nextActions = ([] as Array<Action>).concat(actions);
+  const reducerActions: Array<Action> = [];
+  const effectActions: Array<Action> = [];
 
   nextActions
     .filter(action => {
@@ -37,7 +39,7 @@ export default ({ getState, dispatch, effects }) => next => (
 
       return false;
     })
-    .forEach(action => {
+    .forEach(function(action: Action) {
       try {
         const { type } = action;
         const parts = type.split('/');
@@ -51,6 +53,7 @@ export default ({ getState, dispatch, effects }) => next => (
 
         return reducerActions.push(action);
       } catch (info) {
+        return false;
         // console.error(info)
         // info process action fails
       }

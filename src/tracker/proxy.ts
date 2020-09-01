@@ -14,6 +14,7 @@ import {
   TrackerNode,
   ProxyTrackerConfig,
   ProxyTrackerFunctions,
+  PropProperty,
 } from './types';
 
 const peek = (proxy: IProxyTracker, accessPath: Array<string>) => { // eslint-disable-line
@@ -74,11 +75,12 @@ function createTracker(
         // for relink return parent prop...
         if (context.trackerNode && trackerNode.id !== context.trackerNode.id) {
           const contextProxy = context.trackerNode.proxy;
-          const propProperties = contextProxy?.getProp('propProperties');
+          const propProperties: Array<PropProperty> = contextProxy?.getProp(
+            'propProperties'
+          );
           propProperties.push({
             path: nextAccessPath,
             source: trackerNode.proxy,
-            target: context.trackerNode?.tracker,
           });
           target.setProp('propProperties', propProperties);
           if (trackerNode.proxy)

@@ -20,7 +20,7 @@ class Patcher implements IPatcher {
     paths: Array<Array<string>>;
     autoRunFn: Function;
     key: string;
-    parent: Patcher;
+    parent: null | Patcher;
     displayName: string;
   }) {
     this.autoRunFn = autoRunFn;

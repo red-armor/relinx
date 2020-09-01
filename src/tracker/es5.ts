@@ -13,6 +13,7 @@ import {
   ES5TrackerInterface,
   ES5TrackerConfig,
   TrackerNode,
+  PropProperty,
 } from './types';
 
 const peek = (proxy: IES5Tracker, accessPath: Array<string>) => { // eslint-disable-line
@@ -67,11 +68,12 @@ function createES5Tracker(
             trackerNode.id !== context.trackerNode.id
           ) {
             const contextProxy = context.trackerNode.proxy;
-            const propProperties = contextProxy?.getProp('propProperties');
+            const propProperties: Array<PropProperty> = contextProxy?.getProp(
+              'propProperties'
+            );
             propProperties.push({
               path: nextAccessPath,
               source: trackerNode.proxy,
-              target: context.trackerNode.tracker,
             });
             this.setProp('propProperties', propProperties);
             if (trackerNode.proxy)
