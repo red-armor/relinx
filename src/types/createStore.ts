@@ -1,9 +1,4 @@
-export interface Action {
-  type: string;
-  payload?: object;
-}
-
-export type Dispatch = (action: Action) => void;
+import { Action } from './';
 
 export type GenericState<T, K extends keyof T> = {
   [key in keyof K]: T[K];
@@ -14,18 +9,28 @@ export interface ChangedValueGroup {
   changedValue: object;
 }
 
+// const model: Model = {
+//   state: {
+//     page: 0
+//   }
+// }
+
 export interface Model<
-  T,
-  R,
-  E,
-  K extends keyof T,
-  M extends keyof R,
-  N extends keyof E
+  T = any,
+  R = any,
+  // E = any,
+  K extends keyof T = any,
+  M extends keyof R = any
+  // N extends keyof E = any,
 > {
-  state: T[K];
-  reducers: R[M];
+  state: {
+    [key in K]: T[key];
+  };
+  reducers: {
+    [key in M]: R[key];
+  };
   // reducers: RR<R, M>;
-  effects: E[N];
+  // effects: E[N];
 }
 
 export type RR<R, M extends keyof R> = {

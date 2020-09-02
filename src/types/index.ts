@@ -6,3 +6,4 @@ export * from './observe';
 export * from './context';
 export * from './hooks';
 export * from './applyMiddleware';
+export * from './model';

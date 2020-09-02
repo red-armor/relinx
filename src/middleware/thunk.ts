@@ -1,9 +1,12 @@
-import { Action } from '../types';
+import { Action, GetStoreState } from '../types';
 
-export default ({ getState, dispatch, effects }) => next => (
-  actions: Array<Action> | Function,
-  storeKey: string
-) => {
+export default ({
+  getState,
+  dispatch,
+  effects,
+}: {
+  getState: GetStoreState;
+}) => next => (actions: Array<Action> | Function, storeKey: string) => {
   if (typeof actions === 'function') {
     const nextDispatch = (...args: Array<Action>) => {
       const nextArgs = ([] as Array<Action>).concat(...args) || [];
