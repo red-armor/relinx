@@ -3,7 +3,9 @@ const ownKeys = (o: any) =>
   typeof Reflect !== 'undefined' && Reflect.ownKeys
     ? Reflect.ownKeys(o)
     : typeof Object.getOwnPropertySymbols !== 'undefined'
-    ? Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o))
+    ? Object.getOwnPropertyNames(o).concat(
+        Object.getOwnPropertySymbols(o) as any
+      )
     : Object.getOwnPropertyNames(o);
 
 export const emptyFunction = () => {};
@@ -29,11 +31,24 @@ export const isTrackable = (o: any) => { // eslint-disable-line
   return ['[object Object]', '[object Array]'].indexOf(toString(o)) !== -1;
 };
 
-export function each(obj: Array<any> | object, iter: Function) {
+type EachArray<T> = (index: number, entry: any, obj: T) => void;
+type EachObject<T> = <K extends keyof T>(key: K, entry: T[K], obj: T) => number;
+
+// type EachObject = Array<any> | { [key: string]: any }
+type Iter<T extends Array<any> | { [key: string]: any }> = T extends Array<any>
+  ? EachArray<T>
+  : T extends { [key: string]: any }
+  ? EachObject<T>
+  : never;
+
+export function each<T>(obj: T, iter: Iter<T>) {
   if (Array.isArray(obj)) {
-    obj.forEach((entry, index) => iter(index, entry, obj));
+    (obj as Array<any>).forEach((entry, index) =>
+      (iter as EachArray<T>)(index, entry, obj)
+    );
   } else if (isObject(obj)) {
-    ownKeys(obj).forEach(key => iter(key, obj[key], obj));
+    // @ts-ignore
+    ownKeys(obj).forEach(key => (iter as EachObject<T>)(key, obj[key], obj));
   }
 }
 

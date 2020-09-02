@@ -1,4 +1,6 @@
 import TrackerNode from '../TrackerNode';
+import { IProxyTracker } from './proxyTracker';
+import { IES5Tracker } from './es5Tracker';
 
 export { TrackerNode };
 
@@ -46,3 +48,5 @@ export interface TrackerNodeConstructorProps {
 export interface HydrateConfig {
   rootPath?: Array<string>;
 }
+
+export type TrackerProxy = IProxyTracker | IES5Tracker;

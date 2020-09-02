@@ -106,7 +106,7 @@ function createES5Tracker(
     Object.defineProperty(proxy, prop, desc);
   }
 
-  each(target, (prop: PropertyKey) => {
+  each(target as Array<any>, (prop: PropertyKey) => {
     const desc = Object.getOwnPropertyDescriptor(target, prop);
     const enumerable = desc?.enumerable || false;
     proxyProperty(proxy, prop, enumerable);
@@ -139,7 +139,6 @@ function createES5Tracker(
               propProperties.push({
                 path: nextAccessPath,
                 source: trackerNode.proxy,
-                target: context.trackerNode.tracker,
               });
 
               this.setProp('propProperties', propProperties);

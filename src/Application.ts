@@ -120,7 +120,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     storeKey: keyof K;
     changedValue: object;
   }) {
-    const branch = this.node.children[storeKey];
+    const branch = this.node.children[storeKey as any];
     const baseValue = this.base[storeKey];
     const rootBaseValue = baseValue;
     const nextValue = { ...baseValue, ...changedValue };
@@ -131,9 +131,13 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     const toDestroy: Array<Function> = [];
     const compare = (
       branch: PathNode,
-      baseValue: object,
-      nextValue: object,
-      collections: Array<string | keyof K>,
+      baseValue: {
+        [key: string]: any;
+      },
+      nextValue: {
+        [key: string]: any;
+      },
+      collections: Array<string>,
       operation: Array<Operation>
     ) => {
       if (is(baseValue, nextValue)) return;
@@ -244,7 +248,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       }
     };
 
-    compare(branch, baseValue, nextValue, [storeKey], []);
+    compare(branch, baseValue, nextValue, [storeKey as any], []);
     toDestroy.forEach(fn => fn());
   }
 

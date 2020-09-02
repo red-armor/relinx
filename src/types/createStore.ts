@@ -3,6 +3,8 @@ export interface Action {
   payload?: object;
 }
 
+export type Dispatch = (action: Action) => void;
+
 export type GenericState<T, K extends keyof T> = {
   [key in keyof K]: T[K];
 };

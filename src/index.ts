@@ -1,10 +1,19 @@
-import Patcher from './Patcher';
-import PathNode from './PathNode';
+import Provider from './Provider';
 import applyMiddleware from './applyMiddleware';
-import context from './context';
 import createStore from './createStore';
+import useRelinx from './hooks/useRelinx';
+import useDispatch from './hooks/useDispatch';
+// import logger from './middleware/logger'
+import thunk from './middleware/thunk';
+import observe from './observe';
 
-export * from './utils/key';
-export { default as compose } from './utils/compose';
-
-export { Patcher, PathNode, applyMiddleware, context, createStore };
+export {
+  Provider,
+  applyMiddleware,
+  createStore,
+  useRelinx,
+  useDispatch,
+  // logger,
+  thunk,
+  observe,
+};

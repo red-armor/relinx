@@ -13,7 +13,7 @@ class PathNode {
   public children: Children;
   private prop: string;
 
-  constructor(prop: string | undefined, parent: PathNode | undefined) {
+  constructor(prop?: string, parent?: PathNode) {
     this.prop = prop || 'root';
 
     this.parent = parent;

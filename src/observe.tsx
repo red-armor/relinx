@@ -43,6 +43,7 @@ const diff = (
 export default (WrappedComponent: FC<any>) => {
   function NextComponent(props: any) {
     const shadowState = useRef(0);
+    // @ts-ignore
     const [_, setState] = useState(0);
     const storeName = useRef<string>();
     const isHydrated = useRef(false);
