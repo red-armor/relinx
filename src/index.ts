@@ -3,10 +3,9 @@ import applyMiddleware from './applyMiddleware';
 import createStore from './createStore';
 import useRelinx from './hooks/useRelinx';
 import useDispatch from './hooks/useDispatch';
-// import logger from './middleware/logger'
 import thunk from './middleware/thunk';
 import observe from './observe';
-import { Model } from './types';
+import { Model, ReducerMapObject } from './types';
 
 export {
   Provider,
@@ -14,55 +13,33 @@ export {
   createStore,
   useRelinx,
   useDispatch,
-  // logger,
   thunk,
   observe,
 };
 
-const models = {
-  // init: {
+interface State {
+  page: number;
+  status: string;
+}
+
+const model2 = {
   state: {
     page: 0,
     status: 'offline',
   },
 
   reducers: {
-    // updateState: (_, { status }) => ({ status }),
-    updatePage: (state: any) => ({
-      page: state.page + 1,
-    }),
+    updatePage: (state: State, payload: object) => {
+      console.log('state ', state, payload);
+      return state;
+    },
   },
-
-  // effects: {
-  //   getGoodsList: () => (dispatch, getState) => {
-  //     const { init: { page } } = getState()
-  //     getGoods({ page }).then(result => {
-  //       dispatch([{
-  //         type: 'goods/addGoods',
-  //         payload: {
-  //           goodsList: result,
-  //         },
-  //       }, {
-  //         type: 'updatePage',
-  //       }])
-  //     })
-  //   },
-  //   updateOnline: () => dispatch => {
-  //     dispatch({
-  //       type: 'updateState',
-  //       payload: { status: 'online' },
-  //     })
-  //   },
-  // },
-  // }
 };
 
-function fn(model: Model) {
-  console.log('model', model);
+function fn2<S, R, SK extends keyof S, RK extends keyof R>(
+  model: Model<S, SK, R, RK>
+): Model<S, SK, R, RK> {
+  return model;
 }
 
-fn(models);
-
-const store = createStore({
-  models,
-});
+fn2(model2);

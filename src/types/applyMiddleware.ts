@@ -25,25 +25,25 @@ export interface ApplyMiddlewareAPI {
   dispatch(...args: Array<any>): {};
 }
 
-const store = {
-  first: {
-    name: 'liu',
-  },
-  second: {
-    location: 'shanghai',
-  },
-};
+// const store = {
+//   first: {
+//     name: 'liu',
+//   },
+//   second: {
+//     location: 'shanghai',
+//   },
+// };
 
-function fn(api: ApplyMiddlewareAPI) {}
+// function fn(api: ApplyMiddlewareAPI) {}
 
-const test: ApplyMiddlewareAPI = {
-  getState: () => store,
-  reducers: {
-    first: {
-      increment: state => {
-        console.log('state ', state.second);
-        return {};
-      },
-    },
-  },
-};
+// const test: ApplyMiddlewareAPI = {
+//   getState: () => store,
+//   reducers: {
+//     first: {
+//       increment: state => {
+//         console.log('state ', state.second);
+//         return {};
+//       },
+//     },
+//   },
+// };

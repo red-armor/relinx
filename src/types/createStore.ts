@@ -9,28 +9,32 @@ export interface ChangedValueGroup {
   changedValue: object;
 }
 
-// const model: Model = {
-//   state: {
-//     page: 0
-//   }
-// }
-
 export interface Model<
-  T = any,
+  S = any,
+  SK extends keyof S = any,
   R = any,
-  // E = any,
-  K extends keyof T = any,
-  M extends keyof R = any
-  // N extends keyof E = any,
+  RK extends keyof R = any,
+  E = any,
+  EK extends keyof E = any
 > {
   state: {
-    [key in K]: T[key];
+    [key in SK]: S[key];
   };
-  reducers: {
-    [key in M]: R[key];
+  reducers?: {
+    [key in RK]: R[key];
   };
-  // reducers: RR<R, M>;
-  // effects: E[N];
+  effects?: {
+    [key in EK]: E[key];
+  };
+}
+
+export interface ReducerMapObject<S> {
+  [key: string]: (currentState: S, payload?: object) => Partial<S>;
+  // [key: string]: Reducer<S>;
+}
+
+export interface Reducer<S> {
+  (currentState: S, payload?: object): Partial<S>;
 }
 
 export type RR<R, M extends keyof R> = {
@@ -63,18 +67,23 @@ export interface CombineReducersReducer2 {
 }
 
 export interface Configs<
-  T,
-  R,
-  E,
-  K extends keyof T,
-  M extends keyof R,
-  N extends keyof E
+  SS = any,
+  // SSK extends keyof SS =any,
+  S = any,
+  SK extends keyof S = any,
+  R = any,
+  RK extends keyof R = any,
+  E = any,
+  EK extends keyof E = any
 > {
   models: {
-    [key in K & M & N]: Model<T, R, E, K, M, N>;
+    [key in keyof SS]: SS[key];
+    // [key in keyof SS]: Model<S, SK, R, RK, E, EK>;
   };
   initialValue?: {
-    [key in K]: object;
+    [key in keyof SS]: {
+      [key: string]: any;
+    };
   };
 }
 
@@ -86,17 +95,13 @@ export interface Effect {
   [key: string]: Function;
 }
 
-export interface Reducer {
-  [key: string]: (currentState: object, payload?: object) => object;
-}
-
 export interface StateMap {
   [key: string]: State;
 }
 
-export interface ReducerMap {
-  [key: string]: Reducer;
-}
+// export interface ReducerMap {
+//   [key: string]: Reducer;
+// }
 
 export interface EffectMap {
   [key: string]: Effect;

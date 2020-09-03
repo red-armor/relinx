@@ -48,17 +48,21 @@ const combineReducers = <R, M extends keyof R>(reducers: RR<R, M>) => <
 };
 
 export default function createStore<
-  T,
-  R,
-  E,
-  K extends keyof T,
-  M extends keyof R,
-  N extends keyof E
+  SS = any,
+  SSK extends keyof SS = any,
+  S = any,
+  SK extends keyof S = any,
+  R = any,
+  RK extends keyof R = any,
+  E = any,
+  EK extends keyof E = any
 >(
-  configs: Configs<T, R, E, K, M, N>,
+  configs: Configs<SS, S, SK, R, RK, E, EK>,
   enhancer?: Function
 ): {
-  initialState: T;
+  initialState: {
+    [key in SSK]: SS[key];
+  };
   effects: E;
   reducers: R;
   createReducer: CombineReducersReducer1;
