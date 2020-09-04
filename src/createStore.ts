@@ -6,6 +6,7 @@ import {
   ChangedValueGroup,
   RR,
   SS,
+  Model,
   CombineReducersReducer1,
 } from './types';
 
@@ -47,6 +48,34 @@ const combineReducers = <R, M extends keyof R>(reducers: RR<R, M>) => <
   return [];
 };
 
+type GetState<
+  NextModel extends {
+    [key in keyof NextModel]: Model;
+  }
+> = NextModel extends {
+  state: any;
+}
+  ? {
+      [key in keyof NextModel]: NextModel[key];
+    }
+  : never;
+
+type GetReducer<NextModel extends any> = NextModel extends {
+  state: any;
+}
+  ? {
+      [key in keyof NextModel]: NextModel[key];
+    }[keyof 'reducers']
+  : never;
+
+type GetEffect<NextModel extends any> = NextModel extends {
+  state: any;
+}
+  ? {
+      [key in keyof NextModel]: NextModel[key];
+    }[keyof 'effects']
+  : never;
+
 export default function createStore<
   SS = any,
   SSK extends keyof SS = any,
@@ -74,17 +103,23 @@ export default function createStore<
   const models = configs.models;
   const initialValue = configs.initialValue || ({} as any);
 
-  const globalState = {} as T;
-  const globalReducers = {} as R;
-  const globalEffects = {} as E;
-  const keys = Object.keys(models) as Array<K & M & N>;
+  const globalState = {} as {
+    [key in SSK]: GetState<SS[key]>;
+  };
+  const globalReducers = {} as {
+    [key in SSK]: GetReducer<SS[key]>;
+  };
+  const globalEffects = {} as {
+    [key in SSK]: GetEffect<SS[key]>;
+  };
+  const keys = Object.keys(models) as Array<SSK>;
 
   keys.forEach(key => {
     const { state, reducers, effects } = models[key];
     const initial = initialValue[key] || {};
-    globalState[key as K] = { ...state, ...initial };
-    if (reducers) globalReducers[key as M] = reducers;
-    if (effects) globalEffects[key as N] = effects;
+    globalState[key] = { ...state, ...initial };
+    if (reducers) globalReducers[key] = reducers;
+    if (effects) globalEffects[key] = effects;
   });
 
   return {

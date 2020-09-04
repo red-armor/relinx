@@ -77,8 +77,8 @@ export interface Configs<
   EK extends keyof E = any
 > {
   models: {
-    [key in keyof SS]: SS[key];
-    // [key in keyof SS]: Model<S, SK, R, RK, E, EK>;
+    // [key in keyof SS]: SS[key];
+    [key in keyof SS]: Model<S, SK, R, RK, E, EK>;
   };
   initialValue?: {
     [key in keyof SS]: {
