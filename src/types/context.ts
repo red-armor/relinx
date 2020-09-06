@@ -12,6 +12,6 @@ export interface ContextDefaultValue {
   useProxy: boolean;
   namespace: null | string;
   patcher: null | Patcher;
-  trackerNode: null | TrackerNode;
+  trackerNode?: null | TrackerNode;
   useRelinkMode: boolean;
 }

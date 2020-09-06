@@ -1,29 +1,40 @@
-import { Action, GetStoreState } from '../types';
+import {
+  Action,
+  Next,
+  ApplyMiddlewareAPI,
+  ExtractEffectsTypeOnlyModels,
+  ThunkFn,
+  Dispatch,
+  ThunkDispatch,
+} from '../types';
 
-export default ({
-  getState,
-  dispatch,
-  effects,
-}: {
-  getState: GetStoreState;
-}) => next => (actions: Array<Action> | Function, storeKey: string) => {
+/**
+ * The basic format of action type is `storeKey/${type}`.
+ * Only action in effect could ignore `storeKey`
+ */
+export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
+  next: Next
+) => (actions: Array<Action> | Function, storeKey: keyof T) => {
   if (typeof actions === 'function') {
-    const nextDispatch = (...args: Array<Action>) => {
-      const nextArgs = ([] as Array<Action>).concat(...args) || [];
-      const actions = nextArgs.map(action => {
-        if (!action) return;
-        const { type, payload } = action;
-        const parts = [storeKey].concat(type.split('/')).slice(-2);
-        const nextAction: Action = {
-          type: parts.join('/'),
-        };
-        if (payload) {
-          nextAction.payload = payload;
-        }
+    const nextDispatch = (thunkActions: Array<Action> | Action) => {
+      const nextArgs = ([] as Array<Action>).concat(thunkActions) || [];
+      const actions = nextArgs
+        .map(action => {
+          if (!action) return;
+          const { type, payload } = action;
+          // TODO: ts
+          const parts = [storeKey].concat(type.split('/') as any).slice(-2);
+          const nextAction: Action = {
+            type: parts.join('/'),
+          };
+          if (payload) {
+            nextAction.payload = payload;
+          }
 
-        return nextAction;
-      });
-      if (actions.length) dispatch(actions);
+          return nextAction;
+        })
+        .filter(v => !!v) as Array<Action>;
+      if (actions.length) dispatch && (dispatch as Dispatch)(actions);
     };
     return actions(nextDispatch, getState);
   }
@@ -34,7 +45,6 @@ export default ({
 
   nextActions
     .filter(action => {
-      // filter object with `type`
       if (Object.prototype.toString.call(action) === '[object Object]') {
         const { type } = action;
         return !!type;
@@ -46,8 +56,10 @@ export default ({
       try {
         const { type } = action;
         const parts = type.split('/');
-        const storeKey = parts[0];
-        const actionType = parts[1];
+        const storeKey = parts[0] as keyof T;
+        const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
+          T
+        >[typeof storeKey];
         const currentEffects = effects[storeKey];
 
         if (currentEffects && currentEffects[actionType]) {
@@ -57,8 +69,6 @@ export default ({
         return reducerActions.push(action);
       } catch (info) {
         return false;
-        // console.error(info)
-        // info process action fails
       }
     });
 
@@ -69,11 +79,16 @@ export default ({
   effectActions.forEach(action => {
     const { type, payload } = action;
     const parts = type.split('/');
-    const storeKey = parts[0];
-    const actionType = parts[1];
+    const storeKey = parts[0] as keyof T;
+    const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
+      T
+    >[keyof T];
     const currentEffects = effects[storeKey];
-    const handler = currentEffects[actionType];
+    const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-    Promise.resolve().then(() => dispatch(handler(payload), storeKey));
+    Promise.resolve().then(
+      () =>
+        dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
+    );
   });
 };

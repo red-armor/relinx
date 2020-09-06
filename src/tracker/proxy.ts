@@ -63,7 +63,7 @@ function createTracker(
 
       // refer to immer...
       // if (Array.isArray(tracker)) target = tracker[0]
-      const isInternalPropAccessed = internalProps.indexOf(prop) !== -1;
+      const isInternalPropAccessed = internalProps.indexOf(prop as any) !== -1;
       if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
         return Reflect.get(target, prop, receiver);
       }

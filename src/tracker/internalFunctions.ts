@@ -2,7 +2,7 @@ import invariant from 'invariant';
 import { isTrackable, hideProperty } from './commons';
 import { generateRemarkablePaths } from './path';
 import context from './context';
-import { IProxyTracker, IES5Tracker } from './types';
+import { IProxyTracker, IES5Tracker, PropProperty } from './types';
 
 const peek = (proxy: IProxyTracker | IES5Tracker, accessPath: Array<string>) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur: string) => {
@@ -136,9 +136,9 @@ proto.getRemarkableFullPaths = function() {
   const internalPaths = generateRemarkablePaths(paths).map(path =>
     rootPath.concat(path)
   );
-  const external = propProperties.map(prop => {
+  const external = propProperties.map((prop: PropProperty) => {
     const { path, source } = prop;
-    const sourceRootPath = source.getProp('rootPath');
+    const sourceRootPath = source?.getProp('rootPath');
     return sourceRootPath.concat(path);
   });
   const externalPaths = generateRemarkablePaths(external);
