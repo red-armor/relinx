@@ -4,6 +4,7 @@ import createStore from './createStore';
 import useRelinx from './hooks/useRelinx';
 import useDispatch from './hooks/useDispatch';
 import thunk from './middleware/thunk';
+import logger from './middleware/logger';
 import observe from './observe';
 
 export {
@@ -13,5 +14,6 @@ export {
   useRelinx,
   useDispatch,
   thunk,
+  logger,
   observe,
 };

@@ -1,6 +1,11 @@
 import print from './print';
+import { Next, Action, ApplyMiddlewareAPI } from '../../types';
 
-export default ({ getState }) => next => actions => {
+export default <T>({ getState }: ApplyMiddlewareAPI<T>) => (next: Next) => (
+  actions: Array<Action>
+) => {
+  console.log('print ');
+
   const startTime = Date.now();
   const prevState = JSON.parse(JSON.stringify(getState()));
 

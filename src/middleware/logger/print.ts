@@ -1,11 +1,12 @@
 import { formatTime } from './utils';
+import { Action } from '../../types';
 
 const colorLine = Function.apply.bind(console.log, null) // eslint-disable-line
 const colorGroupEnd = console.groupEnd // eslint-disable-line
 const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null) // eslint-disable-line
 // const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
 
-const colorLog = group => {
+const colorLog = (group: Array<Array<string>>) => {
   const { text: t, styles: s } = group.reduce(
     (acc, cur) => {
       const { text, styles } = acc;
@@ -13,23 +14,27 @@ const colorLog = group => {
 
       return {
         text: `${text}%c ${subText}`,
-        styles: [].concat(styles, subStyle),
+        styles: ([] as Array<string>).concat(styles, subStyle),
       };
     },
     {
       text: '',
-      styles: [],
+      styles: [] as Array<string>,
     }
   );
 
   return [t, ...s];
 };
 
-const renderTitle = props => {
+const renderTitle = (props: {
+  initialActions: Array<Action>;
+  startTime: number;
+  endTime: number;
+}) => {
   const { initialActions, startTime, endTime } = props;
-  let title;
+  let title: string = '';
 
-  const nextActions = [].concat(initialActions).slice(0, 2);
+  const nextActions = ([] as Array<Action>).concat(initialActions).slice(0, 2);
 
   nextActions.forEach(({ type }) => {
     title = title ? `${title}__${type}` : type;
@@ -60,12 +65,17 @@ const renderTitle = props => {
   colorGroupCollapsed(colorLog(parts));
 };
 
-const renderSubAction = props => {
-  const { type, payload = '', actionType = 'action', flag, style } = props;
+const renderSubAction = (props: {
+  type: string;
+  payload?: string | object;
+  actionType?: string;
+  style?: string;
+}) => {
+  const { type, payload = '', actionType = 'action', style } = props;
   const parts = [];
-  if (flag) {
-    parts.push([flag, 'color: #00474f; font-weight: bold']);
-  }
+  // if (flag) {
+  //   parts.push([flag, 'color: #00474f; font-weight: bold']);
+  // }
 
   if (type) {
     parts.push([actionType, 'color: #eb2f96; font-weight: bold']);
@@ -79,7 +89,7 @@ const renderSubAction = props => {
   }
 };
 
-const renderState = (state, isNextState) => {
+const renderState = (state: object, isNextState: boolean = false) => {
   const parts = [];
 
   let title = 'currentState';
@@ -94,7 +104,7 @@ const renderState = (state, isNextState) => {
   colorLine([...colorLog(parts), state]);
 };
 
-const renderPrevState = state => {
+const renderPrevState = (state: object) => {
   renderState(state);
 };
 
@@ -102,43 +112,48 @@ const renderPrevState = state => {
 //   renderState(state, true)
 // }
 
-const paint = (tree, flag) => {
-  const { type, actions = {}, effects = {}, payload, actionType } = tree;
-  const actionKeys = Object.keys(actions);
-  const effectKeys = Object.keys(effects);
+const paint = (tree: Action) => {
+  const { type, payload } = tree;
 
-  if (!actionKeys.length && !effectKeys.length) {
-    renderSubAction({
-      type,
-      payload,
-      actionType,
-      flag,
-      style: 'line',
-    });
-  } else {
-    renderSubAction({
-      type,
-      payload,
-      actionType,
-      flag,
-    });
-  }
-
-  actionKeys.forEach(key => {
-    const action = actions[key];
-    paint(action);
-  });
-  effectKeys.forEach(key => {
-    const effect = effects[key];
-    paint(effect);
+  renderSubAction({
+    type,
+    payload,
   });
 
-  if (actionKeys.length || effectKeys.length) {
-    colorGroupEnd();
-  }
+  // const { type, actions = {}, effects = {}, payload, actionType } = tree;
+  // const actionKeys = Object.keys(actions);
+  // const effectKeys = Object.keys(effects);
+
+  // if (!actionKeys.length && !effectKeys.length) {
+  //   renderSubAction({
+  //     type,
+  //     payload,
+  //     actionType,
+  //     style: 'line',
+  //   });
+  // } else {
+  //   renderSubAction({
+  //     type,
+  //     payload,
+  //     actionType,
+  //   });
+  // }
+
+  // actionKeys.forEach(key => {
+  //   const action = actions[key];
+  //   paint(action);
+  // });
+  // effectKeys.forEach(key => {
+  //   const effect = effects[key];
+  //   paint(effect);
+  // });
+
+  // if (actionKeys.length || effectKeys.length) {
+  //   colorGroupEnd();
+  // }
 };
 
-const paintActions = actions => {
+const paintActions = (actions: Array<Action>) => {
   const nextActions = actions.filter(({ type }) => !type.startsWith('@init'));
 
   nextActions.forEach(action => paint(action));
@@ -148,7 +163,13 @@ const paintActions = actions => {
   }
 };
 
-export default props => {
+export default (props: {
+  actions: Array<Action>;
+  prevState: object;
+  initialActions: Array<Action>;
+  startTime: number;
+  endTime: number;
+}) => {
   const { prevState = {}, actions } = props;
 
   renderTitle(props);

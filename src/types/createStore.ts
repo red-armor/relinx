@@ -147,3 +147,11 @@ export type SS<T, K extends keyof T> = {
     [k: string]: any;
   };
 };
+
+export interface CombineReducersReducer1 {
+  <T, K extends keyof T>(state: SS<T, K>): CombineReducersReducer2;
+}
+
+export interface CombineReducersReducer2 {
+  (_: any, actions: Array<Action>): Array<any>;
+}

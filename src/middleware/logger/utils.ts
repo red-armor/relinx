@@ -1,6 +1,7 @@
-const padding = (value, paddingCount = 2) => `00${value}`.slice(-paddingCount);
+const padding = (value: number, paddingCount = 2) =>
+  `00${value}`.slice(-paddingCount);
 
-export const formatTime = d => {
+export const formatTime = (d: number) => {
   const date = new Date(d);
   const hh = date.getHours();
   const mm = date.getMinutes();

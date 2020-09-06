@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import {
-  // logger,
+  logger,
   Provider,
   createStore,
   applyMiddleware,
@@ -13,7 +13,7 @@ import App from './views'
 
 const store = createStore({
   models: new Models(),
-}, applyMiddleware(thunk))
+}, applyMiddleware(thunk, logger))
 
 const Basic = () => (
   <Provider store={store}>
