@@ -1,5 +1,6 @@
-import { formatTime } from './utils';
 import { Action } from '../../types';
+
+import { formatTime } from './utils';
 
 const colorLine = Function.apply.bind(console.log, null) // eslint-disable-line
 const colorGroupEnd = console.groupEnd // eslint-disable-line
@@ -67,15 +68,12 @@ const renderTitle = (props: {
 
 const renderSubAction = (props: {
   type: string;
-  payload?: string | object;
+  payload?: any;
   actionType?: string;
   style?: string;
 }) => {
   const { type, payload = '', actionType = 'action', style } = props;
   const parts = [];
-  // if (flag) {
-  //   parts.push([flag, 'color: #00474f; font-weight: bold']);
-  // }
 
   if (type) {
     parts.push([actionType, 'color: #eb2f96; font-weight: bold']);
@@ -108,49 +106,48 @@ const renderPrevState = (state: object) => {
   renderState(state);
 };
 
-// const renderNextState = state => {
-//   renderState(state, true)
-// }
+const paint = (tree: {
+  type: string;
+  actions?: {
+    [key: string]: any;
+  };
+  effects?: {
+    [key: string]: any;
+  };
+  payload?: any;
+  actionType?: string;
+}) => {
+  const { type, actions = {}, effects = {}, payload, actionType } = tree;
+  const actionKeys = Object.keys(actions);
+  const effectKeys = Object.keys(effects);
 
-const paint = (tree: Action) => {
-  const { type, payload } = tree;
+  if (!actionKeys.length && !effectKeys.length) {
+    renderSubAction({
+      type,
+      payload,
+      actionType,
+      style: 'line',
+    });
+  } else {
+    renderSubAction({
+      type,
+      payload,
+      actionType,
+    });
+  }
 
-  renderSubAction({
-    type,
-    payload,
+  actionKeys.forEach(key => {
+    const action = actions[key];
+    paint(action);
+  });
+  effectKeys.forEach(key => {
+    const effect = effects[key];
+    paint(effect);
   });
 
-  // const { type, actions = {}, effects = {}, payload, actionType } = tree;
-  // const actionKeys = Object.keys(actions);
-  // const effectKeys = Object.keys(effects);
-
-  // if (!actionKeys.length && !effectKeys.length) {
-  //   renderSubAction({
-  //     type,
-  //     payload,
-  //     actionType,
-  //     style: 'line',
-  //   });
-  // } else {
-  //   renderSubAction({
-  //     type,
-  //     payload,
-  //     actionType,
-  //   });
-  // }
-
-  // actionKeys.forEach(key => {
-  //   const action = actions[key];
-  //   paint(action);
-  // });
-  // effectKeys.forEach(key => {
-  //   const effect = effects[key];
-  //   paint(effect);
-  // });
-
-  // if (actionKeys.length || effectKeys.length) {
-  //   colorGroupEnd();
-  // }
+  if (actionKeys.length || effectKeys.length) {
+    colorGroupEnd();
+  }
 };
 
 const paintActions = (actions: Array<Action>) => {

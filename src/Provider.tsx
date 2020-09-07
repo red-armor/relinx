@@ -33,11 +33,12 @@ export default <T, K extends keyof T>({
     })
   );
 
-  const combinedReducers = useMemo(() => createReducer(initialState), []);
+  const combinedReducers = useMemo(() => createReducer(initialState), []); // eslint-disable-line
   // no need to update value every time.
-  const [value, setValue] = useReducer(combinedReducers, []);
+  // @ts-ignore
+  const [value, setValue] = useReducer(combinedReducers, []); // eslint-disable-line
   const setState = setValue;
-  const dispatch = useMemo(() => createDispatch(setState), []);
+  const dispatch = useMemo(() => createDispatch(setState), []); // eslint-disable-line
 
   application.current.update(value);
 

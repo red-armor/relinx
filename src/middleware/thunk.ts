@@ -20,7 +20,7 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
       const nextArgs = ([] as Array<Action>).concat(thunkActions) || [];
       const actions = nextArgs
         .map(action => {
-          if (!action) return;
+          if (!action) return null;
           const { type, payload } = action;
           // TODO: ts
           const parts = [storeKey].concat(type.split('/') as any).slice(-2);
@@ -86,9 +86,14 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
     const currentEffects = effects[storeKey];
     const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-    Promise.resolve().then(
-      () =>
-        dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
-    );
+    Promise.resolve()
+      .then(
+        () =>
+          dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
+      )
+      .catch(err => {
+        // temp log error info
+        console.error(err);
+      });
   });
 };

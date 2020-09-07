@@ -44,7 +44,7 @@ export default (WrappedComponent: FC<any>) => {
   function NextComponent(props: any) {
     const shadowState = useRef(0);
     // @ts-ignore
-    const [_, setState] = useState(0);
+    const [_, setState] = useState(0); // eslint-disable-line
     const storeName = useRef<string>();
     const isHydrated = useRef(false);
     const isInit = useRef(true);
@@ -119,7 +119,7 @@ export default (WrappedComponent: FC<any>) => {
         if (patcher.current) patcher.current.destroyPatcher();
         unMountMap[componentName] = patcher.current;
       },
-      []
+      [] // eslint-disable-line
     );
 
     const getData = useCallback(
@@ -178,7 +178,7 @@ export default (WrappedComponent: FC<any>) => {
         });
         isHydrated.current = true;
       }
-    }, []);
+    }, []); // eslint-disable-line
 
     const addListener = useCallback(() => {
       patcher.current?.appendTo(parentPatcher); // maybe not needs
@@ -189,7 +189,7 @@ export default (WrappedComponent: FC<any>) => {
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;
       trackerNode.current.leaveContext();
-    }, []);
+    }, []); // eslint-disable-line
 
     const contextValue = {
       ...rest,
