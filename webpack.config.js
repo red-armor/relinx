@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path')
 
 const { DIR, EXT = 'ts' } = process.env;
 
@@ -31,7 +32,7 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx'],
     alias: {
-      relinx: __dirname,
+      relinx: path.resolve(__dirname, 'src'),
     },
   },
   devServer: {
