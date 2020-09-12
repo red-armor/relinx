@@ -91,23 +91,21 @@ export type CreateStoreOnlyModels<
   S extends ExtractStateTypeOnlyModels<T> = ExtractStateTypeOnlyModels<T>
 > = {
   [modelKey in keyof T]: {
-    [key in keyof T[modelKey]]: key extends 'state'
-      ? { [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey] }
-      : key extends 'reducers'
-      ? {
+    [key in keyof Pick<T[modelKey], 'state'>]: { [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey] }
+  } & {
+    [key in keyof Pick<T[modelKey], 'reducers'>]?: {
           [reducerKey in keyof T[modelKey][key]]: (
             state: S[modelKey],
             payload: any
           ) => void;
         }
-      : key extends 'effects'
-      ? {
-          [effectKey in keyof T[modelKey][key]]: (
-            payload: any
-          ) => (dispatch: Function, getState: () => S) => void;
-        }
-      : never;
-  };
+  } & {
+    [key in keyof Pick<T[modelKey], 'effects'>]?: {
+      [effectKey in keyof T[modelKey][key]]: (
+        payload: any
+      ) => (dispatch: Function, getState: () => S) => void;
+    }
+  }
 };
 
 export type ExtractStateTypeOnlyModels<Models> = {
