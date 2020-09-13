@@ -8,7 +8,7 @@ import {
   IApplication,
   GenericState,
   PendingPatcher,
-  UpdateValue,
+  ChangedValueGroup,
   Operation,
 } from './types';
 import Patcher from './Patcher';
@@ -39,7 +39,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.strictMode = strictMode;
   }
 
-  update(values: Array<UpdateValue<K>>) {
+  update(values: Array<ChangedValueGroup<K>>) {
     this.pendingPatchers = [];
 
     if (DEBUG) {
@@ -106,20 +106,14 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     storeKey,
     changedValue,
   }: {
-    storeKey: keyof K;
+    storeKey: K;
     changedValue: object;
   }) {
     const origin = this.base[storeKey];
     this.base[storeKey] = { ...origin, ...changedValue };
   }
 
-  treeShake({
-    storeKey,
-    changedValue,
-  }: {
-    storeKey: keyof K;
-    changedValue: object;
-  }) {
+  treeShake({ storeKey, changedValue }: { storeKey: K; changedValue: object }) {
     const branch = this.node.children[storeKey as any];
     const baseValue = this.base[storeKey];
     const rootBaseValue = baseValue;
@@ -260,7 +254,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     });
   }
 
-  getStoreData(storeName: keyof K): T[K] {
+  getStoreData(storeName: K): T[K] {
     const storeValue = this.base[storeName];
 
     // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Store from './Store';
 
 import {

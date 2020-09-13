@@ -9,8 +9,9 @@ export type ModelKey = 'state' | 'reducers' | 'effects';
 
 export type BasicModelType<T> = {
   [key in keyof T]: {
-    // or const { state, reducers, effects } = models[key] will throw ts error.
-    [key in ModelKey]: any;
+    state: any;
+    reducers?: any;
+    effects?: any;
   };
 };
 
@@ -70,30 +71,54 @@ export type ExtractReducersType<
   [key in keyof Models]: ExtractKey<Models[key], 'reducers'>;
 };
 
+// export type CreateStoreOnlyModels<
+//   T extends BasicModelType<T>,
+//   S extends ExtractStateTypeOnlyModels<T> = ExtractStateTypeOnlyModels<T>
+// > = {
+//   [modelKey in keyof T]: {
+//     [key in keyof Pick<T[modelKey], 'state'>]: {
+//       [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey];
+//     };
+//   } &
+//     {
+//       [key in keyof Pick<T[modelKey], 'reducers'>]?: {
+//         [reducerKey in keyof T[modelKey][key]]: (
+//           state: S[modelKey],
+//           payload: any
+//         ) => void;
+//       };
+//     } &
+//     {
+//       [key in keyof Pick<T[modelKey], 'effects'>]?: {
+//         [effectKey in keyof T[modelKey][key]]: (
+//           payload: any
+//         ) => (dispatch: Function, getState: () => S) => void;
+//       };
+//     };
+// };
+
 export type CreateStoreOnlyModels<
   T extends BasicModelType<T>,
   S extends ExtractStateTypeOnlyModels<T> = ExtractStateTypeOnlyModels<T>
 > = {
   [modelKey in keyof T]: {
-    [key in keyof Pick<T[modelKey], 'state'>]: {
-      [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey];
-    };
-  } &
-    {
-      [key in keyof Pick<T[modelKey], 'reducers'>]?: {
-        [reducerKey in keyof T[modelKey][key]]: (
-          state: S[modelKey],
-          payload: any
-        ) => void;
-      };
-    } &
-    {
-      [key in keyof Pick<T[modelKey], 'effects'>]?: {
-        [effectKey in keyof T[modelKey][key]]: (
-          payload: any
-        ) => (dispatch: Function, getState: () => S) => void;
-      };
-    };
+    [key in keyof T[modelKey]]?: key extends 'state'
+      ? { [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey] }
+      : key extends 'reducers'
+      ? {
+          [reducerKey in keyof T[modelKey][key]]: (
+            state: S[modelKey],
+            payload: any
+          ) => void;
+        }
+      : key extends 'effects'
+      ? {
+          [effectKey in keyof T[modelKey][key]]: (
+            payload: any
+          ) => (dispatch: Function, getState: () => S) => void;
+        }
+      : never;
+  };
 };
 
 export type ExtractStateTypeOnlyModels<Models> = {
@@ -109,10 +134,10 @@ export type ExtractEffectsTypeOnlyModels<Models> = {
 };
 
 export type GenericState<T, K extends keyof T> = {
-  [key in keyof K]: T[K];
+  [key in keyof T]: T[K];
 };
 
-export interface ChangedValueGroup {
-  storeKey: string;
+export interface ChangedValueGroup<K> {
+  storeKey: K;
   changedValue: object;
 }

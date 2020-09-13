@@ -1,7 +1,9 @@
 import print from './print';
-import { Next, Action, ApplyMiddlewareAPI } from '../../types';
+import { Next, Action, ApplyMiddlewareAPI, BasicModelType } from '../../types';
 
-export default <T>({ getState }: ApplyMiddlewareAPI<T>) => (next: Next) => (
+export default <T extends BasicModelType<T>>({
+  getState,
+}: ApplyMiddlewareAPI<T>) => (next: Next) => (
   actions: Array<Action> | Function
 ) => {
   if (typeof actions !== 'function') {

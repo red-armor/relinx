@@ -1,26 +1,19 @@
-import React, { useRef, FC } from 'react';
+import React, { useRef } from 'react';
 import context, { defaultValue } from './context';
 import Application from './Application';
 import { generateNamespaceKey } from './utils/key';
-import { BasicModelType } from './types';
-import Store from './Store';
+import { ProviderProps, BasicModelType } from './types';
 
-export default <T extends BasicModelType<T>, K extends keyof T>({
+// https://fettblog.eu/typescript-react/children/
+// https://stackoverflow.com/questions/53958028/how-to-use-generics-in-props-in-react-in-a-functional-component
+function Provider<T extends BasicModelType<T>, K extends keyof T = keyof T>({
   store,
   children,
   namespace,
   useProxy = true,
   useRelinkMode = true,
   strictMode = false,
-}: {
-  store: Store<T, K>;
-  children: FC<any>;
-  namespace: string;
-  useProxy: boolean;
-  useRelinkMode: boolean;
-  strictMode: boolean;
-}) => {
-  // const { initialState, createReducer, createDispatch } = store;
+}: ProviderProps<T>) {
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(
     new Application<T, K>({
@@ -45,4 +38,6 @@ export default <T extends BasicModelType<T>, K extends keyof T>({
   return (
     <context.Provider value={contextValue.current}>{children}</context.Provider>
   );
-};
+}
+
+export default Provider;

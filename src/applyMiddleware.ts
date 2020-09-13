@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import compose from './utils/compose';
 import {
   BasicModelType,

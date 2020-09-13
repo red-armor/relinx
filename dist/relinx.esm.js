@@ -1,4 +1,4 @@
-import React, { createContext, useRef, useMemo, useReducer, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useRef, useContext, useState, useEffect, useCallback } from 'react';
 import invariant from 'invariant';
 
 const calculateChangeBits = () => 0b00;
@@ -340,35 +340,24 @@ const generatePatcherKey = ({
   return `${namespace}_${componentName}_patcher_${count}`;
 };
 
-var Provider = (({
+// https://stackoverflow.com/questions/53958028/how-to-use-generics-in-props-in-react-in-a-functional-component
+
+function Provider({
   store,
   children,
   namespace,
   useProxy = true,
   useRelinkMode = true,
   strictMode = false
-}) => {
-  const {
-    initialState,
-    createReducer,
-    createDispatch
-  } = store;
+}) {
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(new Application({
-    base: initialState,
+    base: store.getState(),
     namespace: namespaceRef.current,
     strictMode
   }));
-  const combinedReducers = useMemo(() => createReducer(initialState), []); // eslint-disable-line
-  // no need to update value every time.
-  // @ts-ignore
-
-  const [value, setValue] = useReducer(combinedReducers, []); // eslint-disable-line
-
-  const setState = setValue;
-  const dispatch = useMemo(() => createDispatch(setState), []); // eslint-disable-line
-
-  application.current.update(value);
+  store.bindApplication(application.current);
+  const dispatch = store.dispatch;
   const contextValue = useRef({ ...defaultValue,
     dispatch,
     useProxy,
@@ -379,7 +368,7 @@ var Provider = (({
   return React.createElement(context.Provider, {
     value: contextValue.current
   }, children);
-});
+}
 
 // https://github.com/reduxjs/redux/blob/master/src/compose.ts
 function compose(...funcs) {
@@ -397,91 +386,122 @@ function compose(...funcs) {
 function applyMiddleware(...middleware) {
   const nextMiddleware = [...middleware];
   return createStore => config => {
-    const store = { ...createStore(config),
-      dispatch: undefined
-    };
-    const {
-      reducers,
-      effects,
-      initialState
-    } = store;
+    const store = createStore(config);
+    const initialState = store.getState();
     const api = {
       dispatch: (actions, ...rest) => store.dispatch(actions, ...rest),
       getState: () => initialState,
-      reducers,
-      effects
+      store
     };
     const chain = nextMiddleware.map(middleware => middleware(api));
-
-    const createDispatch = setValue => {
-      store.dispatch = compose(...chain)(setValue);
-      return store.dispatch;
-    };
-
-    return { ...store,
-      createDispatch
-    };
+    store.decorateDispatch(compose(...chain));
+    return store;
   };
 }
 
-const combineReducers = reducers => state => (_, actions) => {
-  const nextActions = [].concat(actions);
-  const changedValues = nextActions.reduce((changedValueGroup, action) => {
-    const {
-      type,
-      payload
-    } = action;
-    const [storeKey, actionType] = type.split('/');
-    const usedReducer = reducers[storeKey];
-    !usedReducer ? process.env.NODE_ENV !== "production" ? invariant(false, `Reducer missing for type \`${type}\``) : invariant(false) : void 0;
-    const currentState = state[storeKey];
+class Store {
+  constructor(configs) {
+    const models = configs.models;
+    const initialValue = configs.initialValue || {};
+    this._state = {};
+    this._reducers = {};
+    this._effects = {};
+    const keys = Object.keys(models);
+    keys.forEach(key => {
+      this.injectModel(key, models[key], initialValue[key]);
+    });
 
-    if (usedReducer[actionType]) {
-      const changedValue = usedReducer[actionType](currentState, payload);
-      changedValueGroup.push({
-        storeKey,
-        changedValue
-      });
-    } else {
-      console.warn(`Do not have action '${actionType}'`);
+    this.dispatch = () => {};
+
+    this._application = null;
+    this.subscriptions = {};
+    this._count = 0;
+  }
+
+  getState() {
+    return this._state;
+  }
+
+  getReducers() {
+    return this._reducers;
+  }
+
+  getEffects() {
+    return this._effects;
+  }
+
+  setValue(actions) {
+    const nextActions = [].concat(actions);
+    const changedValues = nextActions.reduce((changedValueGroup, action) => {
+      if (!this._application) return [];
+      const {
+        type,
+        payload
+      } = action;
+      const [storeKey, actionType] = type.split('/');
+      const usedReducer = this._reducers[storeKey];
+      !usedReducer ? process.env.NODE_ENV !== "production" ? invariant(false, `Reducer missing for type \`${type}\``) : invariant(false) : void 0;
+      const currentState = this._application.base[storeKey];
+
+      if (usedReducer[actionType]) {
+        const changedValue = usedReducer[actionType](currentState, payload);
+        changedValueGroup.push({
+          storeKey,
+          changedValue
+        });
+      } else {
+        console.warn(`Do not have action '${actionType}'`);
+      }
+
+      return changedValueGroup;
+    }, []);
+
+    if (changedValues.length) {
+      var _this$_application;
+
+      (_this$_application = this._application) === null || _this$_application === void 0 ? void 0 : _this$_application.update(changedValues);
     }
+  }
 
-    return changedValueGroup;
-  }, []);
-  if (changedValues.length) return changedValues;
-  return [];
-};
+  bindApplication(application) {
+    this._application = application;
+  }
+
+  decorateDispatch(chainedMiddleware) {
+    this.dispatch = chainedMiddleware(this.setValue.bind(this));
+  }
+
+  generateSubscriptionKey() {
+    return `store_${this._count++}`;
+  }
+
+  subscribe(subscription) {
+    const key = this.generateSubscriptionKey();
+    this.subscriptions[key] = subscription;
+    return () => delete this.subscriptions[key];
+  }
+
+  injectModel(key, model, initialValue = {}) {
+    const {
+      state,
+      reducers,
+      effects
+    } = model;
+    this._state[key] = { ...state,
+      ...initialValue
+    };
+    if (reducers) this._reducers[key] = reducers;
+    if (effects) this._effects[key] = effects;
+  }
+
+}
 
 function createStore(configs, enhancer) {
   if (typeof enhancer === 'function') {
     return enhancer(createStore)(configs);
   }
 
-  const models = configs.models;
-  const initialValue = configs.initialValue || {};
-  const globalState = {};
-  const globalReducers = {};
-  const globalEffects = {};
-  const keys = Object.keys(models);
-  keys.forEach(key => {
-    const {
-      state,
-      reducers,
-      effects
-    } = models[key];
-    const initial = initialValue[key] || {};
-    globalState[key] = { ...state,
-      ...initial
-    };
-    if (reducers) globalReducers[key] = reducers;
-    if (effects) globalEffects[key] = effects;
-  });
-  return {
-    initialState: globalState,
-    effects: globalEffects,
-    reducers: globalReducers,
-    createReducer: combineReducers(globalReducers)
-  };
+  return new Store(configs);
 }
 
 var useRelinx = (storeName => {
@@ -507,6 +527,8 @@ var useDispatch = (() => {
   return [dispatch];
 });
 
+// @ts-nocheck
+
 /**
  * The basic format of action type is `storeKey/${type}`.
  * Only action in effect could ignore `storeKey`
@@ -514,7 +536,7 @@ var useDispatch = (() => {
 var thunk = (({
   getState,
   dispatch,
-  effects
+  store
 }) => next => (actions, storeKey) => {
   if (typeof actions === 'function') {
     const nextDispatch = thunkActions => {
@@ -563,7 +585,8 @@ var thunk = (({
       const parts = type.split('/');
       const storeKey = parts[0];
       const actionType = parts[1];
-      const currentEffects = effects[storeKey];
+      const currentEffects = store.getEffects()[storeKey];
+      console.log('current ', currentEffects, storeKey, store);
 
       if (currentEffects && currentEffects[actionType]) {
         return effectActions.push(action);
@@ -587,12 +610,17 @@ var thunk = (({
     const parts = type.split('/');
     const storeKey = parts[0];
     const actionType = parts[1];
-    const currentEffects = effects[storeKey];
+    const currentEffects = store.getEffects()[storeKey];
     const handler = currentEffects[actionType];
-    Promise.resolve().then(() => dispatch && dispatch(handler(payload), storeKey)).catch(err => {
-      // temp log error info
-      console.error(err);
-    });
+    dispatch && dispatch(handler(payload), storeKey); // Promise.resolve()
+    //   .then(
+    //     () =>
+    //       dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
+    //   )
+    //   .catch(err => {
+    //     // temp log error info
+    //     console.error(err);
+    //   });
   });
 });
 
@@ -775,17 +803,19 @@ var print = (props => {
 var index = (({
   getState
 }) => next => actions => {
-  const startTime = Date.now();
-  const prevState = JSON.parse(JSON.stringify(getState()));
-  next(actions);
-  const endTime = Date.now();
-  print({
-    actions,
-    prevState,
-    initialActions: actions,
-    startTime,
-    endTime
-  });
+  if (typeof actions !== 'function') {
+    const startTime = Date.now();
+    const prevState = JSON.parse(JSON.stringify(getState()));
+    next(actions);
+    const endTime = Date.now();
+    print({
+      actions,
+      prevState,
+      initialActions: actions,
+      startTime,
+      endTime
+    });
+  }
 }); // 结束的时间点。。。
 // 如果同步的reducers的话，最外层运行结束就是一个结点
 // 如果说是一个effect的话，这个时候会有很多的不确定性。或者同样是以外层结束作为一个结点；

@@ -22,6 +22,7 @@
     "examples:nest-update-memo": "DIR=nest-update-memo EXT=js webpack-dev-server",
     "examples:simple": "DIR=simple EXT=js webpack-dev-server",
     "examples:immer": "DIR=immer EXT=js webpack-dev-server",
+    "examples:ts-basic": "DIR=ts-basic EXT=tsx webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
     "test": "jest --collect-coverage"
   },

@@ -1,0 +1,32 @@
+import React, { useCallback } from 'react'
+// @ts-ignore
+import { observe, useDispatch } from 'relinx'
+import { Styles } from '../../types'
+
+const styles: Styles = {
+  wrapper: {
+    width: '100%',
+    height: 50,
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: '50px',
+    backgroundColor: '#5cbd3c',
+  },
+}
+
+const LoadMore = () => {
+  const [dispatch] = useDispatch()
+  const handleClick = useCallback(() => {
+    dispatch({
+      type: 'init/getGoodsList',
+    })
+  }, [])
+
+  return (
+    <div style={styles.wrapper} onClick={handleClick}>
+      获取更多
+    </div>
+  )
+}
+
+export default observe(LoadMore)
