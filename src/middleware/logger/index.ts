@@ -7,11 +7,11 @@ export default <T>({ getState }: ApplyMiddlewareAPI<T>) => (next: Next) => (
   if (typeof actions !== 'function') {
     const startTime = Date.now();
     const prevState = JSON.parse(JSON.stringify(getState()));
-  
+
     next(actions);
-  
+
     const endTime = Date.now();
-  
+
     print({
       actions,
       prevState,

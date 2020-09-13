@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
   Action,
   Next,
@@ -12,7 +14,7 @@ import {
  * The basic format of action type is `storeKey/${type}`.
  * Only action in effect could ignore `storeKey`
  */
-export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
+export default <T>({ getState, dispatch, store }: ApplyMiddlewareAPI<T>) => (
   next: Next
 ) => (actions: Array<Action> | Function, storeKey: keyof T) => {
   if (typeof actions === 'function') {
@@ -60,7 +62,9 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
         const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
           T
         >[typeof storeKey];
-        const currentEffects = effects[storeKey];
+        const currentEffects = store.getEffects()[storeKey];
+
+        console.log('current ', currentEffects, storeKey, store);
 
         if (currentEffects && currentEffects[actionType]) {
           return effectActions.push(action);
@@ -83,17 +87,18 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
     const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
       T
     >[keyof T];
-    const currentEffects = effects[storeKey];
+    const currentEffects = store.getEffects()[storeKey];
     const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-    Promise.resolve()
-      .then(
-        () =>
-          dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
-      )
-      .catch(err => {
-        // temp log error info
-        console.error(err);
-      });
+    dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
+    // Promise.resolve()
+    //   .then(
+    //     () =>
+    //       dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
+    //   )
+    //   .catch(err => {
+    //     // temp log error info
+    //     console.error(err);
+    //   });
   });
 };

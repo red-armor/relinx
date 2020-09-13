@@ -1,10 +1,11 @@
-import React, { useMemo, useRef, useReducer, FC } from 'react';
+import React, { useRef, FC } from 'react';
 import context, { defaultValue } from './context';
 import Application from './Application';
 import { generateNamespaceKey } from './utils/key';
-import { CombineReducersReducer1 } from './types';
+import { BasicModelType } from './types';
+import Store from './Store';
 
-export default <T, K extends keyof T>({
+export default <T extends BasicModelType<T>, K extends keyof T>({
   store,
   children,
   namespace,
@@ -12,35 +13,25 @@ export default <T, K extends keyof T>({
   useRelinkMode = true,
   strictMode = false,
 }: {
-  store: {
-    initialState: T;
-    createReducer: CombineReducersReducer1;
-    createDispatch: Function;
-  };
+  store: Store<T, K>;
   children: FC<any>;
   namespace: string;
   useProxy: boolean;
   useRelinkMode: boolean;
   strictMode: boolean;
 }) => {
-  const { initialState, createReducer, createDispatch } = store;
+  // const { initialState, createReducer, createDispatch } = store;
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(
     new Application<T, K>({
-      base: initialState as any,
+      base: store.getState() as any,
       namespace: namespaceRef.current,
       strictMode,
     })
   );
 
-  const combinedReducers = useMemo(() => createReducer(initialState), []); // eslint-disable-line
-  // no need to update value every time.
-  // @ts-ignore
-  const [value, setValue] = useReducer(combinedReducers, []); // eslint-disable-line
-  const setState = setValue;
-  const dispatch = useMemo(() => createDispatch(setState), []); // eslint-disable-line
-
-  application.current.update(value);
+  store.bindApplication(application.current);
+  const dispatch = store.dispatch;
 
   const contextValue = useRef({
     ...defaultValue,

@@ -1,3 +1,5 @@
+import Store from '../Store';
+
 export interface Action {
   type: string;
   payload?: object;
@@ -12,24 +14,6 @@ export type BasicModelType<T> = {
   };
 };
 
-export type CreateStoreResult<
-  T,
-  GLOBAL_STATE extends ExtractStateTypeOnlyModels<
-    T
-  > = ExtractStateTypeOnlyModels<T>,
-  GLOBAL_REDUCERS extends ExtractReducersTypeOnlyModels<
-    T
-  > = ExtractReducersTypeOnlyModels<T>,
-  GLOBAL_EFFECTS extends ExtractEffectsTypeOnlyModels<
-    T
-  > = ExtractEffectsTypeOnlyModels<T>
-> = {
-  initialState: GLOBAL_STATE;
-  reducers: GLOBAL_REDUCERS;
-  effects: GLOBAL_EFFECTS;
-  createReducer: any;
-};
-
 export type CreateStoreFn<
   T extends BasicModelType<T>,
   K extends keyof T = keyof T
@@ -38,33 +22,33 @@ export type CreateStoreFn<
   initialValue?: {
     [key in K]?: any;
   };
-}) => CreateStoreResult<T>;
+}) => Store<T>;
 
-export type CreateStore<T = any> = {
-  [key in keyof T]: key extends 'models'
-    ? T[key] extends object
-      ? {
-          [modelKey in keyof T[key]]: T[key] extends object
-            ? CreateStore<T[key][modelKey]>
-            : T[key];
-        }
-      : T[key]
-    : key extends 'reducers'
-    ? {
-        [reducerKey in keyof T[key]]: (state: any, payload?: any) => any;
-      }
-    : key extends 'state'
-    ? {
-        [stateKey in keyof T[key]]: any;
-      }
-    : key extends 'effects'
-    ? {
-        [effectKey in keyof T[key]]: (
-          payload: any
-        ) => (dispatch: number, getState?: any) => void;
-      }
-    : never;
-};
+// export type CreateStore<T = any> = {
+//   [key in keyof T]: key extends 'models'
+//     ? T[key] extends object
+//       ? {
+//           [modelKey in keyof T[key]]: T[key] extends object
+//             ? CreateStore<T[key][modelKey]>
+//             : T[key];
+//         }
+//       : T[key]
+//     : key extends 'reducers'
+//     ? {
+//         [reducerKey in keyof T[key]]: (state: any, payload?: any) => any;
+//       }
+//     : key extends 'state'
+//     ? {
+//         [stateKey in keyof T[key]]: any;
+//       }
+//     : key extends 'effects'
+//     ? {
+//         [effectKey in keyof T[key]]: (
+//           payload: any
+//         ) => (dispatch: number, getState?: any) => void;
+//       }
+//     : never;
+// };
 
 type ExtractKey<T, key, K extends keyof T = keyof T> = K extends key
   ? T[K]
@@ -91,21 +75,25 @@ export type CreateStoreOnlyModels<
   S extends ExtractStateTypeOnlyModels<T> = ExtractStateTypeOnlyModels<T>
 > = {
   [modelKey in keyof T]: {
-    [key in keyof Pick<T[modelKey], 'state'>]: { [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey] }
-  } & {
-    [key in keyof Pick<T[modelKey], 'reducers'>]?: {
-          [reducerKey in keyof T[modelKey][key]]: (
-            state: S[modelKey],
-            payload: any
-          ) => void;
-        }
-  } & {
-    [key in keyof Pick<T[modelKey], 'effects'>]?: {
-      [effectKey in keyof T[modelKey][key]]: (
-        payload: any
-      ) => (dispatch: Function, getState: () => S) => void;
-    }
-  }
+    [key in keyof Pick<T[modelKey], 'state'>]: {
+      [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey];
+    };
+  } &
+    {
+      [key in keyof Pick<T[modelKey], 'reducers'>]?: {
+        [reducerKey in keyof T[modelKey][key]]: (
+          state: S[modelKey],
+          payload: any
+        ) => void;
+      };
+    } &
+    {
+      [key in keyof Pick<T[modelKey], 'effects'>]?: {
+        [effectKey in keyof T[modelKey][key]]: (
+          payload: any
+        ) => (dispatch: Function, getState: () => S) => void;
+      };
+    };
 };
 
 export type ExtractStateTypeOnlyModels<Models> = {
@@ -127,29 +115,4 @@ export type GenericState<T, K extends keyof T> = {
 export interface ChangedValueGroup {
   storeKey: string;
   changedValue: object;
-}
-
-export type RR<R, M extends keyof R> = {
-  [key in M]: {
-    [k: string]: (
-      state: {
-        [stateKey: string]: any;
-      },
-      payload?: any
-    ) => any;
-  };
-};
-
-export type SS<T, K extends keyof T> = {
-  [key in K]: {
-    [k: string]: any;
-  };
-};
-
-export interface CombineReducersReducer1 {
-  <T, K extends keyof T>(state: SS<T, K>): CombineReducersReducer2;
-}
-
-export interface CombineReducersReducer2 {
-  (_: any, actions: Array<Action>): Array<any>;
 }
