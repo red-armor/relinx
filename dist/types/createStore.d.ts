@@ -6,7 +6,9 @@ export interface Action {
 export declare type ModelKey = 'state' | 'reducers' | 'effects';
 export declare type BasicModelType<T> = {
     [key in keyof T]: {
-        [key in ModelKey]: any;
+        state: any;
+        reducers?: any;
+        effects?: any;
     };
 };
 export declare type CreateStoreFn<T extends BasicModelType<T>, K extends keyof T = keyof T> = (configs: {
@@ -25,17 +27,13 @@ export declare type ExtractReducersType<T, Models extends ExtractModelType<T> = 
 };
 export declare type CreateStoreOnlyModels<T extends BasicModelType<T>, S extends ExtractStateTypeOnlyModels<T> = ExtractStateTypeOnlyModels<T>> = {
     [modelKey in keyof T]: {
-        [key in keyof Pick<T[modelKey], 'state'>]: {
+        [key in keyof T[modelKey]]?: key extends 'state' ? {
             [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey];
-        };
-    } & {
-        [key in keyof Pick<T[modelKey], 'reducers'>]?: {
+        } : key extends 'reducers' ? {
             [reducerKey in keyof T[modelKey][key]]: (state: S[modelKey], payload: any) => void;
-        };
-    } & {
-        [key in keyof Pick<T[modelKey], 'effects'>]?: {
+        } : key extends 'effects' ? {
             [effectKey in keyof T[modelKey][key]]: (payload: any) => (dispatch: Function, getState: () => S) => void;
-        };
+        } : never;
     };
 };
 export declare type ExtractStateTypeOnlyModels<Models> = {

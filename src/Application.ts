@@ -1,4 +1,3 @@
-import invariant from 'invariant';
 import PathNode from './PathNode';
 import is from './utils/is';
 import infoLog from './utils/infoLog';
@@ -109,7 +108,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     storeKey: K;
     changedValue: object;
   }) {
-    const origin = this.base[storeKey];
+    const origin = this.base[storeKey] || ({} as any);
     this.base[storeKey] = { ...origin, ...changedValue };
   }
 
@@ -258,11 +257,11 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     const storeValue = this.base[storeName];
 
     // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
-    invariant(
-      !!storeValue,
-      `Invalid storeName '${storeName}'.` +
-        'Please ensure `base[storeName]` return non-undefined value '
-    );
+    // invariant(
+    //   !!storeValue,
+    //   `Invalid storeName '${storeName}'.` +
+    //     'Please ensure `base[storeName]` return non-undefined value '
+    // );
 
     return storeValue;
   }

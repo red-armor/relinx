@@ -1,5 +1,5 @@
 {
-  "include": ["src", "types", "examples"],
+  "include": ["src", "types"],
   "exclude": ["**/__test__/*.js"],
   "compilerOptions": {
     "module": "esnext",
@@ -7,7 +7,7 @@
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
-    "rootDir": ".",
+    "rootDir": "./src",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

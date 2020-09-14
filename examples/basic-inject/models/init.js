@@ -1,5 +1,4 @@
 import { getGoods } from '../data-source/goods'
-import { ContainerState } from '../types'
 
 export default () => ({
   state: {
@@ -8,7 +7,7 @@ export default () => ({
   },
 
   reducers: {
-    updateState: (_, payload) => ({ status: payload.status }),
+    updateState: (_, { status }) => ({ status }),
     updatePage: state => ({
       page: state.page + 1,
     }),
@@ -25,6 +24,11 @@ export default () => ({
           },
         }, {
           type: 'updatePage',
+        }, {
+          type: 'goods-v2/addGoods',
+          payload: {
+            goodsList: result,
+          }
         }])
       })
     },

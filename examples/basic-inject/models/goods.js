@@ -8,7 +8,7 @@ export default () => ({
         listData: [].concat(state.listData, goodsList),
       }
     },
-    incrementItemCount(state, { index }) {
+    incrementItemCount(state, { id, index }) {
       const { listData } = state
       const item = listData[index]
       const next = [...listData]
@@ -20,7 +20,7 @@ export default () => ({
         listData: next
       }
     },
-    decrementItemCount(state, { index }) {
+    decrementItemCount(state, { id, index }) {
       const { listData } = state
       const item = listData[index]
       const next = [...listData]

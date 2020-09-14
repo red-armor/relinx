@@ -7,9 +7,10 @@ declare class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = key
     private _state;
     private _reducers;
     private _effects;
+    private _pendingActions;
     initialState: any;
     subscriptions: {
-        [key: string]: Function;
+        [key: string]: Subscription<ExtractStateTypeOnlyModels<T>>;
     };
     constructor(configs: {
         models: CreateStoreOnlyModels<T>;
@@ -24,7 +25,7 @@ declare class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = key
     bindApplication(application: Application<T, MODEL_KEY>): void;
     decorateDispatch(chainedMiddleware: Function): void;
     generateSubscriptionKey(): string;
-    subscribe(subscription: Subscription): () => boolean;
+    subscribe(subscription: Subscription<ExtractStateTypeOnlyModels<T>>): Function;
     injectModel(key: MODEL_KEY, model: any, initialValue?: any): void;
 }
 export default Store;

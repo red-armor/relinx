@@ -3,10 +3,10 @@ import createES5Tracker from './es5';
 import createTracker from './proxy';
 
 import {
-  TrackerNodeConstructorProps,
   HydrateConfig,
   IProxyTracker,
   IES5Tracker,
+  TrackerNodeConstructorProps,
 } from './types';
 
 let count = 0;

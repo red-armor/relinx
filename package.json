@@ -17,6 +17,7 @@
     "lint": "tsdx lint --fix src --ignore-pattern **/__test__/*.js",
     "prepare": "tsdx build",
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
+    "examples:basic-inject": "DIR=basic-inject EXT=js webpack-dev-server",
     "examples:memo": "DIR=memo EXT=js webpack-dev-server",
     "examples:nest-update": "DIR=nest-update EXT=js webpack-dev-server",
     "examples:nest-update-memo": "DIR=nest-update-memo EXT=js webpack-dev-server",

@@ -177,7 +177,7 @@ class Application {
     storeKey,
     changedValue
   }) {
-    const origin = this.base[storeKey];
+    const origin = this.base[storeKey] || {};
     this.base[storeKey] = { ...origin,
       ...changedValue
     };
@@ -304,8 +304,12 @@ class Application {
 
   getStoreData(storeName) {
     const storeValue = this.base[storeName]; // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
+    // invariant(
+    //   !!storeValue,
+    //   `Invalid storeName '${storeName}'.` +
+    //     'Please ensure `base[storeName]` return non-undefined value '
+    // );
 
-    !!!storeValue ? process.env.NODE_ENV !== "production" ? invariant(false, `Invalid storeName '${storeName}'.` + 'Please ensure `base[storeName]` return non-undefined value ') : invariant(false) : void 0;
     return storeValue;
   }
 
@@ -406,6 +410,7 @@ class Store {
     this._state = {};
     this._reducers = {};
     this._effects = {};
+    this._pendingActions = [];
     const keys = Object.keys(models);
     keys.forEach(key => {
       this.injectModel(key, models[key], initialValue[key]);
@@ -439,11 +444,13 @@ class Store {
         payload
       } = action;
       const [storeKey, actionType] = type.split('/');
-      const usedReducer = this._reducers[storeKey];
-      !usedReducer ? process.env.NODE_ENV !== "production" ? invariant(false, `Reducer missing for type \`${type}\``) : invariant(false) : void 0;
-      const currentState = this._application.base[storeKey];
+      const usedReducer = this._reducers[storeKey]; // If usedReducer is null, Maybe you have dispatched an unregistered action.
+      // On this condition, put these actions to `this._pendingActions`
 
-      if (usedReducer[actionType]) {
+      if (!usedReducer) {
+        this._pendingActions.push(action);
+      } else if (usedReducer[actionType]) {
+        const currentState = this._application.base[storeKey];
         const changedValue = usedReducer[actionType](currentState, payload);
         changedValueGroup.push({
           storeKey,
@@ -453,13 +460,36 @@ class Store {
         console.warn(`Do not have action '${actionType}'`);
       }
 
+      console.log('[store] ', this._pendingActions);
       return changedValueGroup;
     }, []);
 
     if (changedValues.length) {
-      var _this$_application;
+      var _this$_application, _this$_application2, _this$_application3;
 
-      (_this$_application = this._application) === null || _this$_application === void 0 ? void 0 : _this$_application.update(changedValues);
+      const toObject = changedValues.reduce((acc, cur) => {
+        const {
+          storeKey,
+          changedValue
+        } = cur;
+        acc[storeKey] = changedValue;
+        return acc;
+      }, {});
+      const oldState = { ...((_this$_application = this._application) === null || _this$_application === void 0 ? void 0 : _this$_application.base)
+      };
+      const newState = { ...((_this$_application2 = this._application) === null || _this$_application2 === void 0 ? void 0 : _this$_application2.base),
+        ...toObject
+      };
+      (_this$_application3 = this._application) === null || _this$_application3 === void 0 ? void 0 : _this$_application3.update(changedValues);
+
+      for (let key in this.subscriptions) {
+        const subscription = this.subscriptions[key];
+        subscription({
+          oldState,
+          newState,
+          diff: toObject
+        });
+      }
     }
   }
 
@@ -482,14 +512,50 @@ class Store {
   }
 
   injectModel(key, model, initialValue = {}) {
+    var _this$_application4, _this$_application5;
+
     const {
       state,
-      reducers,
-      effects
-    } = model;
-    this._state[key] = { ...state,
+      reducers = {},
+      effects = {}
+    } = model; // consume all the pending actions.
+
+    let base = ((_this$_application4 = this._application) === null || _this$_application4 === void 0 ? void 0 : _this$_application4.getStoreData(key)) || { ...state,
       ...initialValue
     };
+
+    const nextPendingActions = this._pendingActions.filter(action => {
+      const {
+        type,
+        payload
+      } = action;
+      const [storeKey, actionType] = type.split('/');
+      const reducer = reducers[actionType];
+      const effect = effects[actionType];
+      let nextState = base;
+
+      if (typeof reducer === 'function') {
+        nextState = reducer(base, payload);
+        base = { ...base,
+          ...nextState
+        }; // what if pending action is an effect. call dispatch again to re-run...
+        // But, there is still a condition, effects followed by normal reducer...
+        // The result may override by effect...
+      } else if (typeof effect === 'function') {
+        this.dispatch(action);
+      } else {
+        console.warn(`Maybe you have dispatched an unregistered model's effect action(${action})`);
+      }
+
+      return storeKey !== key;
+    });
+
+    this._state[key] = base;
+    this._pendingActions = nextPendingActions;
+    (_this$_application5 = this._application) === null || _this$_application5 === void 0 ? void 0 : _this$_application5.updateBase({
+      storeKey: key,
+      changedValue: base
+    });
     if (reducers) this._reducers[key] = reducers;
     if (effects) this._effects[key] = effects;
   }
@@ -527,8 +593,6 @@ var useDispatch = (() => {
   return [dispatch];
 });
 
-// @ts-nocheck
-
 /**
  * The basic format of action type is `storeKey/${type}`.
  * Only action in effect could ignore `storeKey`
@@ -546,8 +610,7 @@ var thunk = (({
         const {
           type,
           payload
-        } = action; // TODO: ts
-
+        } = action;
         const parts = [storeKey].concat(type.split('/')).slice(-2);
         const nextAction = {
           type: parts.join('/')
@@ -586,11 +649,13 @@ var thunk = (({
       const storeKey = parts[0];
       const actionType = parts[1];
       const currentEffects = store.getEffects()[storeKey];
-      console.log('current ', currentEffects, storeKey, store);
+      console.log('current ', currentEffects, storeKey, actionType, store);
 
       if (currentEffects && currentEffects[actionType]) {
         return effectActions.push(action);
-      }
+      } // If you dispatch an unregistered model's effect, it will be
+      // considered as an normal reducer action..
+
 
       return reducerActions.push(action);
     } catch (info) {
@@ -612,15 +677,7 @@ var thunk = (({
     const actionType = parts[1];
     const currentEffects = store.getEffects()[storeKey];
     const handler = currentEffects[actionType];
-    dispatch && dispatch(handler(payload), storeKey); // Promise.resolve()
-    //   .then(
-    //     () =>
-    //       dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
-    //   )
-    //   .catch(err => {
-    //     // temp log error info
-    //     console.error(err);
-    //   });
+    dispatch && dispatch(handler(payload), storeKey);
   });
 });
 

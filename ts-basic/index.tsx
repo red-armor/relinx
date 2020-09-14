@@ -6,15 +6,22 @@ import {
   createStore,
   applyMiddleware,
   thunk,
-  // @ts-ignore
 } from '../src'
 import createModel from './models'
+import { Models } from './types'
 
 import App from './container'
 
 const models = createModel()
 
-const store = createStore<typeof models>({ models }, applyMiddleware(thunk, logger))
+type test = typeof models
+
+const store = createStore<Models>({ models }, applyMiddleware(thunk, logger))
+
+store.subscribe(({ oldState, newState, diff }) => {
+  const { init } = oldState
+  const data = init.page
+})
 
 const Basic = () => (
   <Provider store={store}>
