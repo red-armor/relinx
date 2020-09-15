@@ -90,8 +90,6 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         console.warn(`Do not have action '${actionType}'`);
       }
 
-      console.log('[store] ', this._pendingActions);
-
       return changedValueGroup;
     }, []);
 

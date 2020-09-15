@@ -67,8 +67,6 @@ export default <T extends BasicModelType<T>>({
         >[typeof storeKey];
         const currentEffects = store.getEffects()[storeKey];
 
-        console.log('current ', currentEffects, storeKey, actionType, store);
-
         if (currentEffects && currentEffects[actionType]) {
           return effectActions.push(action);
         }

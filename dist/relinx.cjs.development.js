@@ -467,7 +467,6 @@ class Store {
         console.warn(`Do not have action '${actionType}'`);
       }
 
-      console.log('[store] ', this._pendingActions);
       return changedValueGroup;
     }, []);
 
@@ -656,7 +655,6 @@ var thunk = (({
       const storeKey = parts[0];
       const actionType = parts[1];
       const currentEffects = store.getEffects()[storeKey];
-      console.log('current ', currentEffects, storeKey, actionType, store);
 
       if (currentEffects && currentEffects[actionType]) {
         return effectActions.push(action);
