@@ -1,46 +1,30 @@
-import React, { useMemo, useRef, useReducer, FC } from 'react';
+import React, { useRef } from 'react';
 import context, { defaultValue } from './context';
 import Application from './Application';
 import { generateNamespaceKey } from './utils/key';
-import { CombineReducersReducer1 } from './types';
+import { ProviderProps, BasicModelType } from './types';
 
-export default <T, K extends keyof T>({
+// https://fettblog.eu/typescript-react/children/
+// https://stackoverflow.com/questions/53958028/how-to-use-generics-in-props-in-react-in-a-functional-component
+function Provider<T extends BasicModelType<T>, K extends keyof T = keyof T>({
   store,
   children,
   namespace,
   useProxy = true,
   useRelinkMode = true,
   strictMode = false,
-}: {
-  store: {
-    initialState: T;
-    createReducer: CombineReducersReducer1;
-    createDispatch: Function;
-  };
-  children: FC<any>;
-  namespace: string;
-  useProxy: boolean;
-  useRelinkMode: boolean;
-  strictMode: boolean;
-}) => {
-  const { initialState, createReducer, createDispatch } = store;
+}: ProviderProps<T>) {
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(
     new Application<T, K>({
-      base: initialState as any,
+      base: store.getState() as any,
       namespace: namespaceRef.current,
       strictMode,
     })
   );
 
-  const combinedReducers = useMemo(() => createReducer(initialState), []); // eslint-disable-line
-  // no need to update value every time.
-  // @ts-ignore
-  const [value, setValue] = useReducer(combinedReducers, []); // eslint-disable-line
-  const setState = setValue;
-  const dispatch = useMemo(() => createDispatch(setState), []); // eslint-disable-line
-
-  application.current.update(value);
+  store.bindApplication(application.current);
+  const dispatch = store.dispatch;
 
   const contextValue = useRef({
     ...defaultValue,
@@ -54,4 +38,6 @@ export default <T, K extends keyof T>({
   return (
     <context.Provider value={contextValue.current}>{children}</context.Provider>
   );
-};
+}
+
+export default Provider;

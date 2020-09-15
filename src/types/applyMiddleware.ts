@@ -1,10 +1,6 @@
 import { CreateStoreFn, BasicModelType } from './createStore';
-import {
-  Action,
-  ExtractStateTypeOnlyModels,
-  ExtractReducersTypeOnlyModels,
-  ExtractEffectsTypeOnlyModels,
-} from './createStore';
+import { Action, ExtractStateTypeOnlyModels } from './createStore';
+import Store from '../Store';
 
 export type GetState<T> = () => ExtractStateTypeOnlyModels<T>;
 export type UnionActions = Action | Array<Action>;
@@ -18,10 +14,9 @@ export type ThunkDispatch<T> = (
 // ...rest should be preserved, or dispatch an function will not has `storeKey`
 export type Dispatch = (actions: UnionActions, ...rest: Array<any>) => void;
 
-export type ApplyMiddlewareAPI<T> = {
+export type ApplyMiddlewareAPI<T extends BasicModelType<T>> = {
   getState: GetState<T>;
-  reducers: ExtractReducersTypeOnlyModels<T>;
-  effects: ExtractEffectsTypeOnlyModels<T>;
+  store: Store<T>;
 
   // TODO: ts reconsider, why it not work...
   dispatch?: Dispatch | ThunkDispatch<T>;
@@ -34,7 +29,7 @@ export type ApplyMiddlewareAPI<T> = {
   // }
 };
 
-export type Middleware = <T>(
+export type Middleware = <T extends BasicModelType<T>>(
   api: ApplyMiddlewareAPI<T>
 ) => (
   next: Next

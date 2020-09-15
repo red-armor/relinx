@@ -1,4 +1,4 @@
-import { TrackerNodeConstructorProps, HydrateConfig, IProxyTracker, IES5Tracker } from './types';
+import { HydrateConfig, IProxyTracker, IES5Tracker, TrackerNodeConstructorProps } from './types';
 declare class TrackerNode {
     base: object;
     useRevoke: boolean;

@@ -1,20 +1,26 @@
 import {
-  Action,
   Next,
-  ApplyMiddlewareAPI,
-  ExtractEffectsTypeOnlyModels,
+  Action,
   ThunkFn,
   Dispatch,
   ThunkDispatch,
+  BasicModelType,
+  ApplyMiddlewareAPI,
+  ExtractEffectsTypeOnlyModels,
 } from '../types';
 
 /**
  * The basic format of action type is `storeKey/${type}`.
  * Only action in effect could ignore `storeKey`
  */
-export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
-  next: Next
-) => (actions: Array<Action> | Function, storeKey: keyof T) => {
+export default <T extends BasicModelType<T>>({
+  getState,
+  dispatch,
+  store,
+}: ApplyMiddlewareAPI<T>) => (next: Next) => (
+  actions: Array<Action> | Function,
+  storeKey: keyof T
+) => {
   if (typeof actions === 'function') {
     const nextDispatch = (thunkActions: Array<Action> | Action) => {
       const nextArgs = ([] as Array<Action>).concat(thunkActions) || [];
@@ -22,7 +28,6 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
         .map(action => {
           if (!action) return null;
           const { type, payload } = action;
-          // TODO: ts
           const parts = [storeKey].concat(type.split('/') as any).slice(-2);
           const nextAction: Action = {
             type: parts.join('/'),
@@ -60,12 +65,16 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
         const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
           T
         >[typeof storeKey];
-        const currentEffects = effects[storeKey];
+        const currentEffects = store.getEffects()[storeKey];
+
+        console.log('current ', currentEffects, storeKey, actionType, store);
 
         if (currentEffects && currentEffects[actionType]) {
           return effectActions.push(action);
         }
 
+        // If you dispatch an unregistered model's effect, it will be
+        // considered as an normal reducer action..
         return reducerActions.push(action);
       } catch (info) {
         return false;
@@ -83,17 +92,9 @@ export default <T>({ getState, dispatch, effects }: ApplyMiddlewareAPI<T>) => (
     const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
       T
     >[keyof T];
-    const currentEffects = effects[storeKey];
+    const currentEffects = store.getEffects()[storeKey];
     const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-    Promise.resolve()
-      .then(
-        () =>
-          dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey)
-      )
-      .catch(err => {
-        // temp log error info
-        console.error(err);
-      });
+    dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
   });
 };

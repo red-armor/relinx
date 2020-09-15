@@ -1,10 +1,15 @@
-import { FC } from 'react';
+import React from 'react';
+import Store from '../Store';
+import { BasicModelType } from './createStore';
 
-export interface ProviderProps {
-  store: object;
-  children: FC;
-  namespace: string;
-  useProxy: boolean;
-  useRelinkMode: boolean;
-  strictMode: boolean;
+export interface ProviderProps<
+  T extends BasicModelType<T>,
+  K extends keyof T = keyof T
+> {
+  store: Store<T, K>;
+  namespace?: string;
+  useProxy?: boolean;
+  useRelinkMode?: boolean;
+  strictMode?: boolean;
+  children?: React.ReactNode;
 }

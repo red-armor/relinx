@@ -4,7 +4,6 @@ import {
   CreateStoreFn,
   CreateStoreOnlyModels,
   Middleware,
-  Dispatch,
   UnionActions,
 } from './types';
 
@@ -18,29 +17,19 @@ export default function applyMiddleware(...middleware: Array<Middleware>) {
       [key in keyof T]?: any;
     };
   }) => {
-    const store = {
-      ...createStore(config),
-      dispatch: (undefined as unknown) as Dispatch,
-    };
-    const { reducers, effects, initialState } = store;
+    const store = createStore(config);
+    const initialState = store.getState();
 
     const api = {
       dispatch: (actions: UnionActions, ...rest: Array<any>) =>
         store.dispatch(actions, ...rest),
       getState: () => initialState,
-      reducers,
-      effects,
+      store,
     };
 
     const chain = nextMiddleware.map(middleware => middleware<T>(api));
-    const createDispatch = (setValue: Function) => {
-      store.dispatch = compose(...chain)(setValue);
-      return store.dispatch;
-    };
+    store.decorateDispatch(compose(...chain));
 
-    return {
-      ...store,
-      createDispatch,
-    };
+    return store;
   };
 }

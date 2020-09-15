@@ -17,7 +17,3 @@ export interface Operation {
     path: Array<string>;
     isDelete: Boolean;
 }
-export interface UpdateValue<K> {
-    storeKey: keyof K;
-    changedValue: object;
-}
