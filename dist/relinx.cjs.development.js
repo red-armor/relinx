@@ -350,6 +350,7 @@ const generatePatcherKey = ({
   patcherSeenKeys[namespace][componentName] = next;
   return `${namespace}_${componentName}_patcher_${count}`;
 };
+const generateRandomGlobalActionKey = () => Math.floor(Math.random() * MULTIPLIER).toString(32); // eslint-disable-line
 
 // https://stackoverflow.com/questions/53958028/how-to-use-generics-in-props-in-react-in-a-functional-component
 
@@ -598,6 +599,56 @@ var useDispatch = (() => {
   } = React.useContext(context);
   return [dispatch];
 });
+
+var useNamespace = (() => {
+  const {
+    namespace
+  } = React.useContext(context);
+  return namespace;
+});
+
+class GlobalHelper {
+  constructor() {
+    this.collections = [];
+  }
+
+  addAction(actionKey, namespace, actions) {
+    this.collections.push({
+      actionKey,
+      namespace,
+      remover: () => {
+        const index = this.collections.findIndex(({
+          actionKey: key
+        }) => key === actionKey);
+        if (index !== -1) this.collections.splice(index, 1);
+      },
+      actions
+    });
+  }
+
+}
+
+var globalHelper = /*#__PURE__*/
+new GlobalHelper();
+
+const dispatch = actions => {
+  const next = [].concat(actions);
+  next.forEach(action => {
+    const {
+      namespace: targetNamespace,
+      actions
+    } = action;
+    !targetNamespace ?  invariant(false, '`namespace` is required for global action')  : void 0;
+    !actions ?  invariant(false, '`actions` is required for global action')  : void 0;
+    const actionKey = generateRandomGlobalActionKey();
+    globalHelper.addAction(actionKey, targetNamespace, actions);
+  });
+}; // It is not a official documentation compatible Hooks API.
+// For global state, data change responsive is not required, which means
+// value's change will not trigger any UI/data update...
+
+
+var useGlobal = (() => [globalHelper.collections, dispatch]);
 
 /**
  * The basic format of action type is `storeKey/${type}`.
@@ -2080,5 +2131,7 @@ exports.logger = index;
 exports.observe = observe;
 exports.thunk = thunk;
 exports.useDispatch = useDispatch;
+exports.useGlobal = useGlobal;
+exports.useNamespace = useNamespace;
 exports.useRelinx = useRelinx;
 //# sourceMappingURL=relinx.cjs.development.js.map

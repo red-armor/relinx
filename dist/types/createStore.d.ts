@@ -1,7 +1,7 @@
 import Store from '../Store';
 export interface Action {
     type: string;
-    payload?: object;
+    payload?: any;
 }
 export declare type ModelKey = 'state' | 'reducers' | 'effects';
 export declare type BasicModelType<T> = {
@@ -30,7 +30,7 @@ export declare type CreateStoreOnlyModels<T extends BasicModelType<T>, S extends
         [key in keyof T[modelKey]]?: key extends 'state' ? {
             [stateKey in keyof T[modelKey][key]]: T[modelKey][key][stateKey];
         } : key extends 'reducers' ? {
-            [reducerKey in keyof T[modelKey][key]]: (state: S[modelKey], payload: any) => void;
+            [reducerKey in keyof T[modelKey][key]]: (state: S[modelKey], payload: any) => Partial<S[modelKey]>;
         } : key extends 'effects' ? {
             [effectKey in keyof T[modelKey][key]]: (payload: any) => (dispatch: Function, getState: () => S) => void;
         } : never;

@@ -54,3 +54,5 @@ export const generatePatcherKey = ({
   patcherSeenKeys[namespace][componentName] = next;
   return `${namespace}_${componentName}_patcher_${count}`;
 };
+
+export const generateRandomGlobalActionKey = () => Math.floor(Math.random() * MULTIPLIER).toString(32) // eslint-disable-line

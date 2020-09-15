@@ -1,6 +1,6 @@
 import React from 'react'
 // @ts-ignore
-import { useRelinx, observe } from '../../../src'
+import { useRelinx, observe, useGlobal, useNamespace } from '../../../src'
 import { Styles } from '../../types'
 
 const styles: Styles = {
@@ -28,6 +28,23 @@ const styles: Styles = {
 
 const BottomBar = () => {
   const [state] = useRelinx('bottomBar')
+  const value = useGlobal()
+  const namespace = useNamespace()
+
+  const [collections, globalDispatch] = useGlobal()
+  const group = collections.filter(collection => {
+    const { namespace: targetNamespace } = collection
+    return targetNamespace === namespace
+  })
+
+  globalDispatch([{
+    namespace: 'address-list',
+    actions: [{
+      type: 'addressList/setSelectedId',
+      payload: 'x',
+    }],
+  }])
+
   const { count } = state
 
   return (
