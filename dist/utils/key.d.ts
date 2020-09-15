@@ -6,3 +6,4 @@ export declare const generatePatcherKey: ({ namespace, componentName, }: {
     namespace: string;
     componentName: string;
 }) => string;
+export declare const generateRandomGlobalActionKey: () => string;

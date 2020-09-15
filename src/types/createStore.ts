@@ -2,7 +2,7 @@ import Store from '../Store';
 
 export interface Action {
   type: string;
-  payload?: object;
+  payload?: any;
 }
 
 export type ModelKey = 'state' | 'reducers' | 'effects';
@@ -109,7 +109,7 @@ export type CreateStoreOnlyModels<
           [reducerKey in keyof T[modelKey][key]]: (
             state: S[modelKey],
             payload: any
-          ) => void;
+          ) => Partial<S[modelKey]>;
         }
       : key extends 'effects'
       ? {
