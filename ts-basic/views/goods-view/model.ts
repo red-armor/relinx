@@ -1,3 +1,5 @@
+import { TotalState } from '../../index'
+
 export default () => ({
   state: {
     listData: [],
@@ -48,7 +50,7 @@ export default () => ({
         type: 'bottomBar/incrementTotalCount',
       }])
     },
-    decrement: ({ id, index }) => dispatch => {
+    decrement: ({ id, index }) => (dispatch, getState: () => TotalState) => {
       dispatch([{
         type: 'decrementItemCount',
         payload: { id, index },
@@ -58,3 +60,32 @@ export default () => ({
     },
   },
 })
+
+type Dispatch<T> = ({
+  type, payload
+}: {
+  type: 'decrementItemCount',
+  payload?: any
+}) => void
+
+const dispatch: Dispatch<number> = (action) => {
+  console.log('action')
+}
+
+dispatch({
+  type: 'x/decrementItemCount',
+})
+
+
+interface PageInfo {
+  title: string;
+}
+
+type Page = "home" | "about" | "contact";
+
+const nav: Record<Page, PageInfo> = {
+  about: { title: "about" },
+  contact: { title: "contact" },
+  home: { title: "home" },
+};
+

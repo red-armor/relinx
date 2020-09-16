@@ -4,7 +4,10 @@ export interface ContainerState {
 }
 
 export interface ContainerModel {
-  state: ContainerState,
+  state: {
+    page: number;
+    status: string;
+  },
   reducers: {
     updateState: (state: any, payload: { status: string }) => any,
     updatePage: (state: any, payload: { status: string }) => any,
