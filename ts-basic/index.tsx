@@ -126,14 +126,34 @@ type never$unknown = never extends unknown ? number : string
 type object$unknown = object extends unknown ? number : string
 type never$never = never extends never ? number : string
 type object$never = object extends never ? number : string
+type extends$never = never extends never ? number : string
+type any$string = any extends string ? number : string
+type never$string = never extends string ? number : string
 
 export type KeyMap = {
+  'init/increment': 'increment',
+  'init/decrement': 'decrement',
   'init/addGoods': 'addGoods',
   'init/incrementItemCount': 'incrementItemCount',
   'init/decrementItemCount': 'decrementItemCount',
   'bottomBar/incrementTotalCount': 'incrementTotalCount',
   'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
+
+type PP = {
+  'addGoods': string
+}
+
+export type Merged = {
+  [key in keyof KeyMap]: KeyMap[key] extends keyof PP ? PP[KeyMap[key]] : never
+}
+
+type TestMp = MergedP<KeyMap, PP>
+
+type TestKeyMap<C, P> = C extends keyof KeyMap ? KeyMap[C] extends keyof P ? P[KeyMap[C]] : never : never
+// type TestKeyMap2<C, P> = C extends keyof KeyMap ? KeyMap[C] extends keyof P ? KeyMap[C] ? KeyMap[C] extends keyof P ? P[KeyMap[C]]: never : never
+
+type PM = TestKeyMap<'init/addGoods', PP>
 
 type KeyValueTupleToObject<T extends [keyof any, any]> = {
   [K in T[0]]: Extract<T, [K, any]>[1]
@@ -171,27 +191,68 @@ type GetTotalKey<
   EK extends GetKeys<E> = GetKeys<E>,
 > = RK | EK
 
+type MergedP<KM, P> = {
+  [key in keyof KM]: KM[key] extends keyof P ? P[KM[key]] : never;
+} & P
+
 export type Dispatch<
   T,
   KM,
   OKM extends keyof KM = keyof KM,
   TK extends GetTotalKey<T> = GetTotalKey<T>,
   MK extends OKM | TK = OKM | TK,
-  P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<GetMergedPayload<T>>
-> = (action: SafeAction<MK, P> | Array<SafeAction<MK, P>>) => void
+  P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<GetMergedPayload<T>>,
+  MP extends MergedP<KM, P> = MergedP<KM, P>
+// > = <C extends any = void, D extends any = void>(action: SafeAction<MK, P, C, D> | Array<SafeAction<MK, P, C, D>>) => void
+> = <
+  C extends any = void,
+  D extends any = void,
+  E extends any = void,
+>(action: SafeAction<MK, KM, MP, C> | [SafeAction<MK, KM, MP, C>, SafeAction<MK, KM, MP, D>, SafeAction<MK, KM, MP, E>]) => void
 
-type SafeAction<T, P> = {
+
+type SafeAction<T, KM, P, C> = {
+  // payload?: C extends keyof P ? P[C] : never,
+  // payload?: C extends never ? T extends keyof P ? P[T] : C extends keyof P ? P[C] : never : never,
+  payload?: C extends string ? C extends keyof P ? P[C] : never : T extends keyof P ? P[T] : never,
+  // payload?:
+  //   C extends string ?
+  //     C extends keyof P
+  //       ? P[C]
+  //       : C extends keyof KM
+  //         ? KM[C] extends keyof P
+  //           ? P[KM[C]]   // 不知道为啥这个不能够用，所以最终通过MergeP的方式来实现了
+  //           : never
+  //         : T extends keyof P
+  //           ? P[T]
+  //           : never
+  //     : never
   type: T,
-  payload?: T extends keyof P ? P[T] : never
 }
 
+// type TestSafeAction = SafeAction<TotalKeys, M, 'decrement'>
+
+// function next<T>(dispatch: Dispatch<Models, KeyMap>)
+
 function test (dispatch: Dispatch<Models, KeyMap>)  {
-  dispatch({
-    type: 'decrementItemCount',
+  dispatch<'increment'>({
+    type: 'increment',
     payload: {
       ba: 'x',
     }
   })
+
+  dispatch<'decrement', 'increment', 'init/decrement'>([{
+    type: 'decrement',
+    payload: {},
+  }, {
+    type: 'increment',
+    payload: {},
+  }, {
+    type: 'init/decrement',
+    payload: {},
+  }])
+
   // dispatch([{
   //   type: 'incrementTotalCount',
   //   payload: {

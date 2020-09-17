@@ -18,7 +18,8 @@ export const defaultValue = {
 };
 
 // @ts-ignore
-export default createContext<ContextDefaultValue<T>>(
+export default createContext<ContextDefaultValue<T, M>>(
   defaultValue,
+  // @ts-ignore
   calculateChangeBits
 );

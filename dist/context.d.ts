@@ -14,5 +14,5 @@ export declare const defaultValue: {
     useRelinkMode: boolean;
     application: null;
 };
-declare const _default: import("react").Context<ContextDefaultValue<any>>;
+declare const _default: import("react").Context<ContextDefaultValue<any, any>>;
 export default _default;

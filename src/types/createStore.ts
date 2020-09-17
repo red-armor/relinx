@@ -142,7 +142,7 @@ export interface ChangedValueGroup<K> {
   changedValue: object;
 }
 
-type GetReducerPayload<T> = T extends (S: any) => object
+export type GetReducerPayload<T> = T extends (S: any) => object
   ? never
   : T extends (S: any, payload: infer B) => object
   ? B extends any
@@ -155,21 +155,21 @@ type GetEffectPayload<T> = T extends (
   ? B
   : never;
 
-type KeyValueTupleToObject<T extends [keyof any, any]> = {
+export type KeyValueTupleToObject<T extends [keyof any, any]> = {
   [K in T[0]]: Extract<T, [K, any]>[1];
 };
 
-type GetKeys<T> = {
+export type GetKeys<T> = {
   [key in keyof T]: keyof T[key] extends string ? keyof T[key] : never;
 }[keyof T];
 
-type ReducerPayload<R> = {
+export type ReducerPayload<R> = {
   [key in keyof R]: {
     [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
   }[keyof R[key]];
 }[keyof R];
 
-type EffectPayload<E> = {
+export type EffectPayload<E> = {
   [key in keyof E]: E[key] extends never
     ? never
     : {
@@ -177,7 +177,7 @@ type EffectPayload<E> = {
       }[keyof E[key]];
 }[keyof E];
 
-type GetMergedPayload<
+export type GetMergedPayload<
   T,
   R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
   E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
@@ -185,7 +185,7 @@ type GetMergedPayload<
   EP extends EffectPayload<E> = EffectPayload<E>
 > = RP | EP;
 
-type GetTotalKey<
+export type GetTotalKey<
   T,
   R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
   E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
@@ -204,7 +204,7 @@ export type SafeDispatch<
   >
 > = (action: SafeAction<MK, P> | Array<SafeAction<MK, P>>) => void;
 
-type SafeAction<T, P> = {
+export type SafeAction<T, P> = {
   type: T;
   payload?: T extends keyof P ? P[T] : never;
 };

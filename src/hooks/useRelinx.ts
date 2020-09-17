@@ -3,9 +3,9 @@ import invariant from 'invariant';
 import context from '../context';
 import { UseRelinxReturnValue, ContextDefaultValue } from '../types';
 
-export default <T>(storeName: string): UseRelinxReturnValue<T> => {
+export default <T, M>(storeName: string): UseRelinxReturnValue<T, M> => {
   const { dispatch, getData, attachStoreName } = useContext<
-    ContextDefaultValue<T>
+    ContextDefaultValue<T, M>
   >(context);
 
   invariant(

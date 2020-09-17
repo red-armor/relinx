@@ -28,7 +28,8 @@ const defaultValue = {
 }; // @ts-ignore
 
 var context = /*#__PURE__*/
-React.createContext(defaultValue, calculateChangeBits);
+React.createContext(defaultValue, // @ts-ignore
+calculateChangeBits);
 
 /**
  * Intentional info-level logging for clear separation from ad-hoc console debug logging.

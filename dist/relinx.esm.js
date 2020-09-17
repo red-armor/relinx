@@ -21,7 +21,8 @@ const defaultValue = {
 }; // @ts-ignore
 
 var context = /*#__PURE__*/
-createContext(defaultValue, calculateChangeBits);
+createContext(defaultValue, // @ts-ignore
+calculateChangeBits);
 
 /**
  * Intentional info-level logging for clear separation from ad-hoc console debug logging.
