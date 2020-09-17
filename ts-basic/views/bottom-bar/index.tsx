@@ -47,6 +47,13 @@ const BottomBar = () => {
 
   const { count } = state
 
+  dispatch([
+    type: 'bottomBar/increment',
+    payload: {
+
+    }
+  ])
+
   return (
     <div style={styles.wrapper}>
       <span style={styles.text}>

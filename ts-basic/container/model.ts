@@ -3,6 +3,8 @@ import { ContainerState } from '../types'
 
 type fn = {
   updateState: (_: any, payload: { status: string }) => ({ status: string })
+  update: (_: any, payload: { name: string }) => ({ status: string })
+
   updatePage: (state: {
     page: number,
     status: string,
@@ -13,22 +15,22 @@ type fn = {
 }
 
 
-type getParams<T> = {
+type getReducerPayload<T> = {
   [key in keyof fn]: key extends T ? fn[key] extends (S: any) => object ? never
   : fn[key] extends (S: any, payload: infer B) => object ? B extends any ? B : never : never : never
-
-  // [key in keyof fn]: key extends T ? fn[key] extends (S: any, payload: infer B) => object ? B extends any ? B : never : never : never
 }
 type b = string extends unknown ? number : object
+
+type hh = getReducerPayload<actionType>
 
 type Action<T> = {
   type: T,
   payload?: {
-    [key in keyof getParams<T>]: getParams<T>[key]
-  }[keyof getParams<T>]
-
-  // payload?: getParams<T>
+    [key in keyof getReducerPayload<T>]: getReducerPayload<T>[key]
+  }[keyof getReducerPayload<T>]
 }
+
+type mbm = Action<actionType>
 
 type m = {
   a: string;
@@ -43,7 +45,7 @@ type pppp = ppp extends (S: any, payload: infer B) => object ? B : never
 
 type Dispatch<T> = (action: Action<T> | Array<Action<T>>) => void
 
-type actionType = 'updateState' | 'updatePage' | 'init/updateState'
+type actionType = 'updateState' | 'updatePage' | 'init/updateState' | 'update'
 
 type p = Parameters<(a: string) => void>[0]
 type pp = Parameters<(a: string, b: number) => void>
@@ -58,7 +60,8 @@ export default (): {
     updatePage: (state: {
       page: number,
       status: string,
-    }) => { page: number }
+    }) => { page: number },
+    update: (_: any, payload: { name: string}) => ({ status: string })
   },
   effects: {
     getGoodsList: {
@@ -74,6 +77,7 @@ export default (): {
 
   reducers: {
     updateState: (_, payload) => ({ status: payload.status }),
+    update: (_, payload) => ({ status: payload.name }),
     updatePage: state => ({
       page: state.page + 1,
     }),
@@ -84,14 +88,14 @@ export default (): {
       const { init: { page } } = getState()
       getGoods({ page }).then(result => {
         dispatch({
-          type: 'init/updateState',
+          type: 'update',
           payload: 'x'
         })
 
         dispatch([{
           type: 'updateState',
           payload: {
-            status: 2
+            status: 3
           }
         }])
         // dispatch([{

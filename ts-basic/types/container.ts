@@ -13,7 +13,7 @@ export interface ContainerModel {
     updatePage: (state: any, payload: { status: string }) => any,
   },
   effects: {
-    getGoodsList: () => (dispatch: Function, getState: Function) => any,
-    updateOnline: () => (dispatch: Function, getState: Function) => any,
+    // getGoodsList: () => (dispatch: Function, getState: Function) => any,
+    // updateOnline: () => (dispatch: Function, getState: Function) => any,
   }
 }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Reducer } from 'react'
 import ReactDOM from 'react-dom'
 import {
   logger,
@@ -32,7 +32,6 @@ const Basic = () => (
 
 ReactDOM.render(<Basic />, document.getElementById('app'))
 
-
 export type TotalState = ExtractStateTypeOnlyModels<Models>
 type TotalReducers = ExtractReducersTypeOnlyModels<Models>
 type TotalEffects = ExtractEffectsTypeOnlyModels<Models>
@@ -43,79 +42,187 @@ type ReducerKeys = {
 type EffectKeys = {
   [key in keyof TotalEffects]: keyof TotalEffects[key] extends string ? keyof TotalEffects[key] : never
 }[keyof TotalEffects]
+type TotalKeys = EffectKeys | ReducerKeys
+type effectFn = {
+  [key in keyof TotalEffects]: keyof TotalEffects[key] extends string ? {
+    [k in keyof TotalEffects[key]]: TotalEffects[key][k]
+  }[keyof TotalEffects[key]] : never
+}
+type GetFunction<T, K> = {
+  [key in keyof T]: K extends keyof T[key] ? T[key][K] : never
+}[keyof T]
+type GetEffect<K> = GetFunction<TotalEffects, K>
+type GetReducer<K> = GetFunction<TotalReducers, K>
+type GetDispatchFunction<K> = GetEffect<K> | GetReducer<K>
 
-type totalKeys = ReducerKeys | EffectKeys
+type GetReducerPayload<T> = T extends (S: any) => object ? never
+: T extends (S: any, payload: infer B) => object ? B extends any ? B : never : never
+type GetEffectPayload<T> = T extends (payload?: infer B) => (dispatch?: Function, getState?: Function) => void ? B : never
 
-type map = {
-  incrementTotalCount: 'bottomBar/incrementTotalCount',
-  decrementTotalCount: 'bottomBar/decrementTotalCount',
+// 如果说没有payload的话，会造成unknown这个时候整个的值就是unknown
+// type GetEffectPayload<T> = T extends (payload?: infer B) => (dispatch?: Function, getState?: Function) => void ? B : never
+
+type GetPayload<T> = GetReducerPayload<T> | GetEffectPayload<T>
+
+type GetMergePayload<T> = T extends (S: any) => object ? never
+: T extends (S: any, payload: infer B) => object ? B extends any ? B : never
+: T extends (payload?: infer C) => (dispatch?: Function, getState?: Function) => void ? C extends unknown ? never : C : never
+
+type GetMergePayloadOrder<T> = T extends (payload?: infer C) => (dispatch?: Function, getState?: Function) => void ? C
+  : T extends (S: any, payload: infer B) => object ? B extends any ? B : never
+  : T extends (S: any) => object ? never : never
+
+// T extends (S: any) => object ? never
+// : T extends (S: any, payload: infer B) => object ? B extends any ? B : never
+// : T extends (payload?: infer C) => (dispatch?: Function, getState?: Function) => void ? C : never
+
+type GetMergePayload2<T> = T extends (payload?: infer C) => (dispatch?: Function) => void ? C : never
+
+// type Action<K> = {
+//   type: K,
+//   payload: GetMergePayload<GetDispatchFunction<K>>
+// }
+
+type Payload1 = GetDispatchFunction<TotalKeys>
+type Payload2 = GetReducerPayload<Payload1>
+type Payload3 = GetEffectPayload<Payload1>
+type Payload = GetPayload<GetDispatchFunction<TotalKeys>>
+type MergedPayload = GetMergePayload<GetDispatchFunction<EffectKeys>>
+type MergedPayload4 = GetMergePayload<GetDispatchFunction<TotalKeys>>
+type mergedPayloadOrder = GetMergePayloadOrder<GetDispatchFunction<TotalKeys>>
+type mergedPayloadOrder1 = GetMergePayloadOrder<GetDispatchFunction<ReducerKeys>>
+type mergedPayloadOrder2 = GetMergePayloadOrder<GetDispatchFunction<EffectKeys>>
+type Effect = GetDispatchFunction<EffectKeys>
+
+type MergedPayload2 = GetMergePayload<GetDispatchFunction<EffectKeys>>
+type MergedPayload3 = GetMergePayload<GetDispatchFunction<ReducerKeys>>
+
+// export type Dispatch<T> = (action: Action<T> | Array<Action<T>>) => void
+
+type NextReducerPayload = {
+  [key in keyof TotalReducers]: {
+    [k in keyof TotalReducers[key]]: [k, GetReducerPayload<TotalReducers[key][k]>]
+  }[keyof TotalReducers[key]]
+}[keyof TotalReducers]
+
+type NextEffectPayload = {
+  [key in keyof TotalEffects]: TotalEffects[key] extends never ? never : {
+    [k in keyof TotalEffects[key]]: [k, GetEffectPayload<TotalEffects[key][k]>]
+  }[keyof TotalEffects[key]]
+}[keyof TotalEffects]
+
+type TotalPayload = NextEffectPayload | NextReducerPayload
+
+type M = KeyValueTupleToObject<TotalPayload>
+
+
+type Action<K> = {
+  type: K,
+  payload: K extends keyof KeyValueTupleToObject<TotalPayload> ? KeyValueTupleToObject<TotalPayload>[K] : never
 }
 
-type nextKeys = {
-  [key in totalKeys]:
+type never$object = never extends object ? number : string
+type never$unknown = never extends unknown ? number : string
+type object$unknown = object extends unknown ? number : string
+type never$never = never extends never ? number : string
+type object$never = object extends never ? number : string
+
+export type KeyMap = {
+  'init/addGoods': 'addGoods',
+  'init/incrementItemCount': 'incrementItemCount',
+  'init/decrementItemCount': 'decrementItemCount',
+  'bottomBar/incrementTotalCount': 'incrementTotalCount',
+  'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
 
-
-type dispatch = ({
-  type, payload
-}: {
-  payload: any;
-  type: {
-    [key in keyof TotalReducers]: keyof TotalReducers[key]
-  }
-}) => void
-
-
-type SomeMoreDataMapping = {
-  prop1: "prop1Change"
-  prop2: "prop2Change"
-}
-type ValueOf<T> = T[keyof T]
 type KeyValueTupleToObject<T extends [keyof any, any]> = {
   [K in T[0]]: Extract<T, [K, any]>[1]
 }
-// type MapKeys<T, M extends Record<string, string>> =
-//   KeyValueTupleToObject<ValueOf<{
-//     [K in keyof T]: [K extends keyof M ? M[K] : K, T[K]]
-//   }>>
 
+type GetKeys<T> = {
+  [key in keyof T]: keyof T[key] extends string ? keyof T[key] : never
+}[keyof T]
 
-type t = ValueOf<SomeMoreDataMapping>
-type t2 = RequiredKeys<SomeMoreDataMapping>
+type ReducerPayload<R> = {
+  [key in keyof R]: {
+    [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>]
+  }[keyof R[key]]
+}[keyof R]
 
+type EffectPayload<E> = {
+  [key in keyof E]: E[key] extends never ? never : {
+    [k in keyof E[key]]: [k, GetEffectPayload<E[key][k]>]
+  }[keyof E[key]]
+}[keyof E]
 
-type RequiredKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? never : K }[keyof T];
-type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T];
+type GetMergedPayload<
+  T,
+  R extends ExtractReducersTypeOnlyModels<Models> = ExtractReducersTypeOnlyModels<Models>,
+  E extends ExtractEffectsTypeOnlyModels<Models> = ExtractEffectsTypeOnlyModels<Models>,
+  RP extends ReducerPayload<R> = ReducerPayload<R>,
+  EP extends EffectPayload<E> = EffectPayload<E>,
+> = RP | EP
 
+type GetTotalKey<
+  T,
+  R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
+  E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
+  RK extends GetKeys<R> = GetKeys<R>,
+  EK extends GetKeys<E> = GetKeys<E>,
+> = RK | EK
 
+export type Dispatch<
+  T,
+  KM,
+  OKM extends keyof KM = keyof KM,
+  TK extends GetTotalKey<T> = GetTotalKey<T>,
+  MK extends OKM | TK = OKM | TK,
+  P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<GetMergedPayload<T>>
+> = (action: SafeAction<MK, P> | Array<SafeAction<MK, P>>) => void
 
-type MapKeys<T, M extends Record<string, string>> =
-  KeyValueTupleToObject<ValueOf<{
-    [K in RequiredKeys<T>]-?: [K extends keyof M ? M[K] : K, T[K]]
-  }>> & Partial<KeyValueTupleToObject<ValueOf<{
-    [K in OptionalKeys<T>]-?: [K extends keyof M ? M[K] : K, T[K]]
-  }>>> extends infer O ? { [K in keyof O]: O[K] } : never;
-
-type MapKeys2<T, M extends Record<string, string>> =
-  ValueOf<{
-    [K in RequiredKeys<T>]-?: [K extends keyof M ? M[K] : K, T[K]]
-  }>
-
-function makeTheChange<T>(input: T): MapKeys<T, SomeMoreDataMapping> {
-  var ret = {} as MapKeys<T, SomeMoreDataMapping>;
-  for (var k in input) {
-    // lots of any needed here; hard to convince the type system you're doing the right thing
-    var nk: keyof typeof ret = ((k === 'prop1') ? 'prop1Change' : (k === 'prop2') ? 'prop2Change' : k) as any;
-    ret[nk] = input[k] as any;
-  }
-  return ret;
+type SafeAction<T, P> = {
+  type: T,
+  payload?: T extends keyof P ? P[T] : never
 }
 
-var changed = makeTheChange({ prop1: 'Gypsy', prop2: 'Tom', prop3: 'Crow' });
-console.log(changed.prop1Change.charAt(0)); //ok
-console.log(changed.prop2Change.charAt(0)); //ok
-console.log(changed.prop3.charAt(0)); //ok
+function test (dispatch: Dispatch<Models, KeyMap>)  {
+  dispatch({
+    type: 'decrementItemCount',
+    payload: {
+      ba: 'x',
+    }
+  })
+  // dispatch([{
+  //   type: 'incrementTotalCount',
+  //   payload: {
+  //     ba: 'x',
+  //   }
+  // }, {
+  //   type: 'bottomBar/incrementTotalCount',
+  //   payload: {
+  //     name: '3',
+  //   }
+  // }])
 
-type tt = MapKeys2<{ prop1: 'Gypsy', prop2: 'Tom', prop3: 'Crow' }, SomeMoreDataMapping>
-type tt2 = KeyValueTupleToObject<tt>
-type tt3 = tt2 extends infer O ? { [K in keyof O]: O[K] } : never;
+  // dispatch([{
+  //   type: 'increment',
+  //   payload: {
+  //     id: 'name',
+  //     index: 3,
+  //   }
+  // }, {
+  //   type: 'decrement',
+  //   payload: {
+  //     name: 'hello'
+  //   }
+  // }, {
+  //   type: 'incrementItemCount',
+  //   payload: {
+  //     name: 'x'
+  //   }
+  // }, {
+  //   type: 'updatePage',
+  // }, {
+  //   type: 'bottomBar/incrementTotalCount',
+  // }])
+}
