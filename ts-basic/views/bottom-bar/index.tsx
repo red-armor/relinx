@@ -1,7 +1,7 @@
 import React from 'react'
 // @ts-ignore
 import { useRelinx, observe, useGlobal, useNamespace } from '../../../src'
-import { Styles } from '../../types'
+import { Styles, Models } from '../../types'
 
 const styles: Styles = {
   wrapper: {
@@ -27,7 +27,7 @@ const styles: Styles = {
 }
 
 const BottomBar = () => {
-  const [state] = useRelinx('bottomBar')
+  const [state, dispatch] = useRelinx<Models>('bottomBar')
   const value = useGlobal()
   const namespace = useNamespace()
 
@@ -35,6 +35,13 @@ const BottomBar = () => {
   const group = collections.filter(collection => {
     const { namespace: targetNamespace } = collection
     return targetNamespace === namespace
+  })
+
+  dispatch({
+    type: 'addGoods',
+    payload: {
+      name: 'x',
+    }
   })
 
   globalDispatch([{
@@ -46,13 +53,6 @@ const BottomBar = () => {
   }])
 
   const { count } = state
-
-  dispatch([
-    type: 'bottomBar/increment',
-    payload: {
-
-    }
-  ])
 
   return (
     <div style={styles.wrapper}>

@@ -4,8 +4,9 @@ import { ContextDefaultValue } from './types';
 const calculateChangeBits = () => 0b00;
 const noop = () => {};
 
-export const defaultValue: ContextDefaultValue = {
+export const defaultValue = {
   computation: null,
+  getData: () => ({ trackerNode: null }),
   dispatch: noop,
   attachStoreName: noop,
   useProxy: true,
@@ -17,4 +18,7 @@ export const defaultValue: ContextDefaultValue = {
 };
 
 // @ts-ignore
-export default createContext<defaultValue>(defaultValue, calculateChangeBits);
+export default createContext<ContextDefaultValue<T>>(
+  defaultValue,
+  calculateChangeBits
+);
