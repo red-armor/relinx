@@ -40,15 +40,27 @@ const BottomBar = () => {
 
   dispatch([{
     type: 'bottomBar/incrementTotalCount',
-    payload: {
-      name: 'x',
-    }
   }, {
     type: 'decrement',
     payload: {
       name: 'x',
     }
   }])
+
+  dispatch({
+    // type: 'decrement',
+    type: 'decrement',
+    payload: {
+      name: 'x'
+    }
+  })
+
+  // dispatch<'decrement'>({
+  //   type: 'decrement',
+  //   payload: {
+  //     name: 'x',
+  //   }
+  // })
 
   globalDispatch([{
     namespace: 'address-list',

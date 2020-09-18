@@ -52,6 +52,12 @@ export default () => ({
       }])
     },
     decrement: ({ id, index }) => (dispatch: Dispatch<Models, KeyMap>, getState: () => TotalState) => {
+      dispatch<'init/decrement'>({
+        type: 'init/decrement',
+        payload: {
+          name: 'hello',
+        }
+      })
       dispatch([{
         type: 'decrementItemCount',
         payload: { id, index },

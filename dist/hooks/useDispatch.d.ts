@@ -1,4 +1,2 @@
-declare const _default: () => import("../types").SafeDispatch<any, {}, never, any, any, {
-    [x: string]: any;
-}>[];
+declare const _default: <T, M>() => import("../types").SafeDispatch<T, M, keyof M, import("../types").GetTotalKey<T, import("../types").ExtractReducersTypeOnlyModels<T>, import("../types").ExtractEffectsTypeOnlyModels<T>, import("../types").GetKeys<import("../types").ExtractReducersTypeOnlyModels<T>>, import("../types").GetKeys<import("../types").ExtractEffectsTypeOnlyModels<T>>>, keyof M | import("../types").GetKeys<import("../types").ExtractReducersTypeOnlyModels<T>> | import("../types").GetKeys<import("../types").ExtractEffectsTypeOnlyModels<T>>, import("../types").KeyValueTupleToObject<import("../types").GetMergedPayload<T, import("../types").ExtractReducersTypeOnlyModels<T>, import("../types").ExtractEffectsTypeOnlyModels<T>, import("../types").ReducerPayload<import("../types").ExtractReducersTypeOnlyModels<T>>, import("../types").EffectPayload<import("../types").ExtractEffectsTypeOnlyModels<T>>>>>[];
 export default _default;

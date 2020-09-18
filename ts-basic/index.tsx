@@ -242,16 +242,16 @@ function test (dispatch: Dispatch<Models, KeyMap>)  {
     }
   })
 
-  dispatch<'decrement', 'increment', 'init/decrement'>([{
+  dispatch<'decrement'>({
     type: 'decrement',
-    payload: {},
-  }, {
-    type: 'increment',
-    payload: {},
-  }, {
-    type: 'init/decrement',
-    payload: {},
-  }])
+    payload: {name: 'x'},
+  // }, {
+  //   type: 'increment',
+  //   payload: {},
+  // }, {
+  //   type: 'init/decrement',
+  //   payload: {},
+  })
 
   // dispatch([{
   //   type: 'incrementTotalCount',

@@ -95,7 +95,7 @@ export default (): {
         dispatch([{
           type: 'updateState',
           payload: {
-            status: 3
+            status: 'x'
           }
         }])
         // dispatch([{
