@@ -43,7 +43,6 @@ const Main = () => {
     }, {
       type: 'init/getGoodsList',
     }])
-
   }, [])
 
   return (

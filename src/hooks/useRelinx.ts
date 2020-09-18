@@ -1,10 +1,12 @@
 import { useContext } from 'react';
 import invariant from 'invariant';
 import context from '../context';
-import { UseRelinxReturnValue } from '../types';
+import { UseRelinxReturnValue, ContextDefaultValue } from '../types';
 
-export default (storeName: string): UseRelinxReturnValue => {
-  const { dispatch, getData, attachStoreName } = useContext(context);
+export default <T, M>(storeName: string): UseRelinxReturnValue<T, M> => {
+  const { dispatch, getData, attachStoreName } = useContext<
+    ContextDefaultValue<T, M>
+  >(context);
 
   invariant(
     typeof storeName === 'string' && storeName !== '',
@@ -17,7 +19,7 @@ export default (storeName: string): UseRelinxReturnValue => {
 
   const { trackerNode } = getData();
 
-  invariant(!!trackerNode.proxy, `[useRelinx]: 'getData' fails`);
+  invariant(!!trackerNode!.proxy, `[useRelinx]: 'getData' fails`);
 
-  return [trackerNode.proxy, dispatch];
+  return [trackerNode!.proxy, dispatch];
 };

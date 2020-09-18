@@ -1,4 +1,4 @@
 import { TrackerProxy } from '../tracker/types';
-import { Dispatch } from './';
-export declare type UseRelinxReturnValue = [TrackerProxy, Dispatch];
-export declare type UseRelinx = (storeName: string) => UseRelinxReturnValue;
+import { SafeDispatch } from './createStore';
+export declare type UseRelinxReturnValue<T, M> = [TrackerProxy, SafeDispatch<T, M>];
+export declare type UseRelinx = <T, M>(storeName: string) => UseRelinxReturnValue<T, M>;

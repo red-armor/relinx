@@ -63,14 +63,14 @@ export default (WrappedComponent: FC<any>) => {
     const incrementCount = useRef(count++)  // eslint-disable-line
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
     const patcher = useRef<undefined | Patcher>();
-    const trackerNode = useRef<undefined | TrackerNode>();
+    const trackerNode = useRef<TrackerNode | null>(null);
 
     shadowState.current += 1;
 
     const autoRunFn = () => {
       setState(state => state + 1);
       reRenderMap[componentName] = patcher.current;
-      diff(componentName, patcher.current, trackerNode.current);
+      diff(componentName, patcher.current, trackerNode.current!);
     };
 
     useEffect(() => {
@@ -124,7 +124,7 @@ export default (WrappedComponent: FC<any>) => {
 
     const getData = useCallback(
       () => ({
-        trackerNode: trackerNode.current,
+        trackerNode: trackerNode.current || null,
       }),
       []
     );
@@ -199,7 +199,7 @@ export default (WrappedComponent: FC<any>) => {
       namespace,
       useRelinkMode,
       patcher: patcher.current,
-      trackerNode: trackerNode.current,
+      trackerNode: trackerNode.current || null,
       attachStoreName,
     };
 

@@ -7,6 +7,9 @@ const noop = () => {};
 
 const defaultValue = {
   computation: null,
+  getData: () => ({
+    trackerNode: null
+  }),
   dispatch: noop,
   attachStoreName: noop,
   useProxy: true,
@@ -18,7 +21,8 @@ const defaultValue = {
 }; // @ts-ignore
 
 var context = /*#__PURE__*/
-createContext(defaultValue, calculateChangeBits);
+createContext(defaultValue, // @ts-ignore
+calculateChangeBits);
 
 /**
  * Intentional info-level logging for clear separation from ad-hoc console debug logging.
@@ -1976,7 +1980,7 @@ var observe = (WrappedComponent => {
 
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
     const patcher = useRef();
-    const trackerNode = useRef();
+    const trackerNode = useRef(null);
     shadowState.current += 1;
 
     const autoRunFn = () => {
@@ -2025,7 +2029,7 @@ var observe = (WrappedComponent => {
     }, [] // eslint-disable-line
     );
     const getData = useCallback(() => ({
-      trackerNode: trackerNode.current
+      trackerNode: trackerNode.current || null
     }), []); // onUpdate, `relink` relative paths value....
 
     if (trackerNode.current.proxy) {
@@ -2103,7 +2107,7 @@ var observe = (WrappedComponent => {
       namespace,
       useRelinkMode,
       patcher: patcher.current,
-      trackerNode: trackerNode.current,
+      trackerNode: trackerNode.current || null,
       attachStoreName
     };
     return React.createElement(context.Provider, {

@@ -1,7 +1,8 @@
 import React from 'react'
 // @ts-ignore
 import { useRelinx, observe, useGlobal, useNamespace } from '../../../src'
-import { Styles } from '../../types'
+import { Styles, Models } from '../../types'
+import { KeyMap } from '../../'
 
 const styles: Styles = {
   wrapper: {
@@ -27,7 +28,7 @@ const styles: Styles = {
 }
 
 const BottomBar = () => {
-  const [state] = useRelinx('bottomBar')
+  const [state, dispatch] = useRelinx<Models, KeyMap>('bottomBar')
   const value = useGlobal()
   const namespace = useNamespace()
 
@@ -36,6 +37,30 @@ const BottomBar = () => {
     const { namespace: targetNamespace } = collection
     return targetNamespace === namespace
   })
+
+  dispatch([{
+    type: 'bottomBar/incrementTotalCount',
+  }, {
+    type: 'decrement',
+    payload: {
+      name: 'x',
+    }
+  }])
+
+  dispatch({
+    // type: 'decrement',
+    type: 'decrement',
+    payload: {
+      name: 'x'
+    }
+  })
+
+  // dispatch<'decrement'>({
+  //   type: 'decrement',
+  //   payload: {
+  //     name: 'x',
+  //   }
+  // })
 
   globalDispatch([{
     namespace: 'address-list',
