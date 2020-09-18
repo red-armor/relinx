@@ -1,9 +1,9 @@
 import Application from './Application';
-import { Action, Dispatch, Subscription, BasicModelType, CreateStoreOnlyModels, ExtractStateTypeOnlyModels, ExtractEffectsTypeOnlyModels, ExtractReducersTypeOnlyModels } from './types';
+import { Action, InternalDispatch, Subscription, BasicModelType, CreateStoreOnlyModels, ExtractStateTypeOnlyModels, ExtractEffectsTypeOnlyModels, ExtractReducersTypeOnlyModels } from './types';
 declare class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     private _application;
     private _count;
-    dispatch: Dispatch;
+    dispatch: InternalDispatch;
     private _state;
     private _reducers;
     private _effects;
