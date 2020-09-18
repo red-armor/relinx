@@ -7,23 +7,26 @@ export type UnionActions = Action | Array<Action>;
 
 export type Next = (actions: Array<Action>) => void;
 export type ThunkDispatch<T> = (
-  action: (dispatch: Dispatch, getState: GetState<T>) => void,
+  action: (dispatch: InternalDispatch, getState: GetState<T>) => void,
   storyKey: keyof T
 ) => void;
 
 // ...rest should be preserved, or dispatch an function will not has `storeKey`
-export type Dispatch = (actions: UnionActions, ...rest: Array<any>) => void;
+export type InternalDispatch = (
+  actions: UnionActions,
+  ...rest: Array<any>
+) => void;
 
 export type ApplyMiddlewareAPI<T extends BasicModelType<T>> = {
   getState: GetState<T>;
   store: Store<T>;
 
   // TODO: ts reconsider, why it not work...
-  dispatch?: Dispatch | ThunkDispatch<T>;
+  dispatch?: InternalDispatch | ThunkDispatch<T>;
   // dispatch?: {
   //   (actions: UnionActions): void,
   //   (
-  //     action: (dispatch: Dispatch<T>, getState: GetState<T>) => void,
+  //     action: (dispatch: InternalDispatch<T>, getState: GetState<T>) => void,
   //     storyKey: keyof T
   //   ): void,
   // }

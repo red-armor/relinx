@@ -3,9 +3,9 @@ import { SafeDispatch } from './createStore';
 import Application from '../Application';
 import Patcher from '../Patcher';
 import { TrackerNode } from '../tracker/types';
-export interface ContextDefaultValue<T, M> {
+export interface ContextDefaultValue<T> {
     computation: null;
-    dispatch: SafeDispatch<T, M>;
+    dispatch: SafeDispatch<T>;
     getData: GetData;
     attachStoreName: AttachStoreName;
     application: null | Application<any, any>;

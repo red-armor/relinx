@@ -14,8 +14,4 @@ export default () => ({
       }
     },
   },
-
-  // effects: {
-  //   paddingFn: () => (dispatch, getState) => {},
-  // },
 })

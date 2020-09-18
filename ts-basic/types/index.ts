@@ -9,16 +9,26 @@ export interface Styles {
 
 export * from './container'
 
-// export interface Models {
-//   [key in 'container']: ContainerMode,
-//   // BottomBarModel,
-//   // GoodsViewModel
-// }
-
 type modelKeys = 'init' | 'bottomBar' | 'goods'
 
 export type Models = {
   [key in modelKeys]: key extends 'init' ? ContainerModel :
     key extends 'bottomBar' ? BottomBarModel :
     key extends 'goods' ? GoodsViewModel : never
+}
+
+export type KeyMap = {
+  'init/updateState': 'updateState',
+  'init/updatePage': 'updatePage',
+  'init/updateOnline': 'updateOnline',
+  'init/getGoodsList': 'getGoodsList',
+
+  'goods/addGoods': 'addGoods',
+  'goods/incrementItemCount': 'incrementItemCount',
+  'goods/decrementItemCount': 'decrementItemCount',
+  'goods/increment': 'increment',
+  'goods/decrement': 'decrement',
+
+  'bottomBar/incrementTotalCount': 'incrementTotalCount',
+  'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }

@@ -121,6 +121,8 @@ export type CreateStoreOnlyModels<
   };
 };
 
+export type GetState<T> = () => ExtractStateTypeOnlyModels<T>;
+
 export type ExtractStateTypeOnlyModels<Models> = {
   [key in keyof Models]: ExtractKey<Models[key], 'state'>;
 };
@@ -163,6 +165,8 @@ export type GetKeys<T> = {
   [key in keyof T]: keyof T[key] extends string ? keyof T[key] : never;
 }[keyof T];
 
+export type GetStateKey<T> = GetKeys<ExtractStateTypeOnlyModels<T>>;
+
 export type ReducerPayload<R> = {
   [key in keyof R]: {
     [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
@@ -193,7 +197,30 @@ export type GetTotalKey<
   EK extends GetKeys<E> = GetKeys<E>
 > = RK | EK;
 
-export type SafeDispatch<
+export type SafeAction<
+  T,
+  P,
+  A,
+  R extends any = A extends string
+    ? A extends keyof P
+      ? P[A]
+      : void // never will throw with error
+    : T extends keyof P
+    ? P[T]
+    : void
+> = R extends void
+  ? {
+      // If A is assigned with a value, type should be same as A
+      type: A extends string ? A : T;
+    }
+  : {
+      // If A is assigned with a value, type should be same as A
+      type: A extends string ? A : T;
+      // payload?: T extends keyof P ? P[T] : never;
+      payload: R;
+    };
+
+export type Dispatch<
   T,
   KM extends {} = {},
   OKM extends keyof KM = keyof KM,
@@ -202,24 +229,404 @@ export type SafeDispatch<
   P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<
     GetMergedPayload<T>
   >
-> = <A extends MK = MK>(
-  action: SafeAction<MK, P, A> | Array<SafeAction<MK, P, void>>
+> = <
+  A1 extends MK = MK,
+  A2 extends MK = MK,
+  A3 extends MK = MK,
+  A4 extends MK = MK,
+  A5 extends MK = MK,
+  A6 extends MK = MK,
+  A7 extends MK = MK,
+  A8 extends MK = MK,
+  A9 extends MK = MK,
+  A10 extends MK = MK,
+  A11 extends MK = MK,
+  A12 extends MK = MK,
+  A13 extends MK = MK,
+  A14 extends MK = MK,
+  A15 extends MK = MK,
+  A16 extends MK = MK,
+  A17 extends MK = MK,
+  A18 extends MK = MK,
+  A19 extends MK = MK,
+  A20 extends MK = MK,
+  A21 extends MK = MK,
+  A22 extends MK = MK,
+  A23 extends MK = MK,
+  A24 extends MK = MK,
+  A25 extends MK = MK
+>(
+  action:
+    | SafeAction<MK, P, A1>
+    | [SafeAction<MK, P, A1>]
+    | [SafeAction<MK, P, A1>, SafeAction<MK, P, A2>]
+    | [SafeAction<MK, P, A1>, SafeAction<MK, P, A2>, SafeAction<MK, P, A3>]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>,
+        SafeAction<MK, P, A21>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>,
+        SafeAction<MK, P, A21>,
+        SafeAction<MK, P, A22>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>,
+        SafeAction<MK, P, A21>,
+        SafeAction<MK, P, A22>,
+        SafeAction<MK, P, A23>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>,
+        SafeAction<MK, P, A21>,
+        SafeAction<MK, P, A22>,
+        SafeAction<MK, P, A23>,
+        SafeAction<MK, P, A24>
+      ]
+    | [
+        SafeAction<MK, P, A1>,
+        SafeAction<MK, P, A2>,
+        SafeAction<MK, P, A3>,
+        SafeAction<MK, P, A4>,
+        SafeAction<MK, P, A5>,
+        SafeAction<MK, P, A6>,
+        SafeAction<MK, P, A7>,
+        SafeAction<MK, P, A8>,
+        SafeAction<MK, P, A9>,
+        SafeAction<MK, P, A10>,
+        SafeAction<MK, P, A11>,
+        SafeAction<MK, P, A12>,
+        SafeAction<MK, P, A13>,
+        SafeAction<MK, P, A14>,
+        SafeAction<MK, P, A15>,
+        SafeAction<MK, P, A16>,
+        SafeAction<MK, P, A17>,
+        SafeAction<MK, P, A18>,
+        SafeAction<MK, P, A19>,
+        SafeAction<MK, P, A20>,
+        SafeAction<MK, P, A21>,
+        SafeAction<MK, P, A22>,
+        SafeAction<MK, P, A23>,
+        SafeAction<MK, P, A24>,
+        SafeAction<MK, P, A25>
+      ]
 ) => void;
-// (<A1 extends any>(
-//     action: SafeAction<MK, P, A1>
-//   ) => void) |
-// (<A1, A2>(
-//     action: [SafeAction<MK, P, A1>, SafeAction<MK, P, A2>]
-//   ) => void) |
-// (<A1, A2, A3>(
-//   action: [
-//     SafeAction<MK, P, A1>,
-//     SafeAction<MK, P, A2>,
-//     SafeAction<MK, P, A3>,
-//   ]
-// ) => void)
 
-//   export type SafeDispatch<
+//   export type Dispatch<
 //   T,
 //   KM extends {} = {},
 //   OKM extends keyof KM = keyof KM,
@@ -243,110 +650,15 @@ export type SafeDispatch<
 //     ]
 //   ) => void)
 
-// export type SafeDispatch<
-//   T,
-//   KM extends {} = {},
-//   OKM extends keyof KM = keyof KM,
-//   TK extends GetTotalKey<T> = GetTotalKey<T>,
-//   MK extends OKM | TK = OKM | TK,
-//   P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<
-//     GetMergedPayload<T>
-//   >
-// > = <
-//   A1 extends any = void,
-//   A2 extends any = void,
-//   A3 extends any = void,
-//   A4 extends any = void,
-//   A5 extends any = void,
-//   A6 extends any = void,
-//   A7 extends any = void,
-//   A8 extends any = void,
-//   A9 extends any = void,
-//   A10 extends any = void,
-//   A11 extends any = void,
-//   A12 extends any = void,
-//   A13 extends any = void,
-//   A14 extends any = void,
-//   A15 extends any = void,
-//   A16 extends any = void,
-//   A17 extends any = void,
-//   A18 extends any = void,
-//   A19 extends any = void,
-//   A20 extends any = void,
-//   A21 extends any = void,
-//   A22 extends any = void,
-//   A23 extends any = void,
-//   A24 extends any = void,
-//   A25 extends any = void,
-//   A26 extends any = void,
-//   A27 extends any = void,
-//   A28 extends any = void,
-//   A29 extends any = void,
-//   A30 extends any = void,
-//   A31 extends any = void,
-//   A32 extends any = void,
-//   A33 extends any = void,
-//   A34 extends any = void,
-//   A35 extends any = void,
-//   A36 extends any = void,
-//   A37 extends any = void,
-//   A38 extends any = void,
-//   A39 extends any = void,
-//   A40 extends any = void,
-// >(
-//   action: SafeAction<MK, P, A1> | [
-//     SafeAction<MK, P, A1>,
-//     SafeAction<MK, P, A2> | never,
-//     SafeAction<MK, P, A3>,
-//     SafeAction<MK, P, A4>,
-//     SafeAction<MK, P, A5>,
-//     SafeAction<MK, P, A6>,
-//     SafeAction<MK, P, A7>,
-//     SafeAction<MK, P, A8>,
-//     SafeAction<MK, P, A9>,
-//     SafeAction<MK, P, A10>,
-//     SafeAction<MK, P, A11>,
-//     SafeAction<MK, P, A12>,
-//     SafeAction<MK, P, A13>,
-//     SafeAction<MK, P, A14>,
-//     SafeAction<MK, P, A15>,
-//     SafeAction<MK, P, A16>,
-//     SafeAction<MK, P, A17>,
-//     SafeAction<MK, P, A18>,
-//     SafeAction<MK, P, A19>,
-//     SafeAction<MK, P, A20>,
-//     SafeAction<MK, P, A21>,
-//     SafeAction<MK, P, A22>,
-//     SafeAction<MK, P, A23>,
-//     SafeAction<MK, P, A24>,
-//     SafeAction<MK, P, A25>,
-//     SafeAction<MK, P, A26>,
-//     SafeAction<MK, P, A27>,
-//     SafeAction<MK, P, A28>,
-//     SafeAction<MK, P, A29>,
-//     SafeAction<MK, P, A30>,
-//     SafeAction<MK, P, A31>,
-//     SafeAction<MK, P, A32>,
-//     SafeAction<MK, P, A33>,
-//     SafeAction<MK, P, A34>,
-//     SafeAction<MK, P, A35>,
-//     SafeAction<MK, P, A36>,
-//     SafeAction<MK, P, A37>,
-//     SafeAction<MK, P, A38>,
-//     SafeAction<MK, P, A39>,
-//     SafeAction<MK, P, A40>,
-//   ]
-// ) => void;
-
-export type SafeAction<T, P, A> = {
-  // If A is assigned with a value, type should be same as A
-  type: A extends string ? A : T;
-  // payload?: T extends keyof P ? P[T] : never;
-  payload?: A extends string
-    ? A extends keyof P
-      ? P[A]
-      : never
-    : T extends keyof P
-    ? P[T]
-    : never;
-};
+// export type SafeAction<T, P, A> = {
+//   // If A is assigned with a value, type should be same as A
+//   type: A extends string ? A : T;
+//   // payload?: T extends keyof P ? P[T] : never;
+//   payload: A extends string
+//     ? A extends keyof P
+//       ? P[A]
+//       : never
+//     : T extends keyof P
+//     ? P[T]
+//     : never;
+// };

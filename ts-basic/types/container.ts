@@ -10,10 +10,10 @@ export interface ContainerModel {
   },
   reducers: {
     updateState: (state: any, payload: { status: string }) => any,
-    updatePage: (state: any, payload: { status: string }) => any,
+    updatePage: (state: any) => any,
   },
   effects: {
-    // getGoodsList: () => (dispatch: Function, getState: Function) => any,
-    // updateOnline: () => (dispatch: Function, getState: Function) => any,
+    getGoodsList: () => (dispatch: Function, getState: Function) => any,
+    updateOnline: () => (dispatch: Function, getState: Function) => any,
   }
 }

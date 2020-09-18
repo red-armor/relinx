@@ -1,8 +1,9 @@
 import React from 'react'
 // @ts-ignore
 import { useRelinx, observe, useGlobal, useNamespace } from '../../../src'
-import { Styles, Models } from '../../types'
-import { KeyMap } from '../../'
+import { Styles, Models, KeyMap } from '../../types'
+import { ExtractStateTypeOnlyModels, RelinxState
+} from '../../../src/types'
 
 const styles: Styles = {
   wrapper: {
@@ -27,8 +28,12 @@ const styles: Styles = {
   },
 }
 
+type S = ExtractStateTypeOnlyModels<Models>['bottomBar']
+
+type P = RelinxState<Models, KeyMap, 'bottomBar'>
+
 const BottomBar = () => {
-  const [state, dispatch] = useRelinx<Models, KeyMap>('bottomBar')
+  const [state, dispatch] = useRelinx<Models, KeyMap, 'bottomBar'>('bottomBar')
   const value = useGlobal()
   const namespace = useNamespace()
 
@@ -45,22 +50,30 @@ const BottomBar = () => {
     payload: {
       name: 'x',
     }
+  }, {
+    type: 'increment',
+    payload: {
+      id: 'x',
+      index: 1,
+    }
+  }, {
+    type: 'bottomBar/incrementTotalCount',
+  }, {
+    type: 'decrement',
+    payload: {
+      name: 's',
+    }
+  }, {
+    type: 'increment',
+    payload: {
+      id: 'x',
+      index: 1,
+    }
   }])
 
   dispatch({
-    // type: 'decrement',
-    type: 'decrement',
-    payload: {
-      name: 'x'
-    }
+    type: 'bottomBar/decrementTotalCount',
   })
-
-  // dispatch<'decrement'>({
-  //   type: 'decrement',
-  //   payload: {
-  //     name: 'x',
-  //   }
-  // })
 
   globalDispatch([{
     namespace: 'address-list',

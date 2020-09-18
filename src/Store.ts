@@ -1,7 +1,7 @@
 import Application from './Application';
 import {
   Action,
-  Dispatch,
+  InternalDispatch,
   Subscription,
   BasicModelType,
   ChangedValueGroup,
@@ -14,7 +14,7 @@ import {
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null;
   private _count: number;
-  public dispatch: Dispatch;
+  public dispatch: InternalDispatch;
   private _state: ExtractStateTypeOnlyModels<T>;
   private _reducers: ExtractReducersTypeOnlyModels<T>;
   private _effects: ExtractEffectsTypeOnlyModels<T>;
