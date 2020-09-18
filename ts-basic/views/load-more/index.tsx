@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 // @ts-ignore
 import { observe, useDispatch } from '../../../src'
-import { Styles } from '../../types'
+import { KeyMap, Styles, Models } from '../../types'
 
 const styles: Styles = {
   wrapper: {
@@ -15,7 +15,7 @@ const styles: Styles = {
 }
 
 const LoadMore = () => {
-  const [dispatch] = useDispatch()
+  const [dispatch] = useDispatch<Models, KeyMap>()
   const handleClick = useCallback(() => {
     dispatch({
       type: 'init/getGoodsList',

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 // @ts-ignore
 import { observe, useDispatch } from '../../src'
-import { Styles } from '../types'
+import { Styles, Models, KeyMap} from '../types'
 
 import BottomBar from '../views/bottom-bar'
 import GoodsView from '../views/goods-view'
@@ -35,7 +35,7 @@ const styles: Styles = {
 }
 
 const Main = () => {
-  const [dispatch] = useDispatch()
+  const [dispatch] = useDispatch<Models, KeyMap>()
 
   useEffect(() => {
     dispatch([{

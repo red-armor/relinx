@@ -148,13 +148,17 @@ export type GetReducerPayload<T> = T extends (S: any) => object
   ? void
   : T extends (S: any, payload: infer B) => object
   ? B extends any
-    ? B
+    ? B extends unknown
+      ? void
+      : B
     : void
   : void;
 type GetEffectPayload<T> = T extends (
   payload?: infer B
 ) => (dispatch?: Function, getState?: Function) => void
-  ? B
+  ? B extends unknown
+    ? void
+    : B
   : void;
 
 export type KeyValueTupleToObject<T extends [keyof any, any]> = {

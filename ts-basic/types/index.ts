@@ -45,4 +45,7 @@ type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
 type Payload = GetMergedPayload<Models>
 type N = MergedP<KeyMap, P1>
 
-type X = SafeAction<Models, N, 'bottomBar/decrementTotalCount'>
+type X = SafeAction<Models, N, 'init/getGoodsList'>
+
+
+type Y = unknown extends any ? number : string
