@@ -45,6 +45,7 @@ const styles: Styles = {
 const GoodsItem = props => {
   const { index } = props
   const [dispatch] = useDispatch<Models, KeyMap>()
+
   const { data: { title, id, count } } = props
   const updateCount = useRef(0)
 
@@ -56,9 +57,10 @@ const GoodsItem = props => {
   updateCount.current = updateCount.current + 1
 
   const increment = useCallback(() => {
-    dispatch<'goods/increment'>({
+    dispatch({
       type: 'goods/increment',
-      payload: { id, index },
+      payload: {
+        id: id as string, index: index as number },
     })
   }, [])
 

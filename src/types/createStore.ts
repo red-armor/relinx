@@ -145,17 +145,17 @@ export interface ChangedValueGroup<K> {
 }
 
 export type GetReducerPayload<T> = T extends (S: any) => object
-  ? never
+  ? void
   : T extends (S: any, payload: infer B) => object
   ? B extends any
     ? B
-    : never
-  : never;
+    : void
+  : void;
 type GetEffectPayload<T> = T extends (
   payload?: infer B
 ) => (dispatch?: Function, getState?: Function) => void
   ? B
-  : never;
+  : void;
 
 export type KeyValueTupleToObject<T extends [keyof any, any]> = {
   [K in T[0]]: Extract<T, [K, any]>[1];
@@ -188,6 +188,11 @@ export type GetMergedPayload<
   RP extends ReducerPayload<R> = ReducerPayload<R>,
   EP extends EffectPayload<E> = EffectPayload<E>
 > = RP | EP;
+
+export type MergedP<KM, P> = {
+  [key in keyof KM]: KM[key] extends keyof P ? P[KM[key]] : void;
+} &
+  P;
 
 export type GetTotalKey<
   T,
@@ -226,9 +231,10 @@ export type Dispatch<
   OKM extends keyof KM = keyof KM,
   TK extends GetTotalKey<T> = GetTotalKey<T>,
   MK extends OKM | TK = OKM | TK,
-  P extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<
+  P1 extends KeyValueTupleToObject<GetMergedPayload<T>> = KeyValueTupleToObject<
     GetMergedPayload<T>
-  >
+  >,
+  P extends MergedP<KM, P1> = MergedP<KM, P1>
 > = <
   A1 extends MK = MK,
   A2 extends MK = MK,
