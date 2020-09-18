@@ -2,7 +2,7 @@ import {
   Next,
   Action,
   ThunkFn,
-  Dispatch,
+  InternalDispatch,
   ThunkDispatch,
   BasicModelType,
   ApplyMiddlewareAPI,
@@ -39,7 +39,7 @@ export default <T extends BasicModelType<T>>({
           return nextAction;
         })
         .filter(v => !!v) as Array<Action>;
-      if (actions.length) dispatch && (dispatch as Dispatch)(actions);
+      if (actions.length) dispatch && (dispatch as InternalDispatch)(actions);
     };
     return actions(nextDispatch, getState);
   }

@@ -2,9 +2,10 @@ import React, { CSSProperties, useRef } from 'react'
 // @ts-ignore
 import { useRelinx, observe } from '../../../src'
 import GoodsItem from './GoodsItem'
+import { Models, KeyMap } from '../../types'
 
 const GoodsView = () => {
-  const [state] = useRelinx('goods')
+  const [state] = useRelinx<Models, KeyMap, 'goods'>('goods')
   const { listData } = state
   const updateCount = useRef(0)
 

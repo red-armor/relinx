@@ -1,5 +1,5 @@
-import { TotalState, Dispatch, KeyMap } from '../../index'
-import { Models } from '../../types'
+import { Models, KeyMap } from '../../types'
+import { GetState, Dispatch} from '../../../src/types'
 
 export default () => ({
   state: {
@@ -51,45 +51,15 @@ export default () => ({
         type: 'bottomBar/incrementTotalCount',
       }])
     },
-    decrement: ({ id, index }) => (dispatch: Dispatch<Models, KeyMap>, getState: () => TotalState) => {
-      dispatch<'init/decrement'>({
-        type: 'init/decrement',
-        payload: {
-          name: 'hello',
-        }
-      })
+    decrement: ({ id, index }) => (dispatch: Dispatch<Models, KeyMap>, getState: GetState<Models>) => {
+      const state = getState()
+
       dispatch([{
         type: 'decrementItemCount',
         payload: { id, index },
       }, {
         type: 'bottomBar/decrementTotalCount',
-      }, {
-        type: 'incrementItemCount',
       }])
     },
   },
 })
-
-// type Dispatch<T> = ({
-//   type, payload
-// }: {
-//   type: 'decrementItemCount',
-//   payload?: any
-// }) => void
-
-// const dispatch: Dispatch<number> = (action) => {
-//   console.log('action')
-// }
-
-// interface PageInfo {
-//   title: string;
-// }
-
-// type Page = "home" | "about" | "contact";
-
-// const nav: Record<Page, PageInfo> = {
-//   about: { title: "about" },
-//   contact: { title: "contact" },
-//   home: { title: "home" },
-// };
-

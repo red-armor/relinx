@@ -7,6 +7,6 @@ export interface GoodsViewModel {
   },
   effects: {
     increment: (payload: { id: string, index: number }) => (dispatch: Function) => void
-    decrement: (payload: { name: string }) => (dispatch: Function) => void
+    decrement: (payload: { id: string, index: number }) => (dispatch: Function) => void
   }
 }

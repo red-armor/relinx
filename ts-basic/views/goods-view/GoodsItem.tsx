@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react'
 // @ts-ignore
 import { useDispatch, observe } from '../../../src'
-import { Styles } from '../../types'
+import { Styles, Models, KeyMap } from '../../types'
 
 const styles: Styles = {
   container: {
@@ -44,7 +44,8 @@ const styles: Styles = {
 
 const GoodsItem = props => {
   const { index } = props
-  const [dispatch] = useDispatch()
+  const [dispatch] = useDispatch<Models, KeyMap>()
+
   const { data: { title, id, count } } = props
   const updateCount = useRef(0)
 
@@ -58,7 +59,9 @@ const GoodsItem = props => {
   const increment = useCallback(() => {
     dispatch({
       type: 'goods/increment',
-      payload: { id, index },
+      payload: {
+        id, index
+      },
     })
   }, [])
 
