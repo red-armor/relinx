@@ -43,47 +43,37 @@ const BottomBar = () => {
     return targetNamespace === namespace
   })
 
-  // dispatch({
-  //   type: 'updatePage'
-  // })
+  dispatch({
+    type: 'updatePage'
+  })
 
 
-  // dispatch({
-  //   type: 'goods/addGoods',
-  //   payload: {
-  //     goodsList: [] as unknown as Array<object>,
-  //   },
-  // })
+  dispatch({
+    type: 'goods/addGoods',
+    payload: {
+      goodsList: [] as unknown as Array<object>,
+    },
+  })
 
-  // dispatch([{
-  //   type: 'bottomBar/incrementTotalCount',
-  // }, {
-  //   type: 'goods/decrement',
-  //   payload: {
-  //     name: 'x',
-  //   }
-  // }, {
-  //   type: 'increment',
-  //   payload: {
-  //     id: 'x',
-  //     index: 1,
-  //   }
-  // }, {
-  //   type: 'bottomBar/incrementTotalCount',
-  // }, {
-  //   type: 'decrement',
-  //   payload: {
-  //     name: 's',
-  //   }
-  // }, {
-  //   type: 'increment',
-  //   payload: {
-  //     id: 'x',
-  //     index: 1,
-  //   }
-  // }])
+  dispatch([{
+    type: 'bottomBar/incrementTotalCount',
+  }, {
+    type: 'increment',
+    payload: {
+      id: 'x',
+      index: 1,
+    }
+  }, {
+    type: 'bottomBar/incrementTotalCount',
+  }, {
+    type: 'increment',
+    payload: {
+      id: 'x',
+      index: 1,
+    }
+  }])
 
-  dispatch<'bottomBar/decrementTotalCount'>({
+  dispatch({
     type: 'bottomBar/decrementTotalCount',
   })
 

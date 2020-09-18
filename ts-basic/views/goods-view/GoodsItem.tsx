@@ -60,7 +60,8 @@ const GoodsItem = props => {
     dispatch({
       type: 'goods/increment',
       payload: {
-        id: id as string, index: index as number },
+        id, index
+      },
     })
   }, [])
 
