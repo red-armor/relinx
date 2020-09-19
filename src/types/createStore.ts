@@ -148,17 +148,17 @@ export type GetReducerPayload<T> = T extends (S: any) => object
   ? void
   : T extends (S: any, payload: infer B) => object
   ? B extends any
-    ? B extends unknown
-      ? void
-      : B
+    ? B
     : void
   : void;
 type GetEffectPayload<T> = T extends (
   payload?: infer B
 ) => (dispatch?: Function, getState?: Function) => void
-  ? B extends unknown
+  ? B extends never // if B is not exist, it will be never...do not use unknown
     ? void
-    : B
+    : B extends object | number | Array<any> | boolean
+    ? B
+    : void // TODO: verify not unknown is ok.
   : void;
 
 export type KeyValueTupleToObject<T extends [keyof any, any]> = {

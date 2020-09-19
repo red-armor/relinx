@@ -2,7 +2,7 @@ import { CSSProperties } from 'react'
 import { ContainerModel } from './container'
 import { BottomBarModel } from './bottomBar'
 import { GoodsViewModel } from './goodsView'
-import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction } from '../../src/types'
+// import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction, GetEffectPayload, EffectPayload, ExtractEffectsTypeOnlyModels } from '../../src/types'
 
 export interface Styles {
   [key: string]: CSSProperties
@@ -41,11 +41,15 @@ export type KeyMap = {
   'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
 
-type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
-type Payload = GetMergedPayload<Models>
-type N = MergedP<KeyMap, P1>
+// type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
+// type Payload = GetMergedPayload<Models>
+// type N = MergedP<KeyMap, P1>
 
-type X = SafeAction<Models, N, 'init/getGoodsList'>
+// type X1 = SafeAction<Models, N, 'goods/increment'>
+// type X2 = SafeAction<Models, N, 'init/getGoodsList'>
+
+// type X3 = EffectPayload<ExtractEffectsTypeOnlyModels<Models>>
 
 
-type Y = unknown extends any ? number : string
+// type Y = unknown extends number ? number : string
+// type XX = {a: number} extends unknown ? number : string
