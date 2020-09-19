@@ -144,6 +144,8 @@ export interface ChangedValueGroup<K> {
   changedValue: object;
 }
 
+export type DataType = string | object | number | Array<any> | boolean;
+
 export type GetReducerPayload<T> = T extends (S: any) => object
   ? void
   : T extends (S: any, payload: infer B) => object
@@ -156,7 +158,7 @@ type GetEffectPayload<T> = T extends (
 ) => (dispatch?: Function, getState?: Function) => void
   ? B extends never // if B is not exist, it will be never...do not use unknown
     ? void
-    : B extends object | number | Array<any> | boolean
+    : B extends DataType
     ? B
     : void // TODO: verify not unknown is ok.
   : void;

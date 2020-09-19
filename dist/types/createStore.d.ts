@@ -53,8 +53,9 @@ export interface ChangedValueGroup<K> {
     storeKey: K;
     changedValue: object;
 }
+export declare type DataType = string | object | number | Array<any> | boolean;
 export declare type GetReducerPayload<T> = T extends (S: any) => object ? void : T extends (S: any, payload: infer B) => object ? B extends any ? B : void : void;
-declare type GetEffectPayload<T> = T extends (payload?: infer B) => (dispatch?: Function, getState?: Function) => void ? B : void;
+declare type GetEffectPayload<T> = T extends (payload?: infer B) => (dispatch?: Function, getState?: Function) => void ? B extends never ? void : B extends DataType ? B : void : void;
 export declare type KeyValueTupleToObject<T extends [keyof any, any]> = {
     [K in T[0]]: Extract<T, [K, any]>[1];
 };
