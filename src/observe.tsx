@@ -53,6 +53,7 @@ export default (WrappedComponent: FC<any>) => {
     const {
       application,
       useProxy,
+      useScope,
       namespace,
       patcher: parentPatcher,
       trackerNode: parentTrackerNode,
@@ -103,7 +104,7 @@ export default (WrappedComponent: FC<any>) => {
         base: {},
         useProxy,
         useRevoke: false,
-        useScope: true,
+        useScope,
         parent: parentTrackerNode,
         rootPath: [],
       });
@@ -182,7 +183,10 @@ export default (WrappedComponent: FC<any>) => {
 
     const addListener = useCallback(() => {
       patcher.current?.appendTo(parentPatcher); // maybe not needs
-      if (!trackerNode.current?.proxy) return;
+      if (!trackerNode.current?.proxy) {
+        if (trackerNode.current) trackerNode.current.leaveContext();
+        return;
+      }
 
       const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths');
       patcher.current?.update({ paths });
@@ -196,6 +200,7 @@ export default (WrappedComponent: FC<any>) => {
       getData,
       application,
       useProxy,
+      useScope,
       namespace,
       useRelinkMode,
       patcher: patcher.current,
