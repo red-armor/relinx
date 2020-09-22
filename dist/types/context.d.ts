@@ -10,6 +10,7 @@ export interface ContextDefaultValue<T, M> {
     attachStoreName: AttachStoreName;
     application: null | Application<any, any>;
     useProxy: boolean;
+    useScope: boolean;
     namespace: null | string;
     patcher: null | Patcher;
     trackerNode: null | TrackerNode;

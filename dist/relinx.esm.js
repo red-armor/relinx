@@ -357,7 +357,8 @@ function Provider({
   namespace,
   useProxy = true,
   useRelinkMode = true,
-  strictMode = false
+  strictMode = false,
+  useScope = true
 }) {
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(new Application({
@@ -370,6 +371,7 @@ function Provider({
   const contextValue = useRef({ ...defaultValue,
     dispatch,
     useProxy,
+    useScope,
     useRelinkMode,
     namespace: namespaceRef.current,
     application: application.current
@@ -1970,6 +1972,7 @@ var observe = (WrappedComponent => {
     const {
       application,
       useProxy,
+      useScope,
       namespace,
       patcher: parentPatcher,
       trackerNode: parentTrackerNode,
@@ -2012,7 +2015,7 @@ var observe = (WrappedComponent => {
         base: {},
         useProxy,
         useRevoke: false,
-        useScope: true,
+        useScope,
         parent: parentTrackerNode,
         rootPath: []
       });
@@ -2090,7 +2093,11 @@ var observe = (WrappedComponent => {
 
       (_patcher$current = patcher.current) === null || _patcher$current === void 0 ? void 0 : _patcher$current.appendTo(parentPatcher); // maybe not needs
 
-      if (!((_trackerNode$current3 = trackerNode.current) === null || _trackerNode$current3 === void 0 ? void 0 : _trackerNode$current3.proxy)) return;
+      if (!((_trackerNode$current3 = trackerNode.current) === null || _trackerNode$current3 === void 0 ? void 0 : _trackerNode$current3.proxy)) {
+        if (trackerNode.current) trackerNode.current.leaveContext();
+        return;
+      }
+
       const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths');
       (_patcher$current2 = patcher.current) === null || _patcher$current2 === void 0 ? void 0 : _patcher$current2.update({
         paths
@@ -2104,6 +2111,7 @@ var observe = (WrappedComponent => {
       getData,
       application,
       useProxy,
+      useScope,
       namespace,
       useRelinkMode,
       patcher: patcher.current,
