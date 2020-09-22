@@ -1,7 +1,7 @@
 import { canIUseProxy } from './commons';
 import context from './context';
 import TrackerNode from './TrackerNode';
-import invariant from 'invariant';
+// import invariant from 'invariant';
 
 /**
  * resolve `reactivePaths`, and wrap `autoRunFunc`
@@ -22,15 +22,15 @@ const Tracker = ({
   useScope: boolean;
   rootPath: Array<string>;
 }) => {
-  const assertAccessibility = (useScope: boolean, useRevoke: boolean) => {
-    invariant(
-      useRevoke !== useScope,
-      '`useRevoke` or `useScope` should not be equal; and one must be true' +
-        'If you do not have any idea, please leave to use default value.'
-    );
-  };
+  // const assertAccessibility = (useScope: boolean, useRevoke: boolean) => {
+  //   invariant(
+  //     useRevoke !== useScope,
+  //     '`useRevoke` or `useScope` should not be equal; and one must be true. ' +
+  //       'If you do not have any idea, please leave to use default value.'
+  //   );
+  // };
 
-  assertAccessibility(useScope, useRevoke);
+  // assertAccessibility(useScope, useRevoke);
 
   const verifiedUseProxy = canIUseProxy() && useProxy;
   const parentTrackerNode =
