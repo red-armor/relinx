@@ -13,6 +13,7 @@ function Provider<T extends BasicModelType<T>, K extends keyof T = keyof T>({
   useProxy = true,
   useRelinkMode = true,
   strictMode = false,
+  useScope = true,
 }: ProviderProps<T>) {
   const namespaceRef = useRef(namespace || generateNamespaceKey());
   const application = useRef(
@@ -30,6 +31,7 @@ function Provider<T extends BasicModelType<T>, K extends keyof T = keyof T>({
     ...defaultValue,
     dispatch,
     useProxy,
+    useScope,
     useRelinkMode,
     namespace: namespaceRef.current,
     application: application.current,
