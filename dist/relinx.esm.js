@@ -1794,11 +1794,14 @@ const Tracker = ({
   useScope = true,
   rootPath = []
 }) => {
-  const assertAccessibility = (useScope, useRevoke) => {
-    !(useRevoke !== useScope) ? process.env.NODE_ENV !== "production" ? invariant(false, '`useRevoke` or `useScope` should not be equal; and one must be true' + 'If you do not have any idea, please leave to use default value.') : invariant(false) : void 0;
-  };
-
-  assertAccessibility(useScope, useRevoke);
+  // const assertAccessibility = (useScope: boolean, useRevoke: boolean) => {
+  //   invariant(
+  //     useRevoke !== useScope,
+  //     '`useRevoke` or `useScope` should not be equal; and one must be true. ' +
+  //       'If you do not have any idea, please leave to use default value.'
+  //   );
+  // };
+  // assertAccessibility(useScope, useRevoke);
   const verifiedUseProxy = canIUseProxy() && useProxy;
   const parentTrackerNode = typeof parent !== 'undefined' ? parent : context$1.trackerNode;
   let isSibling = false; // re-create a top most node
