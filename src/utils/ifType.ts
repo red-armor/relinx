@@ -3,6 +3,8 @@ import toString from './toString';
 export const isPresent = (o: any) => typeof o !== 'undefined';
 export const isObject = (obj: any) => toString(obj) === '[object Object]';
 export const isArray = (obj: any) => toString(obj) === '[object Array]';
+export const isNumber = (obj: any) => toString(obj) === '[object Number]';
+export const isString = (obj: any) => toString(obj) === '[object String]';
 
 export const isMutable = (obj: any) => isObject(obj) || isArray(obj);
 export const isTypeEqual = (o1: any, o2: any) => toString(o1) === toString(o2);
