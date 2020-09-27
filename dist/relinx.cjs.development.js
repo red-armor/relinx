@@ -544,7 +544,7 @@ class Store {
       } = action;
       const [storeKey, actionType] = type.split('/'); // only process action with current injected model's tag
 
-      if (type === storeKey) {
+      if (key === storeKey) {
         const reducer = reducers[actionType];
         const effect = effects[actionType];
         let nextState = base;
