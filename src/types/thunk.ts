@@ -1,4 +1,5 @@
-import { GetState, UnionActions } from './applyMiddleware';
+import { UnionActions } from './applyMiddleware';
+import { GetState } from './createStore';
 
 export type ThunkFn<T> = (
   payload: any

@@ -1,8 +1,7 @@
 import { CreateStoreFn, BasicModelType } from './createStore';
-import { Action, ExtractStateTypeOnlyModels } from './createStore';
+import { Action, GetState } from './createStore';
 import Store from '../Store';
 
-export type GetState<T> = () => ExtractStateTypeOnlyModels<T>;
 export type UnionActions = Action | Array<Action>;
 
 export type Next = (actions: Array<Action>) => void;
