@@ -166,7 +166,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       ];
 
       // only process action with current injected model's tag
-      if (type === storeKey) {
+      if (key === storeKey) {
         const reducer = reducers[actionType];
         const effect = effects[actionType];
 
