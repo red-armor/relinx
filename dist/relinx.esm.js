@@ -535,22 +535,25 @@ class Store {
         type,
         payload
       } = action;
-      const [storeKey, actionType] = type.split('/');
-      const reducer = reducers[actionType];
-      const effect = effects[actionType];
-      let nextState = base;
+      const [storeKey, actionType] = type.split('/'); // only process action with current injected model's tag
 
-      if (typeof reducer === 'function') {
-        nextState = reducer(base, payload);
-        base = { ...base,
-          ...nextState
-        }; // what if pending action is an effect. call dispatch again to re-run...
-        // But, there is still a condition, effects followed by normal reducer...
-        // The result may override by effect...
-      } else if (typeof effect === 'function') {
-        this.dispatch(action);
-      } else {
-        console.warn(`Maybe you have dispatched an unregistered model's effect action(${action})`);
+      if (type === storeKey) {
+        const reducer = reducers[actionType];
+        const effect = effects[actionType];
+        let nextState = base;
+
+        if (typeof reducer === 'function') {
+          nextState = reducer(base, payload);
+          base = { ...base,
+            ...nextState
+          }; // what if pending action is an effect. call dispatch again to re-run...
+          // But, there is still a condition, effects followed by normal reducer...
+          // The result may override by effect...
+        } else if (typeof effect === 'function') {
+          this.dispatch(action);
+        } else {
+          console.warn(`Maybe you have dispatched an unregistered model's effect action(${action})`);
+        }
       }
 
       return storeKey !== key;

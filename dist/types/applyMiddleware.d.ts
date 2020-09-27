@@ -1,7 +1,6 @@
 import { CreateStoreFn, BasicModelType } from './createStore';
-import { Action, ExtractStateTypeOnlyModels } from './createStore';
+import { Action, GetState } from './createStore';
 import Store from '../Store';
-export declare type GetState<T> = () => ExtractStateTypeOnlyModels<T>;
 export declare type UnionActions = Action | Array<Action>;
 export declare type Next = (actions: Array<Action>) => void;
 export declare type ThunkDispatch<T> = (action: (dispatch: InternalDispatch, getState: GetState<T>) => void, storyKey: keyof T) => void;
