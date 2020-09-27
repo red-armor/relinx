@@ -11,9 +11,9 @@ export type IApplication<T, K extends keyof T> = {
 };
 
 export interface PendingPatcher {
-  collections: Array<string>;
+  // collections: Array<string>;
   patcher: Patcher;
-  operation: Array<Operation>;
+  // operation: Array<Operation>;
 }
 
 export interface Operation {

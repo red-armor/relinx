@@ -17,7 +17,7 @@ export default () => ({
         count: item.count + 1
       }
       return {
-        listData: next
+        listData: next,
       }
     },
     decrementItemCount(state, { id, index }) {
@@ -35,7 +35,7 @@ export default () => ({
       }
 
       return {
-        listData: next
+        listData: next,
       }
     },
   },

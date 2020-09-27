@@ -20,26 +20,6 @@ const Helper = ({ addListener }: { addListener: Function }) => {
   return null;
 };
 
-const DEBUG = false;
-
-const unMountMap: {
-  [key: string]: undefined | Patcher;
-} = {};
-const reRenderMap: {
-  [key: string]: undefined | Patcher;
-} = {};
-
-const diff = (
-  componentName: string,
-  patcher: undefined | Patcher,
-  proxy: undefined | TrackerNode
-) => {
-  const key1 = Object.keys(unMountMap);
-  if (key1.indexOf(componentName) !== -1) {
-    infoLog('invalid re-render', componentName, patcher, proxy);
-  }
-};
-
 export default (WrappedComponent: FC<any>) => {
   function NextComponent(props: any) {
     const shadowState = useRef(0);
@@ -47,8 +27,12 @@ export default (WrappedComponent: FC<any>) => {
     const [_, setState] = useState(0); // eslint-disable-line
     const storeName = useRef<string>();
     const isHydrated = useRef(false);
-    const isInit = useRef(true);
     const patcherUpdated = useRef(0);
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+      isMounted.current = true;
+    });
 
     const {
       application,
@@ -69,20 +53,8 @@ export default (WrappedComponent: FC<any>) => {
     shadowState.current += 1;
 
     const autoRunFn = () => {
-      setState(state => state + 1);
-      reRenderMap[componentName] = patcher.current;
-      diff(componentName, patcher.current, trackerNode.current!);
+      if (isMounted.current) setState(state => state + 1);
     };
-
-    useEffect(() => {
-      if (!DEBUG) return;
-      if (isInit.current) {
-        infoLog('[Observe]', `${componentName} is init`);
-        isInit.current = false;
-      } else {
-        infoLog('[Observe]', `${componentName} is re-rendered`);
-      }
-    });
 
     if (!patcher.current) {
       patcher.current = new Patcher({
@@ -118,7 +90,6 @@ export default (WrappedComponent: FC<any>) => {
     useEffect(
       () => () => {
         if (patcher.current) patcher.current.destroyPatcher();
-        unMountMap[componentName] = patcher.current;
       },
       [] // eslint-disable-line
     );
