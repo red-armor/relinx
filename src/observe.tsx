@@ -12,6 +12,7 @@ import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
 import infoLog from './utils/infoLog';
 import { TrackerNode, PropProperty } from './tracker/types';
+import { TRACKER } from './tracker/commons';
 
 let count = 0;
 
@@ -104,18 +105,21 @@ export default (WrappedComponent: FC<any>) => {
     // onUpdate, `relink` relative paths value....
     if (trackerNode.current.proxy) {
       const proxy = trackerNode.current.proxy;
+      const tracker = proxy[TRACKER];
       // 为什么如果进行remove的话，`propProperties`已经将旧key删除了呢。。。
-      const propProperties: Array<PropProperty> = proxy.getProp(
-        'propProperties'
-      );
+      const propProperties: Array<PropProperty> = tracker.propProperties;
 
       propProperties.forEach(prop => {
         try {
           const { source } = prop;
-          const rootPath = source?.getProp('rootPath');
-          const storeName = rootPath[0];
-          const currentBase = application?.getStoreData(storeName);
-          source?.runFn('relinkBase', currentBase);
+          if (source) {
+            const sourceTracker = source[TRACKER];
+            const rootPath = sourceTracker.rootPath;
+            const storeName = rootPath[0];
+            const currentBase = application?.getStoreData(storeName);
+
+            sourceTracker.relinkBase.call(source, currentBase);
+          }
         } catch (err) {
           infoLog('[observe rebase propProperties]', err);
         }
@@ -124,11 +128,11 @@ export default (WrappedComponent: FC<any>) => {
       if (useRelinkMode) {
         if (storeName.current) {
           const base = application?.getStoreData(storeName.current);
-          proxy.runFn('rebase', base);
+          tracker.rebase.call(proxy, base);
         }
       }
 
-      trackerNode.current.proxy.runFn('cleanup');
+      tracker.cleanup.call(proxy);
     }
 
     // only run one time
@@ -159,7 +163,11 @@ export default (WrappedComponent: FC<any>) => {
         return;
       }
 
-      const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths');
+      const proxy = trackerNode.current.proxy;
+      const proxyTracker = proxy[TRACKER];
+      const paths = proxyTracker.getRemarkableFullPaths.call(proxy);
+
+      // const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths');
       patcher.current?.update({ paths });
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;

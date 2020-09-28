@@ -5,6 +5,7 @@ import GoodsItem from '../components/GoodsItem'
 const GoodsView = () => {
   const [state] = useRelinx('goods')
   const { listData } = state
+
   const updateCount = useRef(0)
 
   updateCount.current = updateCount.current + 1

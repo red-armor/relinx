@@ -27,7 +27,9 @@ export interface ProxyTrackerProperties {
   accessPath: Array<string>;
   rootPath: Array<string>;
   type: Type.Array | Type.Object;
-  base: object;
+  base: {
+    [key: string]: any;
+  };
   parentProxy: IProxyTracker;
   childProxies: {
     [key: string]: IProxyTracker;

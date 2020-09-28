@@ -1,6 +1,6 @@
 import { IProxyTracker, IES5Tracker } from './';
 export interface InternalFunction {
-  reportAccessPath(path: string): void;
+  reportAccessPath(path: Array<string>): void;
   cleanup(): void;
   unlink(): void;
   relink(path: Array<string>, baseValue: object): void;
@@ -8,7 +8,7 @@ export interface InternalFunction {
   relinkBase(baseValue: object): void;
   rebase(baseValue: object): void;
   setRemarkable(): boolean;
-  getRemarkableFullPaths(): Array<string>;
+  getRemarkableFullPaths(): Array<Array<string>>;
   assertScope(): void;
 }
 

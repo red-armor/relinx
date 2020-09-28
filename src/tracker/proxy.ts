@@ -19,9 +19,10 @@ import {
 
 const peek = (proxy: IProxyTracker, accessPath: Array<string>) => { // eslint-disable-line
   return accessPath.reduce((proxy, cur) => {
-    proxy.setProp('isPeeking', true);
+    const tracker = proxy[TRACKER];
+    tracker.isPeeking = true;
     const nextProxy = proxy[cur] as any;
-    proxy.setProp('isPeeking', false);
+    tracker.isPeeking = false;
     return nextProxy;
   }, proxy);
 };
@@ -56,10 +57,12 @@ function createTracker(
   // can not use this in handler, should be `target`
   const handler = {
     get: (target: IProxyTracker, prop: PropertyKey, receiver: any) => {
-      target.runFn('assertScope');
+      // target.runFn('assertScope');
       if (prop === TRACKER) return Reflect.get(target, prop, receiver);
       // assertScope(trackerNode, context.trackerNode)
-      const base = target.getProp('base');
+
+      const tracker = target[TRACKER];
+      const base = tracker.base;
 
       // refer to immer...
       // if (Array.isArray(tracker)) target = tracker[0]
@@ -67,39 +70,41 @@ function createTracker(
       if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
         return Reflect.get(target, prop, receiver);
       }
-      const accessPath = target.getProp('accessPath');
-      const nextAccessPath = accessPath.concat(prop);
-      const isPeeking = target.getProp('isPeeking');
+      const accessPath = tracker.accessPath;
+      const nextAccessPath = accessPath.concat(prop as string);
+      const isPeeking = tracker.isPeeking;
 
       if (!isPeeking) {
         // for relink return parent prop...
         if (context.trackerNode && trackerNode.id !== context.trackerNode.id) {
           const contextProxy = context.trackerNode.proxy;
-          const propProperties: Array<PropProperty> = contextProxy?.getProp(
-            'propProperties'
-          );
-          propProperties.push({
-            path: nextAccessPath,
-            source: trackerNode.proxy,
-          });
-          target.setProp('propProperties', propProperties);
+          if (contextProxy) {
+            const contextProxyTracker = contextProxy[TRACKER];
+            const propProperties: Array<PropProperty> =
+              contextProxyTracker.propProperties;
+            propProperties.push({
+              path: nextAccessPath,
+              source: trackerNode.proxy,
+            });
+            tracker.propProperties = propProperties;
+          }
           if (trackerNode.proxy)
             return peek(trackerNode.proxy as IProxyTracker, nextAccessPath);
         }
-        target.runFn('reportAccessPath', nextAccessPath);
+        tracker.reportAccessPath.call(target, nextAccessPath); // this is required
       }
-      const childProxies = target.getProp('childProxies');
-      const value = base[prop];
+      const childProxies = tracker.childProxies;
+      const value = base[prop as string];
 
       if (!isTrackable(value)) return value;
-      const childProxy = childProxies[prop];
+      const childProxy = childProxies[prop as string];
 
       // for rebase value, if base value change, the childProxy should
       // be replaced
       if (childProxy && childProxy.base === value) {
         return childProxy;
       }
-      return (childProxies[prop] = createTracker(
+      return (childProxies[prop as string] = createTracker(
         value,
         {
           accessPath: nextAccessPath,

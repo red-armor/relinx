@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { isTrackable, hideProperty } from './commons';
+import { isTrackable, hideProperty, TRACKER } from './commons';
 import { generateRemarkablePaths } from './path';
 import context from './context';
 import { IProxyTracker, IES5Tracker, PropProperty } from './types';
@@ -18,7 +18,8 @@ const proto = internalFunctions.prototype;
 
 proto.assertLink = function(fnName: string) {
   const proxy = this;
-  const trackerNode = proxy.getProp('trackerNode');
+  const tracker = proxy[TRACKER];
+  const trackerNode = tracker.trackerNode;
 
   invariant(
     trackerNode,
@@ -35,22 +36,27 @@ proto.assertLink = function(fnName: string) {
 
 proto.reportAccessPath = function(path: string) {
   const proxy = this // eslint-disable-line
-  const paths = proxy.getProp('paths');
-  const parentProxy = proxy.getProp('parentProxy');
+  const tracker = proxy[TRACKER];
+  const paths = tracker.paths;
+  const parentProxy = tracker.parentProxy;
   paths.push(path);
   if (!parentProxy) return;
-  parentProxy.runFn('reportAccessPath', path);
+
+  const parentTracker = parentProxy[TRACKER];
+  parentTracker.reportAccessPath.call(parentProxy, path);
 };
 
 proto.cleanup = function() {
   const proxy = this // eslint-disable-line
-  proxy.setProp('paths', []);
-  proxy.setProp('propProperties', []);
+  const tracker = proxy[TRACKER];
+  tracker.paths = [];
+  tracker.propProperties = [];
 };
 
 proto.unlink = function() {
   const proxy = this // eslint-disable-line
-  return proxy.getProp('base');
+  const tracker = proxy[TRACKER];
+  return tracker.base;
 };
 
 proto.relink = function(path: Array<string>, baseValue: object) {
@@ -106,14 +112,17 @@ proto.relinkProp = function(prop: string, newValue: object) {
 };
 
 proto.relinkBase = function(baseValue: object) {
-  this.runFn('assertLink', 'rebase');
-  this.runFn('rebase', baseValue);
+  const proxy = this;
+  const tracker = proxy[TRACKER];
+  tracker.assertLink.call(proxy, 'rebase');
+  tracker.rebase.call(proxy, baseValue);
 };
 
 proto.rebase = function(baseValue: object) {
   try {
     const proxy = this // eslint-disable-line
-    proxy.setProp('base', baseValue);
+    const tracker = proxy[TRACKER];
+    tracker.base = baseValue;
   } catch (err) {
     // infoLog('[proxy] rebase ', err)
   }
@@ -121,8 +130,11 @@ proto.rebase = function(baseValue: object) {
 
 proto.setRemarkable = function(): boolean {
   const proxy = this // eslint-disable-line
-  const accessPath = proxy.getProp('accessPath');
-  const parentProxy = proxy.getProp('parentProxy');
+  const tracker = proxy[TRACKER];
+  const accessPath = tracker.accessPath;
+  const parentProxy = tracker.parentProxy;
+  // const accessPath = proxy.getProp('accessPath');
+  // const parentProxy = proxy.getProp('parentProxy');
   if (!parentProxy) return false;
   parentProxy.runFn('reportAccessPath', accessPath);
   return true;
@@ -130,26 +142,36 @@ proto.setRemarkable = function(): boolean {
 
 proto.getRemarkableFullPaths = function() {
   const proxy = this // eslint-disable-line
-  const paths = proxy.getProp('paths');
-  const propProperties = proxy.getProp('propProperties');
-  const rootPath = proxy.getProp('rootPath');
+  const tracker = proxy[TRACKER];
+
+  const paths = tracker.paths;
+  const propProperties = tracker.propProperties;
+  const rootPath = tracker.rootPath;
   const internalPaths = generateRemarkablePaths(paths).map(path =>
     rootPath.concat(path)
   );
   const external = propProperties.map((prop: PropProperty) => {
     const { path, source } = prop;
-    const sourceRootPath = source?.getProp('rootPath');
-    return sourceRootPath.concat(path);
+    if (source) {
+      const sourceTracker = source[TRACKER];
+      const sourceRootPath = sourceTracker.rootPath;
+      return sourceRootPath.concat(path);
+    }
+    return [];
   });
   const externalPaths = generateRemarkablePaths(external);
+
   return internalPaths.concat(externalPaths);
 };
 
 proto.assertScope = function() {
-  const useScope = this.getProp('useScope');
+  const proxy = this;
+  const tracker = proxy[TRACKER];
+
+  const useScope = tracker.useScope;
 
   if (!useScope) return;
-  const trackerNode = this.getProp('trackerNode');
+  const trackerNode = tracker.trackerNode;
 
   // If `contextTrackerNode` is null, it means access top most data prop.
   if (!trackerNode) {
