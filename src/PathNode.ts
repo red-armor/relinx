@@ -33,21 +33,23 @@ class PathNode {
           if (DEBUG) {
             infoLog('[PathNode add patcher]', childNode, patcher);
           }
-          childNode.patchers.push(patcher);
-          patcher.addRemover(() => {
-            const index = childNode.patchers.indexOf(patcher);
+          if (childNode.patchers) {
+            childNode.patchers.push(patcher);
+            patcher.addRemover(() => {
+              const index = childNode.patchers.indexOf(patcher);
 
-            if (DEBUG) {
-              infoLog('[PathNode remove patcher]', patcher.id, childNode);
-            }
-            if (index !== -1) {
-              childNode.patchers.splice(index, 1);
-            }
-          });
+              if (DEBUG) {
+                infoLog('[PathNode remove patcher]', patcher.id, childNode);
+              }
+              if (index !== -1) {
+                childNode.patchers.splice(index, 1);
+              }
+            });
+          }
         }
         return node.children[cur];
       }, this);
-    } catch(err) {
+    } catch (err) {
       // console.log('err ', err)
     }
   }

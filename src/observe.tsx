@@ -9,7 +9,6 @@ import React, {
 import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
-import { TrackerNode } from './tracker/types';
 
 let count = 0;
 
@@ -36,7 +35,6 @@ export default (WrappedComponent: FC<any>) => {
       useScope,
       namespace,
       patcher: parentPatcher,
-      trackerNode: parentTrackerNode,
       useRelinkMode,
       ...rest
     } = useContext(context);
@@ -44,7 +42,6 @@ export default (WrappedComponent: FC<any>) => {
     const incrementCount = useRef(count++)  // eslint-disable-line
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
     const patcher = useRef<undefined | Patcher>();
-    const trackerNode = useRef<TrackerNode | null>(null);
 
     shadowState.current += 1;
 
@@ -65,7 +62,7 @@ export default (WrappedComponent: FC<any>) => {
       });
     }
 
-    application?.proxyState.enter()
+    application?.proxyState.enter(componentName);
 
     useEffect(
       () => () => {
@@ -76,11 +73,27 @@ export default (WrappedComponent: FC<any>) => {
 
     const addListener = useCallback(() => {
       patcher.current?.appendTo(parentPatcher); // maybe not needs
-      const paths = application?.proxyState.getContext().getCurrent().getRemarkable()
+      // const paths = []
+      // const start = Date.now();
+      // const paths2 = application?.proxyState
+      //   .getContext()
+      //   .getCurrent()
+      //   .getRemarkable();
+      // const end = Date.now();
+      // console.log('diff ', componentName, end - start, paths2);
+
+      // @ts-ignore
+      const paths = application?.proxyState
+        .getContext()
+        .getCurrent()
+        .getRemarkable();
+      // const end2 = Date.now();
+      // console.log('diff ', componentName, end2 - end, paths);
+
       patcher.current?.update({ paths });
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;
-      application?.proxyState.leave()
+      application?.proxyState.leave(componentName);
     }, []); // eslint-disable-line
 
     const contextValue = {
@@ -91,7 +104,7 @@ export default (WrappedComponent: FC<any>) => {
       namespace,
       useRelinkMode,
       patcher: patcher.current,
-      trackerNode: trackerNode.current || null,
+      componentName: componentName,
     };
 
     return (
@@ -109,6 +122,5 @@ export default (WrappedComponent: FC<any>) => {
     WrappedComponent.name ||
     'ObservedComponent';
 
-  return NextComponent;
-  // return React.memo(props => <NextComponent {...props} />, () => true)
+  return React.memo(props => <NextComponent {...props} />);
 };

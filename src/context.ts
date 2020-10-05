@@ -6,7 +6,6 @@ const noop = () => {};
 
 export const defaultValue = {
   computation: null,
-  getData: () => ({ trackerNode: null }),
   dispatch: noop,
   attachStoreName: noop,
   useProxy: true,

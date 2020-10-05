@@ -1,6 +1,6 @@
 import PathNode from './PathNode';
 import infoLog from './utils/infoLog';
-import { isTypeEqual, isNumber, isString, isMutable } from './utils/ifType';
+import { isTypeEqual, isPrimitive, isMutable } from './utils/ifType';
 import shallowEqual from './utils/shallowEqual';
 import {
   IApplication,
@@ -9,7 +9,7 @@ import {
   ChangedValueGroup,
 } from './types';
 import Patcher from './Patcher';
-import produce from './next'
+import produce from 'state-tracker';
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
   public base: GenericState<T, K>;
@@ -33,11 +33,13 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingPatchers = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
-    this.proxyState = produce(this.base)
+    this.proxyState = produce(this.base);
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
     this.pendingPatchers = [];
+
+    // console.log('this node ', this.node)
 
     try {
       values.forEach(value => this.treeShake(value));
@@ -45,6 +47,8 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
+
+    // console.log('change value ', values, this.pendingPatchers.slice())
 
     this.pendingPatchers.forEach(({ patcher }) => {
       patcher.triggerAutoRun();
@@ -59,18 +63,26 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     changedValue: object;
   }) {
     const origin = this.base[storeKey] || ({} as any);
-    this.proxyState.relink([storeKey],  { ...origin, ...changedValue })
+    this.proxyState.relink([storeKey], { ...origin, ...changedValue });
   }
 
   addPatchers(patchers: Array<Patcher>) {
+    // console.log('patchers ', patchers.slice())
     if (patchers.length) {
       patchers.forEach(patcher => {
         this.pendingPatchers.push({ patcher });
+      });
+      patchers.forEach(patcher => {
         patcher.markDirty();
       });
     }
   }
 
+  /**
+   *
+   * Recently it only support `Array`, `Object`, `Number`, `String` and `Boolean` five
+   * types..
+   */
   treeShake({ storeKey, changedValue }: { storeKey: K; changedValue: object }) {
     const branch = this.node.children[storeKey as any];
     const baseValue = this.base[storeKey];
@@ -98,8 +110,9 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         if (shallowEqual(oldValue, newValue)) return;
 
         if (isTypeEqual(oldValue, newValue)) {
-          if (isNumber(newValue) || isString(newValue)) {
+          if (isPrimitive(newValue)) {
             if (oldValue !== newValue) {
+              // console.log('add patcher ', oldValue, newValue, key)
               this.addPatchers(branch.children[key].patchers);
             }
           }
@@ -130,7 +143,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
   getStoreData(storeName: K): T[K] {
     const storeValue = this.base[storeName];
-
     return storeValue;
   }
 }
