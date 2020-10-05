@@ -9,6 +9,7 @@ import {
   ChangedValueGroup,
 } from './types';
 import Patcher from './Patcher';
+import produce from './next'
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
   public base: GenericState<T, K>;
@@ -16,6 +17,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public pendingPatchers: Array<PendingPatcher>;
   public namespace: string;
   public strictMode: boolean;
+  public proxyState: any;
 
   constructor({
     base,
@@ -31,6 +33,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingPatchers = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
+    this.proxyState = produce(this.base)
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
@@ -56,7 +59,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     changedValue: object;
   }) {
     const origin = this.base[storeKey] || ({} as any);
-    this.base[storeKey] = { ...origin, ...changedValue };
+    this.proxyState.relink([storeKey],  { ...origin, ...changedValue })
   }
 
   addPatchers(patchers: Array<Patcher>) {
@@ -71,7 +74,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   treeShake({ storeKey, changedValue }: { storeKey: K; changedValue: object }) {
     const branch = this.node.children[storeKey as any];
     const baseValue = this.base[storeKey];
-    // const rootBaseValue = baseValue;
     const nextValue = { ...baseValue, ...changedValue };
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
