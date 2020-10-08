@@ -9,9 +9,7 @@ export declare type IApplication<T, K extends keyof T> = {
     strictMode: boolean;
 };
 export interface PendingPatcher {
-    collections: Array<string>;
     patcher: Patcher;
-    operation: Array<Operation>;
 }
 export interface Operation {
     path: Array<string>;

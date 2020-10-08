@@ -7,6 +7,7 @@ declare class Application<T, K extends keyof T> implements IApplication<T, K> {
     pendingPatchers: Array<PendingPatcher>;
     namespace: string;
     strictMode: boolean;
+    proxyState: any;
     constructor({ base, namespace, strictMode, }: {
         base: GenericState<T, K>;
         namespace: string;
@@ -17,6 +18,12 @@ declare class Application<T, K extends keyof T> implements IApplication<T, K> {
         storeKey: K;
         changedValue: object;
     }): void;
+    addPatchers(patchers: Array<Patcher>): void;
+    /**
+     *
+     * Recently it only support `Array`, `Object`, `Number`, `String` and `Boolean` five
+     * types..
+     */
     treeShake({ storeKey, changedValue }: {
         storeKey: K;
         changedValue: object;

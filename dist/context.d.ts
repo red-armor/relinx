@@ -2,9 +2,6 @@
 import { ContextDefaultValue } from './types';
 export declare const defaultValue: {
     computation: null;
-    getData: () => {
-        trackerNode: null;
-    };
     dispatch: () => void;
     attachStoreName: () => void;
     useProxy: boolean;

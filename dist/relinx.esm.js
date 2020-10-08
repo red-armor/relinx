@@ -1,4 +1,5 @@
 import React, { createContext, useRef, useContext, useState, useEffect, useCallback } from 'react';
+import produce from 'state-tracker';
 import invariant from 'invariant';
 
 const calculateChangeBits = () => 0b00;
@@ -7,9 +8,6 @@ const noop = () => {};
 
 const defaultValue = {
   computation: null,
-  getData: () => ({
-    trackerNode: null
-  }),
   dispatch: noop,
   attachStoreName: noop,
   useProxy: true,
@@ -31,6 +29,8 @@ function infoLog(...args) {
   console.log('**DEBUG**', ...args); // eslint-disable-line
 }
 
+const DEBUG = false;
+
 class PathNode {
   constructor(prop, parent) {
     this.prop = prop || 'root';
@@ -40,26 +40,39 @@ class PathNode {
   }
 
   addPathNode(path, patcher) {
-    const len = path.length;
-    path.reduce((node, cur, index) => {
-      // path中前面的值都是为了让我们定位到最后的需要关心的位置
-      if (!node.children[cur]) node.children[cur] = new PathNode(cur, node); // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
+    try {
+      const len = path.length;
+      path.reduce((node, cur, index) => {
+        // path中前面的值都是为了让我们定位到最后的需要关心的位置
+        if (!node.children[cur]) node.children[cur] = new PathNode(cur, node); // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
 
-      if (index === len - 1) {
-        const childNode = node.children[cur];
+        if (index === len - 1) {
+          const childNode = node.children[cur];
 
-        childNode.patchers.push(patcher);
-        patcher.addRemover(() => {
-          const index = childNode.patchers.indexOf(patcher);
-
-          if (index !== -1) {
-            childNode.patchers.splice(index, 1);
+          if (DEBUG) {
+            infoLog('[PathNode add patcher]', childNode, patcher);
           }
-        });
-      }
 
-      return node.children[cur];
-    }, this);
+          if (childNode.patchers) {
+            childNode.patchers.push(patcher);
+            patcher.addRemover(() => {
+              const index = childNode.patchers.indexOf(patcher);
+
+              if (DEBUG) {
+                infoLog('[PathNode remove patcher]', patcher.id, childNode);
+              }
+
+              if (index !== -1) {
+                childNode.patchers.splice(index, 1);
+              }
+            });
+          }
+        }
+
+        return node.children[cur];
+      }, this);
+    } catch (err) {// console.log('err ', err)
+    }
   }
 
   destroyPathNode() {
@@ -84,36 +97,80 @@ class PathNode {
 
 }
 
-function is(x, y) {
-  // From: https://github.com/facebook/fbjs/blob/c69904a511b900266935168223063dd8772dfc40/packages/fbjs/src/core/shallowEqual.js
-  if (x === y) {
-    return x !== 0 || 1 / x === 1 / y;
-  }
-
-  return x !== x && y !== y; // eslint-disable-line
-}
-
 const toString =
 /*#__PURE__*/
 Function.call.bind(Object.prototype.toString);
 
 const isObject = obj => toString(obj) === '[object Object]';
 const isArray = obj => toString(obj) === '[object Array]';
+const isNumber = obj => toString(obj) === '[object Number]';
+const isString = obj => toString(obj) === '[object String]';
+const isBoolean = obj => toString(obj) === '[object Boolean]';
 const isMutable = obj => isObject(obj) || isArray(obj);
+const isPrimitive = obj => isNumber(obj) || isString(obj) || isBoolean(obj);
 const isTypeEqual = (o1, o2) => toString(o1) === toString(o2);
 
-function diffArraySimple(a = [], b) {
-  const parts = [];
+// https://github.com/facebook/react/blob/144328fe81719e916b946e22660479e31561bb0b/packages/shared/shallowEqual.js#L36-L68
 
-  for (let i = 0; i < a.length; i++) {
-    const key = a[i];
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow
+ */
 
-    if (b.indexOf(key) === -1) {
-      parts.push(key);
+/* eslint-disable no-self-compare */
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+/**
+ * inlined Object.is polyfill to avoid requiring consumers ship their own
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+ */
+
+function is(x, y) {
+  // SameValue algorithm
+  if (x === y) {
+    // Steps 1-5, 7-10
+    // Steps 6.b-6.e: +0 != -0
+    // Added the nonzero y check to make Flow happy, but it is redundant
+    return x !== 0 || y !== 0 || 1 / x === 1 / y;
+  } // Step 6.a: NaN == NaN
+
+
+  return x !== x && y !== y;
+}
+/**
+ * Performs equality by iterating through keys on an object and returning false
+ * when any key has values which are not strictly equal between the arguments.
+ * Returns true when the values of all keys are strictly equal.
+ */
+
+
+function shallowEqual(objA, objB) {
+  if (is(objA, objB)) {
+    return true;
+  }
+
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  } // Test for A's keys different from B.
+
+
+  for (let i = 0; i < keysA.length; i++) {
+    if (!hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
     }
   }
 
-  return parts;
+  return true;
 }
 
 class Application {
@@ -127,54 +184,25 @@ class Application {
     this.pendingPatchers = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
+    this.proxyState = produce(this.base);
   }
 
   update(values) {
-    this.pendingPatchers = [];
+    this.pendingPatchers = []; // console.log('this node ', this.node)
 
     try {
       values.forEach(value => this.treeShake(value));
       values.forEach(value => this.updateBase(value));
     } catch (err) {
       infoLog('[Application] update issue ', err);
-    }
+    } // console.log('change value ', values, this.pendingPatchers.slice())
 
-    const finalPatchers = [];
-    const len = this.pendingPatchers.length;
 
-    for (let i = 0; i < len; i++) {
-      const current = this.pendingPatchers[i].patcher;
-      const l = finalPatchers.length;
-      let found = false;
-
-      for (let y = 0; y < l; y++) {
-        // @ts-ignore
-        const base = finalPatchers[y];
-
-        if (current.belongs(base)) {
-          found = true;
-          break;
-        }
-
-        if (base.belongs(current)) {
-          finalPatchers.splice(y, 1);
-          finalPatchers.splice(y, 0, current);
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) finalPatchers.push(current);
-    }
-
-    if (this.pendingPatchers.length) {
-      // const patcherId = generatePatcherId({ namespace: this.namespace });
-      this.pendingPatchers.forEach(({
-        patcher
-      }) => {
-        patcher.triggerAutoRun();
-      });
-    }
+    this.pendingPatchers.forEach(({
+      patcher
+    }) => {
+      patcher.triggerAutoRun();
+    });
   }
 
   updateBase({
@@ -182,10 +210,30 @@ class Application {
     changedValue
   }) {
     const origin = this.base[storeKey] || {};
-    this.base[storeKey] = { ...origin,
+    this.proxyState.relink([storeKey], { ...origin,
       ...changedValue
-    };
+    });
   }
+
+  addPatchers(patchers) {
+    // console.log('patchers ', patchers.slice())
+    if (patchers.length) {
+      patchers.forEach(patcher => {
+        this.pendingPatchers.push({
+          patcher
+        });
+      });
+      patchers.forEach(patcher => {
+        patcher.markDirty();
+      });
+    }
+  }
+  /**
+   *
+   * Recently it only support `Array`, `Object`, `Number`, `String` and `Boolean` five
+   * types..
+   */
+
 
   treeShake({
     storeKey,
@@ -193,7 +241,6 @@ class Application {
   }) {
     const branch = this.node.children[storeKey];
     const baseValue = this.base[storeKey];
-    const rootBaseValue = baseValue;
     const nextValue = { ...baseValue,
       ...changedValue
     }; // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
@@ -201,101 +248,35 @@ class Application {
     if (!branch) return;
     const toDestroy = [];
 
-    const compare = (branch, baseValue, nextValue, collections, operation) => {
-      if (is(baseValue, nextValue)) return; // TODO, add description...only primitive type react...
-
-      if (!isTypeEqual(baseValue, nextValue) || !isMutable(nextValue)) {
-        if (branch.patchers.length) {
-          branch.patchers.forEach(patcher => {
-            this.pendingPatchers.push({
-              collections,
-              patcher,
-              operation
-            });
-          }); // delete should be placed after collection...
-          // `branch.patchers` will be modified on `markDirty`..
-          // branch.patchers.forEach(patcher => patcher.markDirtyAll())
-
-          branch.patchers.forEach(patcher => patcher.markDirty());
-        }
-      }
-
-      const caredKeys = Object.keys(branch.children);
-      let keysToCompare = caredKeys;
-      let keysToDestroy = [];
-      const currentOperation = []; // 处理，如果说array中的一项被删除了。。。。
-
-      if (isTypeEqual(baseValue, nextValue) && Array.isArray(nextValue)) {
-        const baseLength = baseValue.length;
-        const nextLength = nextValue.length;
-
-        if (nextLength < baseLength) {
-          keysToCompare = caredKeys.filter(key => parseInt(key, 10) < nextLength || key === 'length');
-          keysToDestroy = caredKeys.filter(key => {
-            if (parseInt(key, 10) >= nextLength) {
-              currentOperation.push({
-                path: collections.concat(key),
-                isDelete: true
-              });
-              return true;
-            }
-
-            return false;
-          });
-        }
-      }
-
-      if (isObject(nextValue) && isObject(baseValue)) {
-        const nextKeys = Object.keys(nextValue);
-        const prevKeys = Object.keys(baseValue);
-        const removed = diffArraySimple(prevKeys, nextKeys);
-
-        if (removed.length) {
-          toDestroy.push(((branch, removed) => {
-            removed.forEach(key => {
-              const childBranch = branch.children[key];
-              if (childBranch) childBranch.destroyPathNode();
-            });
-          }).bind(null, branch, removed));
-        }
-      }
-
-      if (this.strictMode) {
-        keysToCompare.forEach(key => {
-          const childBranch = branch.children[key];
-
-          if (!baseValue || typeof baseValue[key] === 'undefined') {
-            childBranch.patchers.forEach(patcher => {
-              const displayName = patcher.displayName;
-              const joinedPath = collections.concat(key).join('.');
-              console.warn('root base value ', rootBaseValue); // eslint-disable-line
-
-              console.warn( // eslint-disable-line
-              `Maybe you are using an un-declared props %c${joinedPath}` + ` %cin Component %c${displayName} %cYou'd better declare this prop in model first,` + 'or component may not re-render when value changes on ES5.', 'color: #ff4d4f; font-weight: bold', '', 'color: #7cb305; font-weight: bold', '');
-            });
-          }
-        });
-      }
-
+    const compare = (branch, baseValue, nextValue) => {
+      const keysToCompare = Object.keys(branch.children);
       keysToCompare.forEach(key => {
-        const childBranch = branch.children[key];
-        const childBaseValue = baseValue ? baseValue[key] : undefined; // 当一个对象中的key被删除的时候，那么它的值就是undefined
+        const oldValue = baseValue[key];
+        const newValue = nextValue[key];
+        if (shallowEqual(oldValue, newValue)) return;
 
-        const childNextValue = nextValue ? nextValue[key] : undefined;
-        compare(childBranch, childBaseValue, childNextValue, collections.concat(key), currentOperation);
-      });
+        if (isTypeEqual(oldValue, newValue)) {
+          if (isPrimitive(newValue)) {
+            if (oldValue !== newValue) {
+              // console.log('add patcher ', oldValue, newValue, key)
+              this.addPatchers(branch.children[key].patchers);
+            }
+          }
 
-      if (keysToDestroy.length) {
-        toDestroy.push(((branch, keysToDestroy) => {
-          keysToDestroy.forEach(key => {
+          if (isMutable(newValue)) {
             const childBranch = branch.children[key];
-            if (childBranch) childBranch.destroyPathNode();
-          });
-        }).bind(null, branch, keysToDestroy));
-      }
+            compare(childBranch, oldValue, newValue);
+            return;
+          }
+
+          return;
+        }
+
+        this.addPatchers(branch.children[key].patchers);
+      });
     };
 
-    compare(branch, baseValue, nextValue, [storeKey], []);
+    compare(branch, baseValue, nextValue);
     toDestroy.forEach(fn => fn());
   }
 
@@ -307,13 +288,7 @@ class Application {
   }
 
   getStoreData(storeName) {
-    const storeValue = this.base[storeName]; // on iOS 10. toString(new Proxy({}, {}) === 'object ProxyObject')
-    // invariant(
-    //   !!storeValue,
-    //   `Invalid storeName '${storeName}'.` +
-    //     'Please ensure `base[storeName]` return non-undefined value '
-    // );
-
+    const storeValue = this.base[storeName];
     return storeValue;
   }
 
@@ -582,17 +557,14 @@ function createStore(configs, enhancer) {
 var useRelinx = (storeName => {
   const {
     dispatch,
-    getData,
-    attachStoreName
+    application,
+    componentName
   } = useContext(context);
-  !(typeof storeName === 'string' && storeName !== '') ? process.env.NODE_ENV !== "production" ? invariant(false, '`storeName` is required') : invariant(false) : void 0;
-  !!!getData ? process.env.NODE_ENV !== "production" ? invariant(false, `'useRelinx' should be wrapper in observe function`) : invariant(false) : void 0;
-  attachStoreName(storeName);
-  const {
-    trackerNode
-  } = getData();
-  !!!trackerNode.proxy ? process.env.NODE_ENV !== "production" ? invariant(false, `[useRelinx]: 'getData' fails`) : invariant(false) : void 0;
-  return [trackerNode.proxy, dispatch];
+  const proxyState = application === null || application === void 0 ? void 0 : application.proxyState;
+  const state = proxyState.peek([storeName]);
+  const tracker = state.getTracker();
+  tracker.setContext(componentName);
+  return [state, dispatch];
 });
 
 var useDispatch = (() => {
@@ -936,912 +908,6 @@ var index = (({
 // 如果说是一个effect的话，这个时候会有很多的不确定性。或者同样是以外层结束作为一个结点；
 // 然后每一次有sub结束完就搞一次；最终的结论就是一个action可能会有多个的log
 
-const toString$1 =
-/*#__PURE__*/
-Function.call.bind(Object.prototype.toString);
-
-const ownKeys = o => typeof Reflect !== 'undefined' && Reflect.ownKeys ? Reflect.ownKeys(o) : typeof Object.getOwnPropertySymbols !== 'undefined' ? Object.getOwnPropertyNames(o).concat(Object.getOwnPropertySymbols(o)) : Object.getOwnPropertyNames(o);
-const isObject$1 = o => o ? typeof o === 'object' || typeof o === 'function' : false; // eslint-disable-line
-
-const hasSymbol = typeof Symbol !== 'undefined';
-const TRACKER = hasSymbol ?
-/*#__PURE__*/
-Symbol('tracker') : '__tracker__';
-const canIUseProxy = () => {
-  try {
-    new Proxy({}, {}); // eslint-disable-line
-  } catch (err) {
-    return false;
-  }
-
-  return true;
-};
-const hasOwnProperty = (o, prop) => o.hasOwnProperty(prop); // eslint-disable-line
-
-const isTrackable = o => {
-  return ['[object Object]', '[object Array]'].indexOf(toString$1(o)) !== -1;
-};
-function each(obj, iter) {
-  if (Array.isArray(obj)) {
-    obj.forEach((entry, index) => iter(index, entry, obj));
-  } else if (isObject$1(obj)) {
-    // @ts-ignore
-    ownKeys(obj).forEach(key => iter(key, obj[key], obj));
-  }
-}
-const Type = {
-  Object: 'object',
-  Array: 'array'
-};
-function shallowCopy(o) {
-  if (Array.isArray(o)) return o.slice();
-  const value = Object.create(Object.getPrototypeOf(o));
-  ownKeys(o).forEach(key => {
-    value[key] = o[key];
-  });
-  return value;
-}
-const inherit = (subClass, superClass) => {
-  subClass.prototype = Object.create(superClass.prototype);
-  subClass.prototype.constructor = subClass; // subClass.__proto__ = superClass // eslint-disable-line
-};
-const createHiddenProperty = (target, prop, value) => {
-  Object.defineProperty(target, prop, {
-    value,
-    enumerable: false,
-    writable: true
-  });
-};
-const hideProperty = (target, prop) => {
-  Object.defineProperty(target, prop, {
-    enumerable: false,
-    configurable: false
-  });
-};
-
-const context$1 = {
-  trackerNode: null
-};
-
-const joinPath = path => path.join('_');
-
-const generateRemarkablePaths = paths => {
-  const copy = paths.slice();
-  const accessMap = {};
-  const len = copy.length;
-  const remarkablePaths = [];
-
-  for (let i = len - 1; i >= 0; i--) {
-    const path = copy[i].slice();
-    const pathLength = path.length;
-    let isConsecutive = false;
-
-    for (let i = 0; i < pathLength; i++) {
-      const joinedPath = joinPath(path);
-      const count = accessMap[joinedPath] || 0; // the intermediate accessed path will be ignored.
-      // https://stackoverflow.com/questions/2937120/how-to-get-javascript-object-references-or-reference-count
-      // because of this, intermediate value may be ignored...
-
-      if (isConsecutive) {
-        accessMap[joinedPath] = count + 1;
-        path.pop();
-        continue; // eslint-disable-line
-      }
-
-      if (!count) {
-        const p = path.slice();
-        const str = joinPath(p);
-        const found = remarkablePaths.find(path => joinPath(path) === str);
-        if (!found) remarkablePaths.push(p);
-        isConsecutive = true;
-        path.pop();
-      } else {
-        accessMap[joinedPath] = count - 1;
-        break;
-      }
-    }
-  }
-
-  return remarkablePaths;
-};
-
-const peek = (proxy, accessPath) => {
-  return accessPath.reduce((proxy, cur) => {
-    proxy.setProp('isPeeking', true);
-    const nextProxy = proxy[cur];
-    proxy.setProp('isPeeking', false);
-    return nextProxy;
-  }, proxy);
-};
-
-function internalFunctions() {}
-
-const proto = internalFunctions.prototype;
-
-proto.assertLink = function (fnName) {
-  const proxy = this;
-  const trackerNode = proxy.getProp('trackerNode');
-  !trackerNode ? process.env.NODE_ENV !== "production" ? invariant(false, `You should not use \`${fnName}\` method with pure \`proxy\` object.\n` + 'which should be bind with an `trackerNode` object') : invariant(false) : void 0;
-  !(context$1.trackerNode !== trackerNode) ? process.env.NODE_ENV !== "production" ? invariant(false, `\`${fnName}\` method is used to update \`proxy\` object from upstream.\n` + 'So it is not meaning to link proxy in current trackerNode scope') : invariant(false) : void 0;
-};
-
-proto.reportAccessPath = function (path) {
-  const proxy = this; // eslint-disable-line
-
-  const paths = proxy.getProp('paths');
-  const parentProxy = proxy.getProp('parentProxy');
-  paths.push(path);
-  if (!parentProxy) return;
-  parentProxy.runFn('reportAccessPath', path);
-};
-
-proto.cleanup = function () {
-  const proxy = this; // eslint-disable-line
-
-  proxy.setProp('paths', []);
-  proxy.setProp('propProperties', []);
-};
-
-proto.unlink = function () {
-  const proxy = this; // eslint-disable-line
-
-  return proxy.getProp('base');
-};
-
-proto.relink = function (path, baseValue) {
-  try {
-    this.runFn('assertLink', 'relink');
-    const proxy = this; // eslint-disable-line
-
-    let copy = path.slice();
-    let last = copy.pop();
-    const len = path.length;
-    let nextBaseValue = baseValue; // fix: {a: { b: 1 }} => {a: {}}, nextBaseValue[key] is undefined
-
-    for (let i = 0; i < len; i++) {
-      const key = path[i];
-
-      if (typeof nextBaseValue[key] !== 'undefined') {
-        nextBaseValue = nextBaseValue[key];
-      } else {
-        copy = path.slice(0, i - 1);
-        last = path[i - 1];
-        break;
-      }
-    }
-
-    const nextProxy = peek(proxy, copy);
-    nextProxy.relinkProp(last, nextBaseValue);
-  } catch (err) {// infoLog('[proxy relink issue]', path, baseValue, err)
-  }
-};
-
-proto.relinkProp = function (prop, newValue) {
-  this.runFn('assertLink', 'relinkProp');
-  const proxy = this; // eslint-disable-line
-
-  const base = proxy.getProp('base');
-  const childProxies = proxy.getProp('childProxies');
-  const accessPath = proxy.getProp('accessPath');
-
-  if (Array.isArray(base)) {
-    proxy.setProp('base', base.filter(v => v));
-  }
-
-  proxy.getProp('base')[prop] = newValue;
-
-  if (isTrackable(newValue)) {
-    childProxies[prop] = proxy.createChild(newValue, {
-      accessPath: accessPath.concat(prop),
-      parentProxy: proxy
-    });
-  }
-};
-
-proto.relinkBase = function (baseValue) {
-  this.runFn('assertLink', 'rebase');
-  this.runFn('rebase', baseValue);
-};
-
-proto.rebase = function (baseValue) {
-  try {
-    const proxy = this; // eslint-disable-line
-
-    proxy.setProp('base', baseValue);
-  } catch (err) {// infoLog('[proxy] rebase ', err)
-  }
-};
-
-proto.setRemarkable = function () {
-  const proxy = this; // eslint-disable-line
-
-  const accessPath = proxy.getProp('accessPath');
-  const parentProxy = proxy.getProp('parentProxy');
-  if (!parentProxy) return false;
-  parentProxy.runFn('reportAccessPath', accessPath);
-  return true;
-};
-
-proto.getRemarkableFullPaths = function () {
-  const proxy = this; // eslint-disable-line
-
-  const paths = proxy.getProp('paths');
-  const propProperties = proxy.getProp('propProperties');
-  const rootPath = proxy.getProp('rootPath');
-  const internalPaths = generateRemarkablePaths(paths).map(path => rootPath.concat(path));
-  const external = propProperties.map(prop => {
-    const {
-      path,
-      source
-    } = prop;
-    const sourceRootPath = source === null || source === void 0 ? void 0 : source.getProp('rootPath');
-    return sourceRootPath.concat(path);
-  });
-  const externalPaths = generateRemarkablePaths(external);
-  return internalPaths.concat(externalPaths);
-};
-
-proto.assertScope = function () {
-  const useScope = this.getProp('useScope');
-  if (!useScope) return;
-  const trackerNode = this.getProp('trackerNode'); // If `contextTrackerNode` is null, it means access top most data prop.
-
-  if (!trackerNode) {
-    console.warn('trackerNode is undefined, which means you are using createTracker function directly.' + 'Maybe you should create TrackerNode object.');
-  } else if (!trackerNode.contains(context$1.trackerNode) && context$1.trackerNode) throw new Error(trackerNode.id + 'is not child node of ' + context$1.trackerNode.id + 'Property only could be accessed by self node or parent node.');
-};
-
-hideProperty(proto, 'assertLink');
-hideProperty(proto, 'reportAccessPath');
-hideProperty(proto, 'cleanup');
-hideProperty(proto, 'unlink');
-hideProperty(proto, 'relink');
-hideProperty(proto, 'relinkBase');
-hideProperty(proto, 'relinkProp');
-hideProperty(proto, 'setRemarkable');
-hideProperty(proto, 'getRemarkableFullPaths');
-hideProperty(proto, 'rebase');
-hideProperty(proto, 'assertScope');
-
-let count = 0;
-
-const ES5Tracker = function ({
-  accessPath,
-  parentProxy,
-  rootPath,
-  base,
-  trackerNode,
-  useRevoke,
-  useScope
-}) {
-  createHiddenProperty(this, 'id', `ES5Tracker_${count++}`); // eslint-disable-line
-
-  createHiddenProperty(this, 'trackerNode', trackerNode);
-  createHiddenProperty(this, 'accessPath', accessPath);
-  createHiddenProperty(this, 'rootPath', rootPath);
-  createHiddenProperty(this, 'type', Array.isArray(base) ? Type.Array : Type.Object);
-  createHiddenProperty(this, 'base', base);
-  createHiddenProperty(this, 'parentProxy', parentProxy);
-  createHiddenProperty(this, 'childProxies', {});
-  createHiddenProperty(this, 'isPeeking', false);
-  createHiddenProperty(this, 'propProperties', []);
-  createHiddenProperty(this, 'paths', []);
-  createHiddenProperty(this, 'useRevoke', useRevoke);
-  createHiddenProperty(this, 'useScope', useScope);
-  createHiddenProperty(this, 'isRevoked', false);
-  createHiddenProperty(this, 'assertRevoke', function () {
-    const useRevoke = this.getProp('useRevoke');
-    if (!useRevoke) return;
-    const isRevoked = this.getProp('isRevoked');
-
-    if (isRevoked) {
-      throw new Error('Cannot use a proxy that has been revoked. Did you pass an object ' + 'to an async process? ');
-    }
-  });
-};
-
-inherit(ES5Tracker, internalFunctions);
-
-const peek$1 = (proxy, accessPath) => {
-  return accessPath.reduce((proxy, cur) => {
-    proxy.setProp('isPeeking', true);
-    const nextProxy = proxy[cur];
-    proxy.setProp('isPeeking', false);
-    return nextProxy;
-  }, proxy);
-};
-
-function createES5Tracker(target, config, trackerNode) {
-  const {
-    accessPath = [],
-    parentProxy,
-    useRevoke,
-    useScope,
-    rootPath = []
-  } = config || {};
-
-  if (!isObject$1(target)) {
-    throw new TypeError('Cannot create proxy with a non-object as target or handler');
-  }
-
-  const proxy = shallowCopy(target);
-
-  function proxyProperty(proxy, prop, enumerable) {
-    const desc = {
-      enumerable,
-      configurable: false,
-
-      get() {
-        this.runFn('assertRevoke');
-        this.runFn('assertScope');
-        const base = this.getProp('base');
-        const accessPath = this.getProp('accessPath');
-        const childProxies = this.getProp('childProxies');
-        const isPeeking = this.getProp('isPeeking');
-        const value = base[prop]; // For es5, the prop in array index getter is integer; when use proxy,
-        // `prop` will be string.
-
-        const nextAccessPath = accessPath.concat(`${prop}`);
-
-        if (!isPeeking) {
-          // for relink return parent prop...
-          if (context$1.trackerNode && trackerNode.id !== context$1.trackerNode.id) {
-            const contextProxy = context$1.trackerNode.proxy;
-            const propProperties = contextProxy === null || contextProxy === void 0 ? void 0 : contextProxy.getProp('propProperties');
-            propProperties.push({
-              path: nextAccessPath,
-              source: trackerNode.proxy
-            });
-            this.setProp('propProperties', propProperties);
-            if (trackerNode.proxy) return peek$1(trackerNode.proxy, nextAccessPath);
-          }
-
-          this.runFn('reportAccessPath', nextAccessPath);
-        }
-
-        if (!isTrackable(value)) return value;
-        const childProxy = childProxies[prop]; // for rebase value, if base value change, the childProxy should
-        // be replaced
-
-        if (childProxy && childProxy.base === value) {
-          return childProxy;
-        }
-
-        return childProxies[prop] = createES5Tracker(value, {
-          accessPath: nextAccessPath,
-          parentProxy: proxy,
-          rootPath,
-          useRevoke,
-          useScope
-        }, trackerNode);
-      }
-
-    };
-    Object.defineProperty(proxy, prop, desc);
-  }
-
-  each(target, prop => {
-    const desc = Object.getOwnPropertyDescriptor(target, prop);
-    const enumerable = (desc === null || desc === void 0 ? void 0 : desc.enumerable) || false;
-    proxyProperty(proxy, prop, enumerable);
-  });
-
-  if (Array.isArray(target)) {
-    const descriptors = Object.getPrototypeOf([]);
-    const keys = Object.getOwnPropertyNames(descriptors);
-
-    const handler = (func, functionContext, lengthGetter = true) => function () {
-      const args = Array.prototype.slice.call(arguments); // eslint-disable-line
-
-      this.runFn('assertRevoke');
-
-      if (lengthGetter) {
-        const accessPath = this.getProp('accessPath');
-        const isPeeking = this.getProp('isPeeking');
-        const nextAccessPath = accessPath.concat('length');
-
-        if (!isPeeking) {
-          if (context$1.trackerNode && trackerNode.id !== context$1.trackerNode.id) {
-            const contextProxy = context$1.trackerNode.proxy;
-            const propProperties = contextProxy === null || contextProxy === void 0 ? void 0 : contextProxy.getProp('propProperties');
-            propProperties.push({
-              path: nextAccessPath,
-              source: trackerNode.proxy
-            });
-            this.setProp('propProperties', propProperties);
-          }
-
-          this.runFn('reportAccessPath', nextAccessPath);
-        }
-      }
-
-      return func.apply(functionContext, args);
-    };
-
-    keys.forEach(key => {
-      const func = descriptors[key];
-
-      if (typeof func === 'function') {
-        const notRemarkLengthPropKeys = ['concat', 'copyWith'];
-        const remarkLengthPropKeys = ['concat', 'copyWith', 'fill', 'find', 'findIndex', 'lastIndexOf', 'pop', 'push', 'reverse', 'shift', 'unshift', 'slice', 'sort', 'splice', 'includes', 'indexOf', 'join', 'keys', 'entries', 'forEach', 'filter', 'flat', 'flatMap', 'map', 'every', 'some', 'reduce', 'reduceRight'];
-
-        if (notRemarkLengthPropKeys.indexOf(key) !== -1) {
-          createHiddenProperty(proxy, key, handler(func, proxy, false));
-        } else if (remarkLengthPropKeys.indexOf(key) !== -1) {
-          createHiddenProperty(proxy, key, handler(func, proxy));
-        }
-      }
-    });
-  }
-
-  const tracker = new ES5Tracker({
-    base: target,
-    parentProxy,
-    accessPath,
-    rootPath,
-    trackerNode,
-    useRevoke,
-    useScope
-  });
-  createHiddenProperty(proxy, 'getProps', function () {
-    const args = Array.prototype.slice.call(arguments);
-    return args.map(prop => this[TRACKER][prop]);
-  });
-  createHiddenProperty(proxy, 'getProp', function () {
-    const args = Array.prototype.slice.call(arguments);
-    return this[TRACKER][args[0]];
-  });
-  createHiddenProperty(proxy, 'setProp', function () {
-    const args = Array.prototype.slice.call(arguments);
-    const prop = args[0];
-    const value = args[1]; // @ts-ignore
-
-    return this[TRACKER][prop] = value;
-  });
-  createHiddenProperty(proxy, 'runFn', function () {
-    const args = Array.prototype.slice.call(arguments);
-    const fn = this[TRACKER][args[0]];
-    const rest = args.slice(1);
-    if (typeof fn === 'function') return fn.apply(this, rest);
-  });
-  createHiddenProperty(proxy, 'unlink', function () {
-    return this.runFn('unlink');
-  });
-  createHiddenProperty(proxy, 'createChild', function () {
-    const args = Array.prototype.slice.call(arguments);
-    const target = args[0] || {};
-    const config = args[1] || {};
-    return createES5Tracker(target, {
-      useRevoke,
-      useScope,
-      rootPath,
-      ...config
-    }, trackerNode);
-  });
-  createHiddenProperty(proxy, 'revoke', function () {
-    const useRevoke = this.getProp('useRevoke');
-    if (useRevoke) this.setProp('isRevoked', true);
-  });
-  createHiddenProperty(proxy, TRACKER, tracker);
-  return proxy;
-}
-
-var Type$1;
-
-(function (Type) {
-  Type["Object"] = "object";
-  Type["Array"] = "array";
-})(Type$1 || (Type$1 = {}));
-
-let count$1 = 0; // 'this' implicitly has type 'any'
-// https://stackoverflow.com/questions/52431074/how-to-solve-this-implicitly-has-type-any-when-typescript-checking-classic
-
-const ProxyTracker = function ({
-  accessPath,
-  parentProxy,
-  rootPath,
-  base,
-  trackerNode,
-  useRevoke,
-  useScope
-}) {
-  createHiddenProperty(this, 'id', `ProxyTracker_${count$1++}`); // eslint-disable-line
-
-  createHiddenProperty(this, 'trackerNode', trackerNode);
-  createHiddenProperty(this, 'accessPath', accessPath);
-  createHiddenProperty(this, 'rootPath', rootPath);
-  createHiddenProperty(this, 'type', Array.isArray(base) ? Type$1.Array : Type$1.Object);
-  createHiddenProperty(this, 'base', base);
-  createHiddenProperty(this, 'parentProxy', parentProxy);
-  createHiddenProperty(this, 'childProxies', {});
-  createHiddenProperty(this, 'isPeeking', false);
-  createHiddenProperty(this, 'propProperties', []);
-  createHiddenProperty(this, 'paths', []);
-  createHiddenProperty(this, 'useRevoke', useRevoke);
-  createHiddenProperty(this, 'useScope', useScope); // function constructor https://stackoverflow.com/a/43624326/2006805
-};
-
-inherit(ProxyTracker, internalFunctions);
-
-const peek$2 = (proxy, accessPath) => {
-  return accessPath.reduce((proxy, cur) => {
-    proxy.setProp('isPeeking', true);
-    const nextProxy = proxy[cur];
-    proxy.setProp('isPeeking', false);
-    return nextProxy;
-  }, proxy);
-};
-
-function createTracker(target, config, trackerNode) {
-  const {
-    accessPath = [],
-    parentProxy,
-    useRevoke,
-    useScope,
-    rootPath = []
-  } = config || {};
-
-  if (!isObject$1(target)) {
-    throw new TypeError('Cannot create proxy with a non-object as target or handler');
-  }
-
-  const copy = shallowCopy(target);
-  const internalProps = [TRACKER, 'revoke', 'runFn', 'unlink', 'getProp', 'setProp', 'getProps', 'createChild']; // can not use this in handler, should be `target`
-
-  const handler = {
-    get: (target, prop, receiver) => {
-      target.runFn('assertScope');
-      if (prop === TRACKER) return Reflect.get(target, prop, receiver); // assertScope(trackerNode, context.trackerNode)
-
-      const base = target.getProp('base'); // refer to immer...
-      // if (Array.isArray(tracker)) target = tracker[0]
-
-      const isInternalPropAccessed = internalProps.indexOf(prop) !== -1;
-
-      if (isInternalPropAccessed || !hasOwnProperty(base, prop)) {
-        return Reflect.get(target, prop, receiver);
-      }
-
-      const accessPath = target.getProp('accessPath');
-      const nextAccessPath = accessPath.concat(prop);
-      const isPeeking = target.getProp('isPeeking');
-
-      if (!isPeeking) {
-        // for relink return parent prop...
-        if (context$1.trackerNode && trackerNode.id !== context$1.trackerNode.id) {
-          const contextProxy = context$1.trackerNode.proxy;
-          const propProperties = contextProxy === null || contextProxy === void 0 ? void 0 : contextProxy.getProp('propProperties');
-          propProperties.push({
-            path: nextAccessPath,
-            source: trackerNode.proxy
-          });
-          target.setProp('propProperties', propProperties);
-          if (trackerNode.proxy) return peek$2(trackerNode.proxy, nextAccessPath);
-        }
-
-        target.runFn('reportAccessPath', nextAccessPath);
-      }
-
-      const childProxies = target.getProp('childProxies');
-      const value = base[prop];
-      if (!isTrackable(value)) return value;
-      const childProxy = childProxies[prop]; // for rebase value, if base value change, the childProxy should
-      // be replaced
-
-      if (childProxy && childProxy.base === value) {
-        return childProxy;
-      }
-
-      return childProxies[prop] = createTracker(value, {
-        accessPath: nextAccessPath,
-        parentProxy: target,
-        rootPath,
-        useRevoke,
-        useScope
-      }, trackerNode);
-    }
-  };
-  const tracker = new ProxyTracker({
-    base: target,
-    parentProxy,
-    accessPath,
-    rootPath,
-    trackerNode,
-    useRevoke,
-    useScope
-  });
-  const {
-    proxy,
-    revoke
-  } = Proxy.revocable(copy, handler);
-  createHiddenProperty(proxy, 'getProps', function () {
-    const args = Array.prototype.slice.call(arguments);
-    return args.map(prop => this[TRACKER][prop]);
-  });
-  createHiddenProperty(proxy, 'getProp', function () {
-    const args = Array.prototype.slice.call(arguments);
-    return this[TRACKER][args[0]];
-  });
-  createHiddenProperty(proxy, 'setProp', function () {
-    const args = Array.prototype.slice.call(arguments); // eslint-disable-line
-
-    const prop = args[0];
-    const value = args[1]; // this[TRACKER][prop as keyof ProxyTrackerInterface] = value
-    // @ts-ignore
-
-    return this[TRACKER][prop] = value;
-  });
-  createHiddenProperty(proxy, 'runFn', function () {
-    const args = Array.prototype.slice.call(arguments); // eslint-disable-line
-
-    const fn = this[TRACKER][args[0]];
-    const rest = args.slice(1);
-    if (typeof fn === 'function') return fn.apply(this, rest);
-  });
-  createHiddenProperty(proxy, 'unlink', function () {
-    return this.runFn('unlink');
-  });
-  createHiddenProperty(proxy, 'createChild', function () {
-    const args = Array.prototype.slice.call(arguments); // eslint-disable-line
-
-    const target = args[0] || {};
-    const config = args[1] || {};
-    return createTracker(target, {
-      useRevoke,
-      useScope,
-      rootPath,
-      ...config
-    }, trackerNode);
-  });
-  createHiddenProperty(proxy, 'revoke', function () {
-    const useRevoke = this.getProp('useRevoke');
-    if (useRevoke) revoke();
-  });
-  createHiddenProperty(proxy, TRACKER, tracker);
-  return proxy;
-}
-
-let count$2 = 0;
-
-class TrackerNode {
-  constructor({
-    parent,
-    isSibling,
-    base,
-    useRevoke,
-    useScope,
-    useProxy,
-    rootPath
-  }) {
-    this.base = base;
-    this.useRevoke = useRevoke;
-    this.useScope = useScope;
-    this.useProxy = useProxy;
-    this.rootPath = rootPath || [];
-    this.children = [];
-    this.parent = parent;
-    this.prevSibling = null;
-    this.nextSibling = null;
-    this.proxy = null;
-    this.id = `__TrackerNode_${count$2++}__`; // eslint-disable-line
-
-    this.isRevoked = false;
-    this.inScope = false;
-    this.updateParent();
-
-    if (isSibling) {
-      this.initPrevSibling();
-    }
-
-    if (this.base) {
-      this.enterTrackerScope();
-    }
-  }
-
-  updateParent() {
-    if (this.parent) {
-      this.parent.children.push(this);
-    }
-  }
-
-  enterTrackerScope() {
-    this.enterContext();
-    const fn = this.useProxy ? createTracker : createES5Tracker;
-    this.proxy = fn(this.base, {
-      useRevoke: this.useRevoke,
-      useScope: this.useScope,
-      rootPath: this.rootPath
-    }, this);
-  }
-
-  enterContext() {
-    context$1.trackerNode = this;
-    this.inScope = true;
-  }
-
-  leaveContext() {
-    if (this.inScope) {
-      this.inScope = false;
-      context$1.trackerNode = null;
-    }
-
-    if (this.parent && this.parent.inScope) {
-      context$1.trackerNode = this.parent;
-    }
-  }
-
-  initPrevSibling() {
-    if (this.parent) {
-      const childNodes = this.parent.children;
-      const lastChild = childNodes[childNodes.length - 1];
-      this.prevSibling = lastChild;
-
-      if (lastChild) {
-        lastChild.nextSibling = this;
-      }
-    }
-  }
-
-  destroy() {
-    if (this.parent) {
-      const index = this.parent.children.indexOf(this);
-      this.parent.children.splice(index, 1);
-    }
-
-    const prev = this.prevSibling;
-    const next = this.nextSibling;
-
-    if (prev) {
-      if (next) prev.nextSibling = next;else prev.nextSibling = null;
-    }
-
-    if (next) {
-      if (prev) next.prevSibling = prev;else next.prevSibling = null;
-    }
-  }
-
-  contains(childNode) {
-    if (childNode === this) return true;
-    if (!childNode) return false;
-    const parent = childNode.parent;
-    if (!parent) return false;
-    if (parent === this) return true;
-    return this.contains(parent);
-  }
-
-  revokeLastChild() {
-    if (this.children.length) {
-      this.children[this.children.length - 1].revoke();
-    }
-  }
-  /**
-   *
-   * @param {null | TrackerNode} parent, null value means revoke until to top most.
-   */
-
-
-  revokeUntil(parent) {
-    if (parent === this) return true;
-
-    if (parent) {
-      if (parent.isRevoked) throw new Error('Assign a `revoked` parent is forbidden');
-    }
-
-    if (this.parent) {
-      // if (!parent) throw new Error('parent should exist')
-      // the top most node, still can not find `parent` node
-      // if (!this.parent) throw new Error('`parent` is not a valid `TrackerNode`')
-      if (this.parent) {
-        return this.parent.revokeUntil(parent);
-      }
-    }
-
-    return this.revokeSelf();
-  }
-
-  revokeSelf() {
-    if (this.children.length) {
-      this.children.forEach(child => {
-        if (!child.isRevoked) child.revokeSelf();
-      });
-    }
-
-    if (!this.isRevoked) {
-      var _this$proxy;
-
-      (_this$proxy = this.proxy) === null || _this$proxy === void 0 ? void 0 : _this$proxy.revoke();
-      this.isRevoked = true;
-    }
-
-    return true;
-  }
-  /**
-   * return context handler to parent node.
-   */
-
-
-  revoke() {
-    if (this.parent) {
-      var _this$proxy2;
-
-      (_this$proxy2 = this.proxy) === null || _this$proxy2 === void 0 ? void 0 : _this$proxy2.revoke();
-      context$1.trackerNode = this.parent;
-    }
-  }
-
-  hydrate(base, config = {}) {
-    this.base = base || this.base;
-    const keys = Object.keys(config || {}); // Object.keys always return 'string[]', So it need to
-    // convert explicitly
-    // https://stackoverflow.com/a/52856805/2006805
-
-    keys.forEach(key => {
-      // @ts-ignore
-      this[key] = config[key];
-    });
-    this.enterTrackerScope();
-  }
-
-}
-
-/**
- * resolve `reactivePaths`, and wrap `autoRunFunc`
- * @param {*} param0
- */
-
-const Tracker = ({
-  base,
-  parent,
-  useProxy = true,
-  useRevoke = false,
-  useScope = true,
-  rootPath = []
-}) => {
-  // const assertAccessibility = (useScope: boolean, useRevoke: boolean) => {
-  //   invariant(
-  //     useRevoke !== useScope,
-  //     '`useRevoke` or `useScope` should not be equal; and one must be true. ' +
-  //       'If you do not have any idea, please leave to use default value.'
-  //   );
-  // };
-  // assertAccessibility(useScope, useRevoke);
-  const verifiedUseProxy = canIUseProxy() && useProxy;
-  const parentTrackerNode = typeof parent !== 'undefined' ? parent : context$1.trackerNode;
-  let isSibling = false; // re-create a top most node
-
-  if (!parentTrackerNode) {
-    // start another top level branch...like
-    // { a: { b: 1 }} => { a: { b: 1 }, c: {d: 2 }}
-    if (context$1.trackerNode && useRevoke) {
-      context$1.trackerNode.revokeUntil();
-    }
-  } else {
-    if (parentTrackerNode === context$1.trackerNode) {
-      // Add a child, for sibling, intersection access is forbidden.
-      if (useRevoke) {
-        parentTrackerNode.revokeLastChild();
-      }
-    } else if (useRevoke && context$1.trackerNode) {
-      // Add a parentTrackerNode's sibling, so `revokeUntil` is required.
-      context$1.trackerNode.revokeUntil(parentTrackerNode);
-    }
-
-    if (context$1.trackerNode && parentTrackerNode === context$1.trackerNode.parent) {
-      isSibling = true;
-    }
-  }
-
-  return new TrackerNode({
-    parent: parentTrackerNode,
-    isSibling,
-    base,
-    useRevoke,
-    useScope,
-    useProxy: verifiedUseProxy,
-    rootPath
-  });
-};
-
 class Patcher {
   constructor({
     paths,
@@ -1947,22 +1013,13 @@ class Patcher {
 
 }
 
-let count$3 = 0;
+let count = 0;
 
 const Helper = ({
   addListener
 }) => {
   addListener();
   return null;
-};
-const unMountMap = {};
-
-const diff = (componentName, patcher, proxy) => {
-  const key1 = Object.keys(unMountMap);
-
-  if (key1.indexOf(componentName) !== -1) {
-    infoLog('invalid re-render', componentName, patcher, proxy);
-  }
 };
 
 var observe = (WrappedComponent => {
@@ -1971,35 +1028,29 @@ var observe = (WrappedComponent => {
 
     const [_, setState] = useState(0); // eslint-disable-line
 
-    const storeName = useRef();
-    const isHydrated = useRef(false);
-    const isInit = useRef(true);
     const patcherUpdated = useRef(0);
+    const isMounted = useRef(false);
+    useEffect(() => {
+      isMounted.current = true;
+    });
     const {
       application,
       useProxy,
       useScope,
       namespace,
       patcher: parentPatcher,
-      trackerNode: parentTrackerNode,
       useRelinkMode,
       ...rest
     } = useContext(context);
-    const incrementCount = useRef(count$3++); // eslint-disable-line
+    const incrementCount = useRef(count++); // eslint-disable-line
 
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
     const patcher = useRef();
-    const trackerNode = useRef(null);
     shadowState.current += 1;
 
     const autoRunFn = () => {
-      setState(state => state + 1);
-      diff(componentName, patcher.current, trackerNode.current);
+      if (isMounted.current) setState(state => state + 1);
     };
-
-    useEffect(() => {
-      return;
-    });
 
     if (!patcher.current) {
       patcher.current = new Patcher({
@@ -2014,115 +1065,44 @@ var observe = (WrappedComponent => {
       });
     }
 
-    if (!trackerNode.current) {
-      // `base` should has a default value value `{}`, or it will cause error.
-      // Detail refer to https://github.com/ryuever/relinx/issues/6
-      trackerNode.current = Tracker({
-        base: {},
-        useProxy,
-        useRevoke: false,
-        useScope,
-        parent: parentTrackerNode,
-        rootPath: []
-      });
-    }
-
-    if (trackerNode.current) {
-      trackerNode.current.enterContext();
-    } // destroy `patcher` when component un-mount.
-
-
+    application === null || application === void 0 ? void 0 : application.proxyState.enter(componentName);
     useEffect(() => () => {
       if (patcher.current) patcher.current.destroyPatcher();
-      unMountMap[componentName] = patcher.current;
     }, [] // eslint-disable-line
     );
-    const getData = useCallback(() => ({
-      trackerNode: trackerNode.current || null
-    }), []); // onUpdate, `relink` relative paths value....
-
-    if (trackerNode.current.proxy) {
-      const proxy = trackerNode.current.proxy; // 为什么如果进行remove的话，`propProperties`已经将旧key删除了呢。。。
-
-      const propProperties = proxy.getProp('propProperties');
-      propProperties.forEach(prop => {
-        try {
-          const {
-            source
-          } = prop;
-          const rootPath = source === null || source === void 0 ? void 0 : source.getProp('rootPath');
-          const storeName = rootPath[0];
-          const currentBase = application === null || application === void 0 ? void 0 : application.getStoreData(storeName);
-          source === null || source === void 0 ? void 0 : source.runFn('relinkBase', currentBase);
-        } catch (err) {
-          infoLog('[observe rebase propProperties]', err);
-        }
-      });
-
-      if (useRelinkMode) {
-        if (storeName.current) {
-          const base = application === null || application === void 0 ? void 0 : application.getStoreData(storeName.current);
-          proxy.runFn('rebase', base);
-        }
-      }
-
-      trackerNode.current.proxy.runFn('cleanup');
-    } // only run one time
-
-
-    const attachStoreName = useCallback(name => {
-      if (useRelinkMode) {
-        if (name && !isHydrated.current) {
-          var _trackerNode$current;
-
-          storeName.current = name;
-          const initialState = application === null || application === void 0 ? void 0 : application.getStoreData(storeName.current);
-          (_trackerNode$current = trackerNode.current) === null || _trackerNode$current === void 0 ? void 0 : _trackerNode$current.hydrate(initialState, {
-            rootPath: [storeName.current]
-          });
-          isHydrated.current = true;
-        }
-      } else {
-        var _trackerNode$current2;
-
-        storeName.current = name;
-        const initialState = application === null || application === void 0 ? void 0 : application.getStoreData(storeName.current);
-        (_trackerNode$current2 = trackerNode.current) === null || _trackerNode$current2 === void 0 ? void 0 : _trackerNode$current2.hydrate(initialState, {
-          rootPath: [storeName.current]
-        });
-        isHydrated.current = true;
-      }
-    }, []); // eslint-disable-line
-
     const addListener = useCallback(() => {
-      var _patcher$current, _trackerNode$current3, _patcher$current2;
+      var _patcher$current, _patcher$current2;
 
       (_patcher$current = patcher.current) === null || _patcher$current === void 0 ? void 0 : _patcher$current.appendTo(parentPatcher); // maybe not needs
+      // const paths = []
+      // const start = Date.now();
+      // const paths2 = application?.proxyState
+      //   .getContext()
+      //   .getCurrent()
+      //   .getRemarkable();
+      // const end = Date.now();
+      // console.log('diff ', componentName, end - start, paths2);
+      // @ts-ignore
 
-      if (!((_trackerNode$current3 = trackerNode.current) === null || _trackerNode$current3 === void 0 ? void 0 : _trackerNode$current3.proxy)) {
-        if (trackerNode.current) trackerNode.current.leaveContext();
-        return;
-      }
+      const paths = application === null || application === void 0 ? void 0 : application.proxyState.getContext().getCurrent().getRemarkable(); // const end2 = Date.now();
+      // console.log('diff ', componentName, end2 - end, paths);
 
-      const paths = trackerNode.current.proxy.runFn('getRemarkableFullPaths');
       (_patcher$current2 = patcher.current) === null || _patcher$current2 === void 0 ? void 0 : _patcher$current2.update({
         paths
       });
       if (patcher.current) application === null || application === void 0 ? void 0 : application.addPatcher(patcher.current);
       patcherUpdated.current += 1;
-      trackerNode.current.leaveContext();
+      application === null || application === void 0 ? void 0 : application.proxyState.leave(componentName);
     }, []); // eslint-disable-line
 
     const contextValue = { ...rest,
-      getData,
       application,
       useProxy,
       useScope,
       namespace,
       useRelinkMode,
       patcher: patcher.current,
-      trackerNode: trackerNode.current || null,
-      attachStoreName
+      componentName: componentName
     };
     return React.createElement(context.Provider, {
       value: contextValue
@@ -2132,7 +1112,7 @@ var observe = (WrappedComponent => {
   }
 
   NextComponent.displayName = WrappedComponent.displayName || WrappedComponent.name || 'ObservedComponent';
-  return NextComponent; // return React.memo(props => <NextComponent {...props} />, () => true)
+  return React.memo(props => React.createElement(NextComponent, Object.assign({}, props)));
 });
 
 export { Provider, applyMiddleware, createStore, index as logger, observe, thunk, useDispatch, useGlobal, useNamespace, useRelinx };
