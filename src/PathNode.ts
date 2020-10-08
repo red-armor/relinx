@@ -22,30 +22,36 @@ class PathNode {
   }
 
   addPathNode(path: Array<string>, patcher: Patcher) {
-    const len = path.length;
-    path.reduce<PathNode>((node: PathNode, cur: string, index: number) => {
-      // path中前面的值都是为了让我们定位到最后的需要关心的位置
-      if (!node.children[cur]) node.children[cur] = new PathNode(cur, node);
-      // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
-      if (index === len - 1) {
-        const childNode = node.children[cur];
-        if (DEBUG) {
-          infoLog('[PathNode add patcher]', childNode, patcher);
-        }
-        childNode.patchers.push(patcher);
-        patcher.addRemover(() => {
-          const index = childNode.patchers.indexOf(patcher);
-
+    try {
+      const len = path.length;
+      path.reduce<PathNode>((node: PathNode, cur: string, index: number) => {
+        // path中前面的值都是为了让我们定位到最后的需要关心的位置
+        if (!node.children[cur]) node.children[cur] = new PathNode(cur, node);
+        // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
+        if (index === len - 1) {
+          const childNode = node.children[cur];
           if (DEBUG) {
-            infoLog('[PathNode remove patcher]', patcher.id, childNode);
+            infoLog('[PathNode add patcher]', childNode, patcher);
           }
-          if (index !== -1) {
-            childNode.patchers.splice(index, 1);
+          if (childNode.patchers) {
+            childNode.patchers.push(patcher);
+            patcher.addRemover(() => {
+              const index = childNode.patchers.indexOf(patcher);
+
+              if (DEBUG) {
+                infoLog('[PathNode remove patcher]', patcher.id, childNode);
+              }
+              if (index !== -1) {
+                childNode.patchers.splice(index, 1);
+              }
+            });
           }
-        });
-      }
-      return node.children[cur];
-    }, this);
+        }
+        return node.children[cur];
+      }, this);
+    } catch (err) {
+      // console.log('err ', err)
+    }
   }
 
   destroyPathNode() {

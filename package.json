@@ -17,6 +17,8 @@
     "lint": "tsdx lint --fix src --ignore-pattern **/__test__/*.js",
     "prepare": "tsdx build",
     "examples:basic": "DIR=basic EXT=js webpack-dev-server",
+    "examples:bench": "DIR=bench EXT=js webpack-dev-server",
+    "examples:bench2": "DIR=bench2 EXT=js webpack-dev-server",
     "examples:basic-inject": "DIR=basic-inject EXT=js webpack-dev-server",
     "examples:memo": "DIR=memo EXT=js webpack-dev-server",
     "examples:nest-update": "DIR=nest-update EXT=js webpack-dev-server",
@@ -81,6 +83,7 @@
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "invariant": "^2.2.4",
+    "state-tracker": "^0.2.0",
     "ts-jest": "^25.2.0"
   }
 }

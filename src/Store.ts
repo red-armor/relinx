@@ -151,7 +151,6 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   injectModel(key: MODEL_KEY, model: any, initialValue: any = {}) {
     const { state, reducers = {}, effects = {} } = model;
-
     // consume all the pending actions.
     let base = this._application?.getStoreData(key) || {
       ...state,
@@ -192,6 +191,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
     this._state[key] = base;
     this._pendingActions = nextPendingActions;
+
     this._application?.updateBase({
       storeKey: key,
       changedValue: base,
