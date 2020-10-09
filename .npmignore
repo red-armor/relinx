@@ -173,3 +173,7 @@ Makefile
 ############################
 # By Project
 ############################
+coverage
+jest.config.js
+__test__
+jest.setup.js

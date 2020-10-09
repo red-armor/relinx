@@ -107,3 +107,4 @@ __pycache__/
 *$py.class
 .picasso
 dist
+vscode
