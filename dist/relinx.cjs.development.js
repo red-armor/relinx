@@ -343,11 +343,16 @@ function Provider({
   useScope = true
 }) {
   const namespaceRef = React.useRef(namespace || generateNamespaceKey());
-  const application = React.useRef(new Application({
-    base: store.getState(),
-    namespace: namespaceRef.current,
-    strictMode
-  }));
+  const application = React.useRef();
+
+  if (!application.current) {
+    application.current = new Application({
+      base: store.getState(),
+      namespace: namespaceRef.current,
+      strictMode
+    });
+  }
+
   store.bindApplication(application.current);
   const dispatch = store.dispatch;
   const contextValue = React.useRef({ ...defaultValue,
