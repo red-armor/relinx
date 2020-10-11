@@ -83,7 +83,7 @@
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "invariant": "^2.2.4",
-    "state-tracker": "^0.2.4",
+    "state-tracker": "^0.3.0",
     "ts-jest": "^25.2.0"
   }
 }
