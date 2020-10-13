@@ -73,22 +73,12 @@ export default (WrappedComponent: FC<any>) => {
 
     const addListener = useCallback(() => {
       patcher.current?.appendTo(parentPatcher); // maybe not needs
-      // const paths = []
-      // const start = Date.now();
-      // const paths2 = application?.proxyState
-      //   .getContext()
-      //   .getCurrent()
-      //   .getRemarkable();
-      // const end = Date.now();
-      // console.log('diff ', componentName, end - start, paths2);
 
       // @ts-ignore
       const paths = application?.proxyState
         .getContext()
         .getCurrent()
         .getRemarkable();
-      // const end2 = Date.now();
-      // console.log('diff ', componentName, end2 - end, paths);
 
       patcher.current?.update({ paths });
       if (patcher.current) application?.addPatcher(patcher.current);

@@ -39,16 +39,12 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   update(values: Array<ChangedValueGroup<K>>) {
     this.pendingPatchers = [];
 
-    // console.log('this node ', this.node)
-
     try {
       values.forEach(value => this.treeShake(value));
       values.forEach(value => this.updateBase(value));
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
-
-    // console.log('change value ', values, this.pendingPatchers.slice())
 
     this.pendingPatchers.forEach(({ patcher }) => {
       patcher.triggerAutoRun();
@@ -67,7 +63,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   }
 
   addPatchers(patchers: Array<Patcher>) {
-    // console.log('patchers ', patchers.slice())
     if (patchers.length) {
       patchers.forEach(patcher => {
         this.pendingPatchers.push({ patcher });
@@ -112,7 +107,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         if (isTypeEqual(oldValue, newValue)) {
           if (isPrimitive(newValue)) {
             if (oldValue !== newValue) {
-              // console.log('add patcher ', oldValue, newValue, key)
               this.addPatchers(branch.children[key].patchers);
             }
           }
