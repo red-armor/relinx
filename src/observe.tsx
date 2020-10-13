@@ -80,10 +80,10 @@ export default (WrappedComponent: FC<any>) => {
         .getCurrent()
         .getRemarkable();
 
-      patcher.current?.update({ paths });
+      patcher.current?.update({ paths: paths! });
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;
-      application?.proxyState.leave(componentName);
+      application?.proxyState.leave();
     }, []); // eslint-disable-line
 
     const contextValue = {

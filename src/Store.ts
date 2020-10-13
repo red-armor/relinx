@@ -4,12 +4,15 @@ import {
   InternalDispatch,
   Subscription,
   BasicModelType,
+  AutoRunSubscriptions,
   ChangedValueGroup,
   CreateStoreOnlyModels,
   ExtractStateTypeOnlyModels,
   ExtractEffectsTypeOnlyModels,
   ExtractReducersTypeOnlyModels,
+  PendingAutoRunInitialization,
 } from './types';
+import autoRun from './autoRun';
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null;
@@ -18,6 +21,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _state: ExtractStateTypeOnlyModels<T>;
   private _reducers: ExtractReducersTypeOnlyModels<T>;
   private _effects: ExtractEffectsTypeOnlyModels<T>;
+  private _pendingAutoRunInitializations: Array<PendingAutoRunInitialization>;
   private _pendingActions: Array<Action>;
   public initialState: any;
   public subscriptions: {
@@ -37,6 +41,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     this._reducers = {} as ExtractReducersTypeOnlyModels<T>;
     this._effects = {} as ExtractEffectsTypeOnlyModels<T>;
     this._pendingActions = [];
+    this._pendingAutoRunInitializations = [];
 
     const keys = Object.keys(models) as Array<MODEL_KEY>;
 
@@ -131,6 +136,17 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   bindApplication(application: Application<T, MODEL_KEY>) {
     this._application = application;
+    this.runPendingAutoRunInitialization();
+  }
+
+  runPendingAutoRunInitialization() {
+    if (this._pendingAutoRunInitializations.length) {
+      this._pendingAutoRunInitializations.forEach(initialization => {
+        const { autoRunFn } = initialization;
+        autoRun(autoRunFn, this._application!);
+      });
+      this._pendingAutoRunInitializations = [];
+    }
   }
 
   decorateDispatch(chainedMiddleware: Function) {
@@ -151,6 +167,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   injectModel(key: MODEL_KEY, model: any, initialValue: any = {}) {
     const { state, reducers = {}, effects = {} } = model;
+    const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
     // consume all the pending actions.
     let base = this._application?.getStoreData(key) || {
       ...state,
@@ -187,6 +204,21 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       }
 
       return storeKey !== key;
+    });
+
+    const subscriptionsKeys = Object.keys(subscriptions);
+    subscriptionsKeys.forEach(autoRunKey => {
+      const autoRunFn = subscriptions[autoRunKey];
+
+      if (!this._application) {
+        this._pendingAutoRunInitializations.push({
+          modelKey: key as string,
+          autoRunKey,
+          autoRunFn,
+        });
+      } else {
+        autoRun<T, MODEL_KEY>(autoRunFn, this._application);
+      }
     });
 
     this._state[key] = base;

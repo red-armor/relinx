@@ -1,5 +1,6 @@
 import infoLog from './utils/infoLog';
 import Patcher from './Patcher';
+import AutoRunner from './AutoRunner';
 
 const DEBUG = false;
 
@@ -20,6 +21,14 @@ class PathNode {
     this.children = {};
     this.patchers = [];
   }
+
+  addPatcher() {}
+
+  destroyPatcher() {}
+
+  addAutoRunner(path: Array<string>, autoRunner: AutoRunner) {}
+
+  destroyAutoRunner() {}
 
   addPathNode(path: Array<string>, patcher: Patcher) {
     try {

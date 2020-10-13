@@ -57,4 +57,10 @@ export default () => ({
       }])
     },
   },
+  subscriptions: {
+    setup({ state }) {
+      const { bottomBar } = state
+      console.log('bottom bar ', bottomBar.count)
+    }
+  }
 })

@@ -135,6 +135,10 @@ export type ExtractEffectsTypeOnlyModels<Models> = {
   [key in keyof Models]: ExtractKey<Models[key], 'effects'>;
 };
 
+export type ExtractSubscriptionsTypeOnlyModels<Models> = {
+  [key in keyof Models]: ExtractKey<Models[key], 'subscriptions'>;
+};
+
 export type GenericState<T, K extends keyof T> = {
   [key in keyof T]: T[K];
 };

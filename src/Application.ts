@@ -9,7 +9,8 @@ import {
   ChangedValueGroup,
 } from './types';
 import Patcher from './Patcher';
-import produce from 'state-tracker';
+import produce, { ProxyState } from 'state-tracker';
+import AutoRunner from './AutoRunner';
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
   public base: GenericState<T, K>;
@@ -17,7 +18,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public pendingPatchers: Array<PendingPatcher>;
   public namespace: string;
   public strictMode: boolean;
-  public proxyState: any;
+  public proxyState: ProxyState;
 
   constructor({
     base,
@@ -59,7 +60,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     changedValue: object;
   }) {
     const origin = this.base[storeKey] || ({} as any);
-    this.proxyState.relink([storeKey], { ...origin, ...changedValue });
+    this.proxyState.relink([storeKey as string], {
+      ...origin,
+      ...changedValue,
+    });
   }
 
   addPatchers(patchers: Array<Patcher>) {
@@ -132,6 +136,13 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
     paths.forEach(fullPath => {
       this.node.addPathNode(fullPath, patcher);
+    });
+  }
+
+  addAutoRunner(autoRunner: AutoRunner) {
+    const paths = autoRunner.paths;
+    paths.forEach(fullPath => {
+      this.node.addAutoRunner(fullPath, autoRunner);
     });
   }
 
