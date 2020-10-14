@@ -43,7 +43,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.proxyState = produce(this.base);
   }
 
-  processAutoRunner(values: Array<ChangedValueGroup<K>>): Array<Action> {
+  processAutoRunner(values: Array<ChangedValueGroup<K>>) {
     this.pendingAutoRunners = [];
 
     try {
@@ -51,14 +51,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     } catch (err) {
       infoLog('[Application] processAutoRunner issue ', err);
     }
-
-    let actions = [] as Array<Action>;
-
-    this.pendingAutoRunners.forEach(({ autoRunner }) => {
-      actions = actions.concat(autoRunner.triggerAutoRun());
-    });
-
-    return actions;
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
@@ -76,12 +68,16 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
     this.pendingPatchers = [];
+    this.pendingAutoRunners = [];
     let actions = [] as Array<Action>;
 
     try {
       values.forEach(value => this.treeShake(value));
-      actions = this.processAutoRunner(values);
+      this.processAutoRunner(values);
       values.forEach(value => this.updateBase(value));
+      this.pendingAutoRunners.forEach(({ autoRunner }) => {
+        actions = actions.concat(autoRunner.triggerAutoRun());
+      });
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }

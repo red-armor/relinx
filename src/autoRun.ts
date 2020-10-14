@@ -12,15 +12,14 @@ const autoRun = <T, K extends keyof T>(
 
   state.enter();
   fn({ state });
-  const autoRunFn = () => {
-    fn({ state });
-  };
   const tracker = state.getContext().getCurrent();
   const paths = tracker.getRemarkable();
 
   const autoRunner = new AutoRunner({
     paths,
-    autoRunFn,
+    autoRunFn: () => {
+      return fn({ state });
+    },
   });
 
   application.addAutoRunner(autoRunner);

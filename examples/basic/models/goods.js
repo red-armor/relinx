@@ -1,6 +1,7 @@
 export default () => ({
   state: {
     listData: [],
+    bottomBarUpdateCount: 0,
   },
   reducers: {
     addGoods(state, { goodsList }) {
@@ -38,6 +39,7 @@ export default () => ({
         listData: next,
       }
     },
+    setProps: (_, payload) => ({ ...payload })
   },
   effects: {
     increment: ({ id, index }) => dispatch => {
@@ -60,7 +62,12 @@ export default () => ({
   subscriptions: {
     setup({ state }) {
       const { bottomBar } = state
-      console.log('bottom bar ', bottomBar.count)
+      return {
+        type: 'goods/setProps',
+        payload: {
+          bottomBarUpdateCount: bottomBar.count,
+        }
+      }
     }
   }
 })
