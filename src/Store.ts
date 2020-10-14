@@ -67,36 +67,41 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return this._effects;
   }
 
+  resolveActions(actions: Array<Action>) {
+    return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
+      (changedValueGroup, action) => {
+        if (!this._application) return [];
+        const { type, payload } = action;
+        const [storeKey, actionType] = type.split('/') as [
+          MODEL_KEY,
+          keyof ExtractReducersTypeOnlyModels<T>
+        ];
+        const usedReducer = this._reducers[storeKey];
+
+        // If usedReducer is null, Maybe you have dispatched an unregistered action.
+        // On this condition, put these actions to `this._pendingActions`
+        if (!usedReducer) {
+          this._pendingActions.push(action);
+        } else if (usedReducer[actionType]) {
+          const currentState = this._application.base[storeKey];
+          const changedValue = usedReducer[actionType](currentState, payload);
+          changedValueGroup.push({
+            storeKey,
+            changedValue,
+          });
+        } else {
+          console.warn(`Do not have action '${actionType}'`);
+        }
+
+        return changedValueGroup;
+      },
+      []
+    );
+  }
+
   setValue(actions: Array<Action>) {
     const nextActions = ([] as Array<Action>).concat(actions);
-    const changedValues = nextActions.reduce<
-      Array<ChangedValueGroup<MODEL_KEY>>
-    >((changedValueGroup, action) => {
-      if (!this._application) return [];
-      const { type, payload } = action;
-      const [storeKey, actionType] = type.split('/') as [
-        MODEL_KEY,
-        keyof ExtractReducersTypeOnlyModels<T>
-      ];
-      const usedReducer = this._reducers[storeKey];
-
-      // If usedReducer is null, Maybe you have dispatched an unregistered action.
-      // On this condition, put these actions to `this._pendingActions`
-      if (!usedReducer) {
-        this._pendingActions.push(action);
-      } else if (usedReducer[actionType]) {
-        const currentState = this._application.base[storeKey];
-        const changedValue = usedReducer[actionType](currentState, payload);
-        changedValueGroup.push({
-          storeKey,
-          changedValue,
-        });
-      } else {
-        console.warn(`Do not have action '${actionType}'`);
-      }
-
-      return changedValueGroup;
-    }, []);
+    const changedValues = this.resolveActions(nextActions);
 
     if (changedValues.length) {
       const toObject = changedValues.reduce<
@@ -121,7 +126,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         ...toObject,
       } as ExtractStateTypeOnlyModels<T>;
 
-      this._application?.update(changedValues);
+      const derivedActions =
+        this._application?.updateDryRun(changedValues) || [];
+      const derivedChangedValue = this.resolveActions(derivedActions!);
+      this._application?.update(derivedChangedValue);
 
       for (let key in this.subscriptions) {
         const subscription = this.subscriptions[key];
