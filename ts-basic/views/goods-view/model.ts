@@ -4,6 +4,7 @@ import { GetState, Dispatch} from '../../../src/types'
 export default () => ({
   state: {
     listData: [],
+    bottomBarUpdateCount: 0,
   },
   reducers: {
     addGoods(state, { goodsList }) {
@@ -62,4 +63,15 @@ export default () => ({
       }])
     },
   },
+  subscriptions: {
+    setup({ state }) {
+      const { bottomBar } = state
+      return {
+        type: 'goods/setProps',
+        payload: {
+          bottomBarUpdateCount: bottomBar.count,
+        }
+      }
+    }
+  }
 })

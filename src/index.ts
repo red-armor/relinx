@@ -21,3 +21,5 @@ export {
   logger,
   observe,
 };
+
+export * from './types';

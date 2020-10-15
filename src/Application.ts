@@ -20,6 +20,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public autoRunnerNode: PathNode;
   public pendingPatchers: Array<PendingPatcher>;
   public pendingAutoRunners: Array<PendingAutoRunner>;
+  public pendingCleaner: Array<Function>;
   public namespace: string;
   public strictMode: boolean;
   public proxyState: ProxyState;
@@ -38,6 +39,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.autoRunnerNode = new PathNode();
     this.pendingPatchers = [];
     this.pendingAutoRunners = [];
+    this.pendingCleaner = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
     this.proxyState = produce(this.base);
@@ -64,11 +66,15 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingPatchers.forEach(({ patcher }) => {
       patcher.triggerAutoRun();
     });
+    this.pendingPatchers = [];
+
+    this.pendingAutoRunners = [];
+
+    this.pendingCleaner.forEach(clean => clean());
+    this.pendingCleaner = [];
   }
 
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
-    this.pendingPatchers = [];
-    this.pendingAutoRunners = [];
     let actions = [] as Array<Action>;
 
     try {
@@ -113,7 +119,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   addAutoRunners(autoRunners: Array<AutoRunner>) {
     if (autoRunners.length) {
       autoRunners.forEach(autoRunner => {
-        this.pendingAutoRunners.push({ autoRunner });
+        if (!autoRunner.isDirty()) {
+          this.pendingAutoRunners.push({ autoRunner });
+          this.pendingCleaner.push(autoRunner.markClean.bind(autoRunner));
+        }
       });
       autoRunners.forEach(autoRunner => {
         autoRunner.markDirty();

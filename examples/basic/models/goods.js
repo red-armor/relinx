@@ -2,6 +2,7 @@ export default () => ({
   state: {
     listData: [],
     bottomBarUpdateCount: 0,
+    listLength: 0,
   },
   reducers: {
     addGoods(state, { goodsList }) {
@@ -61,13 +62,19 @@ export default () => ({
   },
   subscriptions: {
     setup({ state }) {
-      const { bottomBar } = state
-      return {
+      const { bottomBar, goods } = state
+
+      return [{
         type: 'goods/setProps',
         payload: {
           bottomBarUpdateCount: bottomBar.count,
         }
-      }
+      }, {
+        type: 'goods/setProps',
+        payload: {
+          listLength: goods.listData.length,
+        }
+      }]
     }
   }
 })

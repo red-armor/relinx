@@ -104,40 +104,53 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     const changedValues = this.resolveActions(nextActions);
 
     if (changedValues.length) {
-      const toObject = changedValues.reduce<
-        {
-          [key in MODEL_KEY]: object;
-        }
-      >(
-        (acc, cur) => {
-          const { storeKey, changedValue } = cur;
-          acc[storeKey] = changedValue;
-          return acc;
-        },
-        {} as {
-          [key in MODEL_KEY]: object;
-        }
-      );
-      const oldState = {
-        ...this._application?.base,
-      } as ExtractStateTypeOnlyModels<T>;
-      const newState = {
-        ...this._application?.base,
-        ...toObject,
-      } as ExtractStateTypeOnlyModels<T>;
-
+      // updateDryRun do two things
+      // 1. resolve pendingPatchers
+      // 2. assign application.base with new value.
+      // Note: on this step, pendingPatchers do not execute
       const derivedActions =
         this._application?.updateDryRun(changedValues) || [];
+      // model.subscriptions may cause new value update..
       const derivedChangedValue = this.resolveActions(derivedActions!);
       this._application?.update(derivedChangedValue);
 
-      for (let key in this.subscriptions) {
-        const subscription = this.subscriptions[key];
-        subscription({
-          oldState,
-          newState,
-          diff: toObject as Partial<ExtractStateTypeOnlyModels<T>>,
-        });
+      const storeSubscriptionsKeys = Object.keys(this.subscriptions);
+      const storeSubscriptionsKeysLength = storeSubscriptionsKeys.length;
+      // Only if there are store subscriptions. it requires to calculate old and new value..
+      if (storeSubscriptionsKeysLength) {
+        const toObject = changedValues.reduce<
+          {
+            [key in MODEL_KEY]: object;
+          }
+        >(
+          (acc, cur) => {
+            const { storeKey, changedValue } = cur;
+            acc[storeKey] = {
+              ...acc[storeKey],
+              ...changedValue,
+            };
+            return acc;
+          },
+          {} as {
+            [key in MODEL_KEY]: object;
+          }
+        );
+        const oldState = {
+          ...this._application?.base,
+        } as ExtractStateTypeOnlyModels<T>;
+        const newState = {
+          ...this._application?.base,
+          ...toObject,
+        } as ExtractStateTypeOnlyModels<T>;
+        for (let i = 0; i < storeSubscriptionsKeysLength; i++) {
+          const key = storeSubscriptionsKeys[i];
+          const subscription = this.subscriptions[key];
+          subscription({
+            oldState,
+            newState,
+            diff: toObject as Partial<ExtractStateTypeOnlyModels<T>>,
+          });
+        }
       }
     }
   }

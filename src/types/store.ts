@@ -11,8 +11,12 @@ export type Subscription<T> = ({
   diff: Partial<T>;
 }) => any;
 
+export type AutoRunSubscriptionProps = {
+  state: ProxyState;
+};
+
 export type AutoRunSubscription = {
-  ({ state }: { state: ProxyState }): Action | Array<Action>;
+  ({ state }: AutoRunSubscriptionProps): Action | Array<Action>;
 };
 
 export type AutoRunSubscriptions = {
