@@ -3,12 +3,13 @@ export interface Action {
     type: string;
     payload?: any;
 }
-export declare type ModelKey = 'state' | 'reducers' | 'effects';
+export declare type ModelKey = 'state' | 'reducers' | 'effects' | 'subscriptions';
 export declare type BasicModelType<T> = {
     [key in keyof T]: {
         state: any;
         reducers?: any;
         effects?: any;
+        subscriptions?: any;
     };
 };
 export declare type CreateStoreFn<T extends BasicModelType<T>, K extends keyof T = keyof T> = (configs: {
@@ -45,6 +46,9 @@ export declare type ExtractReducersTypeOnlyModels<Models> = {
 };
 export declare type ExtractEffectsTypeOnlyModels<Models> = {
     [key in keyof Models]: ExtractKey<Models[key], 'effects'>;
+};
+export declare type ExtractSubscriptionsTypeOnlyModels<Models> = {
+    [key in keyof Models]: ExtractKey<Models[key], 'subscriptions'>;
 };
 export declare type GenericState<T, K extends keyof T> = {
     [key in keyof T]: T[K];

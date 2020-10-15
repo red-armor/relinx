@@ -37,6 +37,12 @@ function infoLog(...args) {
 }
 
 const DEBUG = false;
+var Field;
+
+(function (Field) {
+  Field["Patchers"] = "patchers";
+  Field["AutoRunners"] = "autoRunners";
+})(Field || (Field = {}));
 
 class PathNode {
   constructor(prop, parent) {
@@ -44,9 +50,30 @@ class PathNode {
     this.parent = parent;
     this.children = {};
     this.patchers = [];
+    this.autoRunners = [];
   }
 
-  addPathNode(path, patcher) {
+  addPatcher(path, patcher) {
+    this.addPathNode(path, patcher, Field.Patchers);
+  }
+
+  destroyPatcher() {}
+
+  addAutoRunner(path, autoRunner) {
+    this.addPathNode(path, autoRunner, Field.AutoRunners);
+  }
+
+  destroyAutoRunner() {}
+
+  getCollection(field) {
+    if (field === Field.Patchers) {
+      return this.patchers;
+    }
+
+    return this.autoRunners;
+  }
+
+  addPathNode(path, handler, field) {
     try {
       const len = path.length;
       path.reduce((node, cur, index) => {
@@ -57,20 +84,22 @@ class PathNode {
           const childNode = node.children[cur];
 
           if (DEBUG) {
-            infoLog('[PathNode add patcher]', childNode, patcher);
+            infoLog('[PathNode add handler]', childNode, handler);
           }
 
-          if (childNode.patchers) {
-            childNode.patchers.push(patcher);
-            patcher.addRemover(() => {
-              const index = childNode.patchers.indexOf(patcher);
+          const collection = childNode.getCollection(field);
+
+          if (collection) {
+            collection.push(handler);
+            handler.addRemover(() => {
+              const index = collection.indexOf(handler);
 
               if (DEBUG) {
-                infoLog('[PathNode remove patcher]', patcher.id, childNode);
+                infoLog('[PathNode remove handler]', handler.id, childNode);
               }
 
               if (index !== -1) {
-                childNode.patchers.splice(index, 1);
+                collection.splice(index, 1);
               }
             });
           }
@@ -188,28 +217,61 @@ class Application {
   }) {
     this.base = base;
     this.node = new PathNode();
+    this.autoRunnerNode = new PathNode();
     this.pendingPatchers = [];
+    this.pendingAutoRunners = [];
+    this.pendingCleaner = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
     this.proxyState = produce(this.base);
   }
 
-  update(values) {
-    this.pendingPatchers = []; // console.log('this node ', this.node)
+  processAutoRunner(values) {
+    this.pendingAutoRunners = [];
 
+    try {
+      values.forEach(value => this.treeShakeAutoRunner(value));
+    } catch (err) {
+      infoLog('[Application] processAutoRunner issue ', err);
+    }
+  }
+
+  update(values) {
     try {
       values.forEach(value => this.treeShake(value));
       values.forEach(value => this.updateBase(value));
     } catch (err) {
       infoLog('[Application] update issue ', err);
-    } // console.log('change value ', values, this.pendingPatchers.slice())
-
+    }
 
     this.pendingPatchers.forEach(({
       patcher
     }) => {
       patcher.triggerAutoRun();
     });
+    this.pendingPatchers = [];
+    this.pendingAutoRunners = [];
+    this.pendingCleaner.forEach(clean => clean());
+    this.pendingCleaner = [];
+  }
+
+  updateDryRun(values) {
+    let actions = [];
+
+    try {
+      values.forEach(value => this.treeShake(value));
+      this.processAutoRunner(values);
+      values.forEach(value => this.updateBase(value));
+      this.pendingAutoRunners.forEach(({
+        autoRunner
+      }) => {
+        actions = actions.concat(autoRunner.triggerAutoRun());
+      });
+    } catch (err) {
+      infoLog('[Application] update issue ', err);
+    }
+
+    return actions;
   }
 
   updateBase({
@@ -223,7 +285,6 @@ class Application {
   }
 
   addPatchers(patchers) {
-    // console.log('patchers ', patchers.slice())
     if (patchers.length) {
       patchers.forEach(patcher => {
         this.pendingPatchers.push({
@@ -234,6 +295,65 @@ class Application {
         patcher.markDirty();
       });
     }
+  }
+
+  addAutoRunners(autoRunners) {
+    if (autoRunners.length) {
+      autoRunners.forEach(autoRunner => {
+        if (!autoRunner.isDirty()) {
+          this.pendingAutoRunners.push({
+            autoRunner
+          });
+          this.pendingCleaner.push(autoRunner.markClean.bind(autoRunner));
+        }
+      });
+      autoRunners.forEach(autoRunner => {
+        autoRunner.markDirty();
+      });
+    }
+  }
+
+  compare(branch, baseValue, nextValue, cb) {
+    const keysToCompare = Object.keys(branch.children);
+    keysToCompare.forEach(key => {
+      const oldValue = baseValue[key];
+      const newValue = nextValue[key];
+      if (shallowEqual(oldValue, newValue)) return;
+
+      if (isTypeEqual(oldValue, newValue)) {
+        if (isPrimitive(newValue)) {
+          if (oldValue !== newValue) {
+            cb(branch.children[key]); // this.addPatchers(branch.children[key].patchers);
+          }
+        }
+
+        if (isMutable(newValue)) {
+          const childBranch = branch.children[key];
+          this.compare(childBranch, oldValue, newValue, cb);
+          return;
+        }
+
+        return;
+      }
+
+      cb(branch.children[key]); // this.addPatchers(branch.children[key].patchers);
+    });
+  }
+
+  treeShakeAutoRunner({
+    storeKey,
+    changedValue
+  }) {
+    const branch = this.autoRunnerNode.children[storeKey];
+    const baseValue = this.base[storeKey];
+    const nextValue = { ...baseValue,
+      ...changedValue
+    }; // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
+
+    if (!branch) return;
+    this.compare(branch, baseValue, nextValue, pathNode => {
+      this.addAutoRunners(pathNode.autoRunners);
+    });
   }
   /**
    *
@@ -253,44 +373,22 @@ class Application {
     }; // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
 
     if (!branch) return;
-    const toDestroy = [];
-
-    const compare = (branch, baseValue, nextValue) => {
-      const keysToCompare = Object.keys(branch.children);
-      keysToCompare.forEach(key => {
-        const oldValue = baseValue[key];
-        const newValue = nextValue[key];
-        if (shallowEqual(oldValue, newValue)) return;
-
-        if (isTypeEqual(oldValue, newValue)) {
-          if (isPrimitive(newValue)) {
-            if (oldValue !== newValue) {
-              // console.log('add patcher ', oldValue, newValue, key)
-              this.addPatchers(branch.children[key].patchers);
-            }
-          }
-
-          if (isMutable(newValue)) {
-            const childBranch = branch.children[key];
-            compare(childBranch, oldValue, newValue);
-            return;
-          }
-
-          return;
-        }
-
-        this.addPatchers(branch.children[key].patchers);
-      });
-    };
-
-    compare(branch, baseValue, nextValue);
-    toDestroy.forEach(fn => fn());
+    this.compare(branch, baseValue, nextValue, pathNode => {
+      this.addPatchers(pathNode.patchers);
+    });
   }
 
   addPatcher(patcher) {
     const paths = patcher.paths;
     paths.forEach(fullPath => {
-      this.node.addPathNode(fullPath, patcher);
+      this.node.addPatcher(fullPath, patcher);
+    });
+  }
+
+  addAutoRunner(autoRunner) {
+    const paths = autoRunner.paths;
+    paths.forEach(fullPath => {
+      this.autoRunnerNode.addAutoRunner(fullPath, autoRunner);
     });
   }
 
@@ -397,6 +495,68 @@ function applyMiddleware(...middleware) {
   };
 }
 
+let count = 1;
+
+class AutoRunner {
+  constructor({
+    paths,
+    autoRunFn
+  }) {
+    this.id = `autoRunner_${count++}`;
+    this.paths = paths;
+    this.autoRunFn = autoRunFn;
+    this._isDirty = false;
+    this.removers = [];
+  }
+
+  addRemover(remover) {
+    this.removers.push(remover);
+  }
+
+  teardown() {
+    this.removers.forEach(remover => remover());
+    this.removers = [];
+  }
+
+  markDirty() {
+    this._isDirty = true;
+  }
+
+  markClean() {
+    this._isDirty = false;
+  }
+
+  isDirty() {
+    return this._isDirty;
+  }
+
+  triggerAutoRun() {
+    return this.autoRunFn() || [];
+  }
+
+}
+
+const autoRun = (fn, application) => {
+  !application ?  invariant(false, 'application is required to be initialized already !')  : void 0;
+  const state = application.proxyState;
+  state.enter();
+  fn({
+    state
+  });
+  const tracker = state.getContext().getCurrent();
+  const paths = tracker.getRemarkable();
+  const autoRunner = new AutoRunner({
+    paths,
+    autoRunFn: () => {
+      return fn({
+        state
+      });
+    }
+  });
+  application.addAutoRunner(autoRunner);
+  state.leave();
+};
+
 class Store {
   constructor(configs) {
     const models = configs.models;
@@ -405,6 +565,7 @@ class Store {
     this._reducers = {};
     this._effects = {};
     this._pendingActions = [];
+    this._pendingAutoRunInitializations = [];
     const keys = Object.keys(models);
     keys.forEach(key => {
       this.injectModel(key, models[key], initialValue[key]);
@@ -429,9 +590,8 @@ class Store {
     return this._effects;
   }
 
-  setValue(actions) {
-    const nextActions = [].concat(actions);
-    const changedValues = nextActions.reduce((changedValueGroup, action) => {
+  resolveActions(actions) {
+    return actions.reduce((changedValueGroup, action) => {
       if (!this._application) return [];
       const {
         type,
@@ -456,38 +616,74 @@ class Store {
 
       return changedValueGroup;
     }, []);
+  }
+
+  setValue(actions) {
+    const nextActions = [].concat(actions);
+    const changedValues = this.resolveActions(nextActions);
 
     if (changedValues.length) {
-      var _this$_application, _this$_application2, _this$_application3;
+      var _this$_application, _this$_application2;
 
-      const toObject = changedValues.reduce((acc, cur) => {
-        const {
-          storeKey,
-          changedValue
-        } = cur;
-        acc[storeKey] = changedValue;
-        return acc;
-      }, {});
-      const oldState = { ...((_this$_application = this._application) === null || _this$_application === void 0 ? void 0 : _this$_application.base)
-      };
-      const newState = { ...((_this$_application2 = this._application) === null || _this$_application2 === void 0 ? void 0 : _this$_application2.base),
-        ...toObject
-      };
-      (_this$_application3 = this._application) === null || _this$_application3 === void 0 ? void 0 : _this$_application3.update(changedValues);
+      // updateDryRun do two things
+      // 1. resolve pendingPatchers
+      // 2. assign application.base with new value.
+      // Note: on this step, pendingPatchers do not execute
+      const derivedActions = ((_this$_application = this._application) === null || _this$_application === void 0 ? void 0 : _this$_application.updateDryRun(changedValues)) || []; // model.subscriptions may cause new value update..
 
-      for (let key in this.subscriptions) {
-        const subscription = this.subscriptions[key];
-        subscription({
-          oldState,
-          newState,
-          diff: toObject
-        });
+      const derivedChangedValue = this.resolveActions(derivedActions);
+      (_this$_application2 = this._application) === null || _this$_application2 === void 0 ? void 0 : _this$_application2.update(derivedChangedValue);
+      const storeSubscriptionsKeys = Object.keys(this.subscriptions);
+      const storeSubscriptionsKeysLength = storeSubscriptionsKeys.length; // Only if there are store subscriptions. it requires to calculate old and new value..
+
+      if (storeSubscriptionsKeysLength) {
+        var _this$_application3, _this$_application4;
+
+        const toObject = changedValues.reduce((acc, cur) => {
+          const {
+            storeKey,
+            changedValue
+          } = cur;
+          acc[storeKey] = { ...acc[storeKey],
+            ...changedValue
+          };
+          return acc;
+        }, {});
+        const oldState = { ...((_this$_application3 = this._application) === null || _this$_application3 === void 0 ? void 0 : _this$_application3.base)
+        };
+        const newState = { ...((_this$_application4 = this._application) === null || _this$_application4 === void 0 ? void 0 : _this$_application4.base),
+          ...toObject
+        };
+
+        for (let i = 0; i < storeSubscriptionsKeysLength; i++) {
+          const key = storeSubscriptionsKeys[i];
+          const subscription = this.subscriptions[key];
+          subscription({
+            oldState,
+            newState,
+            diff: toObject
+          });
+        }
       }
     }
   }
 
   bindApplication(application) {
     this._application = application;
+    this.runPendingAutoRunInitialization();
+  }
+
+  runPendingAutoRunInitialization() {
+    if (this._pendingAutoRunInitializations.length) {
+      this._pendingAutoRunInitializations.forEach(initialization => {
+        const {
+          autoRunFn
+        } = initialization;
+        autoRun(autoRunFn, this._application);
+      });
+
+      this._pendingAutoRunInitializations = [];
+    }
   }
 
   decorateDispatch(chainedMiddleware) {
@@ -505,15 +701,16 @@ class Store {
   }
 
   injectModel(key, model, initialValue = {}) {
-    var _this$_application4, _this$_application5;
+    var _this$_application5, _this$_application6;
 
     const {
       state,
       reducers = {},
       effects = {}
-    } = model; // consume all the pending actions.
+    } = model;
+    const subscriptions = model.subscriptions || {}; // consume all the pending actions.
 
-    let base = ((_this$_application4 = this._application) === null || _this$_application4 === void 0 ? void 0 : _this$_application4.getStoreData(key)) || { ...state,
+    let base = ((_this$_application5 = this._application) === null || _this$_application5 === void 0 ? void 0 : _this$_application5.getStoreData(key)) || { ...state,
       ...initialValue
     };
 
@@ -546,9 +743,23 @@ class Store {
       return storeKey !== key;
     });
 
+    const subscriptionsKeys = Object.keys(subscriptions);
+    subscriptionsKeys.forEach(autoRunKey => {
+      const autoRunFn = subscriptions[autoRunKey];
+
+      if (!this._application) {
+        this._pendingAutoRunInitializations.push({
+          modelKey: key,
+          autoRunKey,
+          autoRunFn
+        });
+      } else {
+        autoRun(autoRunFn, this._application);
+      }
+    });
     this._state[key] = base;
     this._pendingActions = nextPendingActions;
-    (_this$_application5 = this._application) === null || _this$_application5 === void 0 ? void 0 : _this$_application5.updateBase({
+    (_this$_application6 = this._application) === null || _this$_application6 === void 0 ? void 0 : _this$_application6.updateBase({
       storeKey: key,
       changedValue: base
     });
@@ -1025,7 +1236,7 @@ class Patcher {
 
 }
 
-let count = 0;
+let count$1 = 0;
 
 const Helper = ({
   addListener
@@ -1054,7 +1265,7 @@ var observe = (WrappedComponent => {
       useRelinkMode,
       ...rest
     } = React.useContext(context);
-    const incrementCount = React.useRef(count++); // eslint-disable-line
+    const incrementCount = React.useRef(count$1++); // eslint-disable-line
 
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
     const patcher = React.useRef();
@@ -1086,25 +1297,15 @@ var observe = (WrappedComponent => {
       var _patcher$current, _patcher$current2;
 
       (_patcher$current = patcher.current) === null || _patcher$current === void 0 ? void 0 : _patcher$current.appendTo(parentPatcher); // maybe not needs
-      // const paths = []
-      // const start = Date.now();
-      // const paths2 = application?.proxyState
-      //   .getContext()
-      //   .getCurrent()
-      //   .getRemarkable();
-      // const end = Date.now();
-      // console.log('diff ', componentName, end - start, paths2);
       // @ts-ignore
 
-      const paths = application === null || application === void 0 ? void 0 : application.proxyState.getContext().getCurrent().getRemarkable(); // const end2 = Date.now();
-      // console.log('diff ', componentName, end2 - end, paths);
-
+      const paths = application === null || application === void 0 ? void 0 : application.proxyState.getContext().getCurrent().getRemarkable();
       (_patcher$current2 = patcher.current) === null || _patcher$current2 === void 0 ? void 0 : _patcher$current2.update({
-        paths
+        paths: paths
       });
       if (patcher.current) application === null || application === void 0 ? void 0 : application.addPatcher(patcher.current);
       patcherUpdated.current += 1;
-      application === null || application === void 0 ? void 0 : application.proxyState.leave(componentName);
+      application === null || application === void 0 ? void 0 : application.proxyState.leave();
     }, []); // eslint-disable-line
 
     const contextValue = { ...rest,

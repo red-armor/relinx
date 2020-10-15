@@ -9,3 +9,4 @@ import thunk from './middleware/thunk';
 import logger from './middleware/logger';
 import observe from './observe';
 export { Provider, applyMiddleware, createStore, useRelinx, useDispatch, useGlobal, useNamespace, thunk, logger, observe, };
+export * from './types';
