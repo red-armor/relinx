@@ -1,4 +1,4 @@
-import React, { Reducer } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom'
 import {
   logger,
@@ -9,7 +9,7 @@ import {
 } from '../src'
 import createModel from './models'
 import { Models } from './types'
-import { ExtractEffectsTypeOnlyModels, ExtractReducersTypeOnlyModels, ExtractStateTypeOnlyModels } from '../src/types'
+// import { ExtractEffectsTypeOnlyModels, ExtractReducersTypeOnlyModels, ExtractStateTypeOnlyModels } from '../src/types'
 
 import App from './container'
 

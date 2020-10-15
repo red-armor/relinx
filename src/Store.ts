@@ -4,12 +4,15 @@ import {
   InternalDispatch,
   Subscription,
   BasicModelType,
+  AutoRunSubscriptions,
   ChangedValueGroup,
   CreateStoreOnlyModels,
   ExtractStateTypeOnlyModels,
   ExtractEffectsTypeOnlyModels,
   ExtractReducersTypeOnlyModels,
+  PendingAutoRunInitialization,
 } from './types';
+import autoRun from './autoRun';
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null;
@@ -18,6 +21,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _state: ExtractStateTypeOnlyModels<T>;
   private _reducers: ExtractReducersTypeOnlyModels<T>;
   private _effects: ExtractEffectsTypeOnlyModels<T>;
+  private _pendingAutoRunInitializations: Array<PendingAutoRunInitialization>;
   private _pendingActions: Array<Action>;
   public initialState: any;
   public subscriptions: {
@@ -37,6 +41,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     this._reducers = {} as ExtractReducersTypeOnlyModels<T>;
     this._effects = {} as ExtractEffectsTypeOnlyModels<T>;
     this._pendingActions = [];
+    this._pendingAutoRunInitializations = [];
 
     const keys = Object.keys(models) as Array<MODEL_KEY>;
 
@@ -62,75 +67,107 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return this._effects;
   }
 
+  resolveActions(actions: Array<Action>) {
+    return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
+      (changedValueGroup, action) => {
+        if (!this._application) return [];
+        const { type, payload } = action;
+        const [storeKey, actionType] = type.split('/') as [
+          MODEL_KEY,
+          keyof ExtractReducersTypeOnlyModels<T>
+        ];
+        const usedReducer = this._reducers[storeKey];
+
+        // If usedReducer is null, Maybe you have dispatched an unregistered action.
+        // On this condition, put these actions to `this._pendingActions`
+        if (!usedReducer) {
+          this._pendingActions.push(action);
+        } else if (usedReducer[actionType]) {
+          const currentState = this._application.base[storeKey];
+          const changedValue = usedReducer[actionType](currentState, payload);
+          changedValueGroup.push({
+            storeKey,
+            changedValue,
+          });
+        } else {
+          console.warn(`Do not have action '${actionType}'`);
+        }
+
+        return changedValueGroup;
+      },
+      []
+    );
+  }
+
   setValue(actions: Array<Action>) {
     const nextActions = ([] as Array<Action>).concat(actions);
-    const changedValues = nextActions.reduce<
-      Array<ChangedValueGroup<MODEL_KEY>>
-    >((changedValueGroup, action) => {
-      if (!this._application) return [];
-      const { type, payload } = action;
-      const [storeKey, actionType] = type.split('/') as [
-        MODEL_KEY,
-        keyof ExtractReducersTypeOnlyModels<T>
-      ];
-      const usedReducer = this._reducers[storeKey];
-
-      // If usedReducer is null, Maybe you have dispatched an unregistered action.
-      // On this condition, put these actions to `this._pendingActions`
-      if (!usedReducer) {
-        this._pendingActions.push(action);
-      } else if (usedReducer[actionType]) {
-        const currentState = this._application.base[storeKey];
-        const changedValue = usedReducer[actionType](currentState, payload);
-        changedValueGroup.push({
-          storeKey,
-          changedValue,
-        });
-      } else {
-        console.warn(`Do not have action '${actionType}'`);
-      }
-
-      return changedValueGroup;
-    }, []);
+    const changedValues = this.resolveActions(nextActions);
 
     if (changedValues.length) {
-      const toObject = changedValues.reduce<
-        {
-          [key in MODEL_KEY]: object;
-        }
-      >(
-        (acc, cur) => {
-          const { storeKey, changedValue } = cur;
-          acc[storeKey] = changedValue;
-          return acc;
-        },
-        {} as {
-          [key in MODEL_KEY]: object;
-        }
-      );
-      const oldState = {
-        ...this._application?.base,
-      } as ExtractStateTypeOnlyModels<T>;
-      const newState = {
-        ...this._application?.base,
-        ...toObject,
-      } as ExtractStateTypeOnlyModels<T>;
+      // updateDryRun do two things
+      // 1. resolve pendingPatchers
+      // 2. assign application.base with new value.
+      // Note: on this step, pendingPatchers do not execute
+      const derivedActions =
+        this._application?.updateDryRun(changedValues) || [];
+      // model.subscriptions may cause new value update..
+      const derivedChangedValue = this.resolveActions(derivedActions!);
+      this._application?.update(derivedChangedValue);
 
-      this._application?.update(changedValues);
-
-      for (let key in this.subscriptions) {
-        const subscription = this.subscriptions[key];
-        subscription({
-          oldState,
-          newState,
-          diff: toObject as Partial<ExtractStateTypeOnlyModels<T>>,
-        });
+      const storeSubscriptionsKeys = Object.keys(this.subscriptions);
+      const storeSubscriptionsKeysLength = storeSubscriptionsKeys.length;
+      // Only if there are store subscriptions. it requires to calculate old and new value..
+      if (storeSubscriptionsKeysLength) {
+        const toObject = changedValues.reduce<
+          {
+            [key in MODEL_KEY]: object;
+          }
+        >(
+          (acc, cur) => {
+            const { storeKey, changedValue } = cur;
+            acc[storeKey] = {
+              ...acc[storeKey],
+              ...changedValue,
+            };
+            return acc;
+          },
+          {} as {
+            [key in MODEL_KEY]: object;
+          }
+        );
+        const oldState = {
+          ...this._application?.base,
+        } as ExtractStateTypeOnlyModels<T>;
+        const newState = {
+          ...this._application?.base,
+          ...toObject,
+        } as ExtractStateTypeOnlyModels<T>;
+        for (let i = 0; i < storeSubscriptionsKeysLength; i++) {
+          const key = storeSubscriptionsKeys[i];
+          const subscription = this.subscriptions[key];
+          subscription({
+            oldState,
+            newState,
+            diff: toObject as Partial<ExtractStateTypeOnlyModels<T>>,
+          });
+        }
       }
     }
   }
 
   bindApplication(application: Application<T, MODEL_KEY>) {
     this._application = application;
+    this.runPendingAutoRunInitialization();
+  }
+
+  runPendingAutoRunInitialization() {
+    if (this._pendingAutoRunInitializations.length) {
+      this._pendingAutoRunInitializations.forEach(initialization => {
+        const { autoRunFn } = initialization;
+        autoRun(autoRunFn, this._application!);
+      });
+      this._pendingAutoRunInitializations = [];
+    }
   }
 
   decorateDispatch(chainedMiddleware: Function) {
@@ -151,6 +188,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   injectModel(key: MODEL_KEY, model: any, initialValue: any = {}) {
     const { state, reducers = {}, effects = {} } = model;
+    const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
     // consume all the pending actions.
     let base = this._application?.getStoreData(key) || {
       ...state,
@@ -187,6 +225,21 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       }
 
       return storeKey !== key;
+    });
+
+    const subscriptionsKeys = Object.keys(subscriptions);
+    subscriptionsKeys.forEach(autoRunKey => {
+      const autoRunFn = subscriptions[autoRunKey];
+
+      if (!this._application) {
+        this._pendingAutoRunInitializations.push({
+          modelKey: key as string,
+          autoRunKey,
+          autoRunFn,
+        });
+      } else {
+        autoRun<T, MODEL_KEY>(autoRunFn, this._application);
+      }
     });
 
     this._state[key] = base;

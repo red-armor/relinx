@@ -1,15 +1,24 @@
 import infoLog from './utils/infoLog';
 import Patcher from './Patcher';
+import AutoRunner from './AutoRunner';
 
 const DEBUG = false;
 
-interface Children {
+type Children = {
   [key: string]: PathNode;
+};
+
+type ToHandlerMap<T> = T extends Field.Patchers ? Patcher : AutoRunner;
+
+enum Field {
+  Patchers = 'patchers',
+  AutoRunners = 'autoRunners',
 }
 
 class PathNode {
   private parent: PathNode | undefined;
   public patchers: Array<Patcher>;
+  public autoRunners: Array<AutoRunner>;
   public children: Children;
   private prop: string;
 
@@ -19,9 +28,33 @@ class PathNode {
     this.parent = parent;
     this.children = {};
     this.patchers = [];
+    this.autoRunners = [];
   }
 
-  addPathNode(path: Array<string>, patcher: Patcher) {
+  addPatcher(path: Array<string>, patcher: Patcher) {
+    this.addPathNode(path, patcher, Field.Patchers);
+  }
+
+  destroyPatcher() {}
+
+  addAutoRunner(path: Array<string>, autoRunner: AutoRunner) {
+    this.addPathNode(path, autoRunner, Field.AutoRunners);
+  }
+
+  destroyAutoRunner() {}
+
+  getCollection<T extends Field>(field: T): Array<Patcher> | Array<AutoRunner> {
+    if (field === Field.Patchers) {
+      return this.patchers;
+    }
+    return this.autoRunners;
+  }
+
+  addPathNode<T extends Field>(
+    path: Array<string>,
+    handler: ToHandlerMap<T>,
+    field: T
+  ) {
     try {
       const len = path.length;
       path.reduce<PathNode>((node: PathNode, cur: string, index: number) => {
@@ -31,18 +64,22 @@ class PathNode {
         if (index === len - 1) {
           const childNode = node.children[cur];
           if (DEBUG) {
-            infoLog('[PathNode add patcher]', childNode, patcher);
+            infoLog('[PathNode add handler]', childNode, handler);
           }
-          if (childNode.patchers) {
-            childNode.patchers.push(patcher);
-            patcher.addRemover(() => {
-              const index = childNode.patchers.indexOf(patcher);
+          const collection = childNode.getCollection(field) as Array<
+            ToHandlerMap<T>
+          >;
+
+          if (collection) {
+            collection.push(handler);
+            handler.addRemover(() => {
+              const index = collection.indexOf(handler);
 
               if (DEBUG) {
-                infoLog('[PathNode remove patcher]', patcher.id, childNode);
+                infoLog('[PathNode remove handler]', handler.id, childNode);
               }
               if (index !== -1) {
-                childNode.patchers.splice(index, 1);
+                collection.splice(index, 1);
               }
             });
           }

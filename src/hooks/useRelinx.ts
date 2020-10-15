@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import context from '../context';
 import {
+  RelinxState,
   RelinxDispatch,
   UseRelinxReturnValue,
   ContextDefaultValue,
@@ -14,9 +15,12 @@ export default <T, M, K extends keyof T = any>(
   >(context);
 
   const proxyState = application?.proxyState;
-  const state = proxyState.peek([storeName]);
+  const state = proxyState!.peek([storeName as string]);
   const tracker = state.getTracker();
-  tracker.setContext(componentName);
+  tracker.setContext(componentName!);
 
-  return [state, dispatch as RelinxDispatch<T, M>];
+  return [
+    (state as any) as RelinxState<T, M, K>,
+    dispatch as RelinxDispatch<T, M>,
+  ];
 };

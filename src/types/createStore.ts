@@ -5,13 +5,14 @@ export interface Action {
   payload?: any;
 }
 
-export type ModelKey = 'state' | 'reducers' | 'effects';
+export type ModelKey = 'state' | 'reducers' | 'effects' | 'subscriptions';
 
 export type BasicModelType<T> = {
   [key in keyof T]: {
     state: any;
     reducers?: any;
     effects?: any;
+    subscriptions?: any;
   };
 };
 
@@ -133,6 +134,10 @@ export type ExtractReducersTypeOnlyModels<Models> = {
 
 export type ExtractEffectsTypeOnlyModels<Models> = {
   [key in keyof Models]: ExtractKey<Models[key], 'effects'>;
+};
+
+export type ExtractSubscriptionsTypeOnlyModels<Models> = {
+  [key in keyof Models]: ExtractKey<Models[key], 'subscriptions'>;
 };
 
 export type GenericState<T, K extends keyof T> = {

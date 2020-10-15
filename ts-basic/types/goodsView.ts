@@ -1,3 +1,5 @@
+import { Action } from '../../src/types'
+
 export interface GoodsViewModel {
   state: { listData: Array<object> },
   reducers: {
@@ -8,5 +10,8 @@ export interface GoodsViewModel {
   effects: {
     increment: (payload: { id: string, index: number }) => (dispatch: Function) => void
     decrement: (payload: { id: string, index: number }) => (dispatch: Function) => void
-  }
+  },
+  subscription: {
+    setup: ({ state }: { state: any}) => Action | Array<Action>
+  },
 }
