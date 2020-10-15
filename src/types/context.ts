@@ -14,4 +14,5 @@ export interface ContextDefaultValue<T, M> {
   patcher: null | Patcher;
   useRelinkMode: boolean;
   componentName?: string;
+  $_modelKey?: string;
 }

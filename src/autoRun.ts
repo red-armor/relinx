@@ -4,7 +4,8 @@ import AutoRunner from './AutoRunner';
 
 const autoRun = <T, K extends keyof T>(
   fn: Function,
-  application: Application<T, K>
+  application: Application<T, K>,
+  modelKey: string
 ) => {
   invariant(application, 'application is required to be initialized already !');
 
@@ -17,6 +18,7 @@ const autoRun = <T, K extends keyof T>(
 
   const autoRunner = new AutoRunner({
     paths,
+    modelKey,
     autoRunFn: () => {
       return fn({ state });
     },

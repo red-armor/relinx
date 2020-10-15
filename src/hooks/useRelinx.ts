@@ -8,14 +8,15 @@ import {
 } from '../types';
 
 export default <T, M, K extends keyof T = any>(
-  storeName: K
+  storeName?: K
 ): UseRelinxReturnValue<T, M, K> => {
-  const { dispatch, application, componentName } = useContext<
+  const { dispatch, application, componentName, $_modelKey } = useContext<
     ContextDefaultValue<T, M>
   >(context);
 
+  const nextStoreName = storeName || $_modelKey;
   const proxyState = application?.proxyState;
-  const state = proxyState!.peek([storeName as string]);
+  const state = proxyState!.peek([nextStoreName as string]);
   const tracker = state.getTracker();
   tracker.setContext(componentName!);
 

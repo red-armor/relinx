@@ -163,8 +163,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   runPendingAutoRunInitialization() {
     if (this._pendingAutoRunInitializations.length) {
       this._pendingAutoRunInitializations.forEach(initialization => {
-        const { autoRunFn } = initialization;
-        autoRun(autoRunFn, this._application!);
+        const { autoRunFn, modelKey } = initialization;
+        autoRun(autoRunFn, this._application!, modelKey);
       });
       this._pendingAutoRunInitializations = [];
     }
@@ -238,7 +238,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           autoRunFn,
         });
       } else {
-        autoRun<T, MODEL_KEY>(autoRunFn, this._application);
+        autoRun<T, MODEL_KEY>(autoRunFn, this._application, key as string);
       }
     });
 
