@@ -500,13 +500,15 @@ let count = 1;
 class AutoRunner {
   constructor({
     paths,
-    autoRunFn
+    autoRunFn,
+    modelKey
   }) {
     this.id = `autoRunner_${count++}`;
     this.paths = paths;
     this.autoRunFn = autoRunFn;
     this._isDirty = false;
     this.removers = [];
+    this.modelKey = modelKey;
   }
 
   addRemover(remover) {
@@ -531,12 +533,27 @@ class AutoRunner {
   }
 
   triggerAutoRun() {
-    return this.autoRunFn() || [];
+    const actions = this.autoRunFn() || [];
+    return actions.map(action => {
+      const {
+        type,
+        payload
+      } = action; // if type is not in `namespace/type` format, then add modelKey as default namespace.
+
+      if (!/\//.test(type)) {
+        return {
+          type: `${this.modelKey}/${type}`,
+          payload
+        };
+      }
+
+      return action;
+    });
   }
 
 }
 
-const autoRun = (fn, application) => {
+const autoRun = (fn, application, modelKey) => {
   !application ?  invariant(false, 'application is required to be initialized already !')  : void 0;
   const state = application.proxyState;
   state.enter();
@@ -547,6 +564,7 @@ const autoRun = (fn, application) => {
   const paths = tracker.getRemarkable();
   const autoRunner = new AutoRunner({
     paths,
+    modelKey,
     autoRunFn: () => {
       return fn({
         state
@@ -677,9 +695,10 @@ class Store {
     if (this._pendingAutoRunInitializations.length) {
       this._pendingAutoRunInitializations.forEach(initialization => {
         const {
-          autoRunFn
+          autoRunFn,
+          modelKey
         } = initialization;
-        autoRun(autoRunFn, this._application);
+        autoRun(autoRunFn, this._application, modelKey);
       });
 
       this._pendingAutoRunInitializations = [];
@@ -754,7 +773,7 @@ class Store {
           autoRunFn
         });
       } else {
-        autoRun(autoRunFn, this._application);
+        autoRun(autoRunFn, this._application, key);
       }
     });
     this._state[key] = base;
@@ -781,10 +800,12 @@ var useRelinx = (storeName => {
   const {
     dispatch,
     application,
-    componentName
+    componentName,
+    $_modelKey
   } = React.useContext(context);
+  const nextStoreName = storeName || $_modelKey;
   const proxyState = application === null || application === void 0 ? void 0 : application.proxyState;
-  const state = proxyState.peek([storeName]);
+  const state = proxyState.peek([nextStoreName]);
   const tracker = state.getTracker();
   tracker.setContext(componentName);
   return [state, dispatch];
@@ -1253,6 +1274,10 @@ var observe = (WrappedComponent => {
 
     const patcherUpdated = React.useRef(0);
     const isMounted = React.useRef(false);
+    const {
+      $_modelKey,
+      ...restProps
+    } = props;
     React.useEffect(() => {
       isMounted.current = true;
     });
@@ -1317,9 +1342,14 @@ var observe = (WrappedComponent => {
       patcher: patcher.current,
       componentName: componentName
     };
+
+    if ($_modelKey) {
+      contextValue.$_modelKey = $_modelKey;
+    }
+
     return React__default.createElement(context.Provider, {
       value: contextValue
-    }, React__default.createElement(React__default.Fragment, null, React__default.createElement(WrappedComponent, Object.assign({}, props)), React__default.createElement(Helper, {
+    }, React__default.createElement(React__default.Fragment, null, React__default.createElement(WrappedComponent, Object.assign({}, restProps)), React__default.createElement(Helper, {
       addListener: addListener
     })));
   }

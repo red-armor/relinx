@@ -1,3 +1,3 @@
 import Application from './Application';
-declare const autoRun: <T, K extends keyof T>(fn: Function, application: Application<T, K>) => void;
+declare const autoRun: <T, K extends keyof T>(fn: Function, application: Application<T, K>, modelKey: string) => void;
 export default autoRun;

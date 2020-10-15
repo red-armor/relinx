@@ -493,13 +493,15 @@ let count = 1;
 class AutoRunner {
   constructor({
     paths,
-    autoRunFn
+    autoRunFn,
+    modelKey
   }) {
     this.id = `autoRunner_${count++}`;
     this.paths = paths;
     this.autoRunFn = autoRunFn;
     this._isDirty = false;
     this.removers = [];
+    this.modelKey = modelKey;
   }
 
   addRemover(remover) {
@@ -524,12 +526,27 @@ class AutoRunner {
   }
 
   triggerAutoRun() {
-    return this.autoRunFn() || [];
+    const actions = this.autoRunFn() || [];
+    return actions.map(action => {
+      const {
+        type,
+        payload
+      } = action; // if type is not in `namespace/type` format, then add modelKey as default namespace.
+
+      if (!/\//.test(type)) {
+        return {
+          type: `${this.modelKey}/${type}`,
+          payload
+        };
+      }
+
+      return action;
+    });
   }
 
 }
 
-const autoRun = (fn, application) => {
+const autoRun = (fn, application, modelKey) => {
   !application ? process.env.NODE_ENV !== "production" ? invariant(false, 'application is required to be initialized already !') : invariant(false) : void 0;
   const state = application.proxyState;
   state.enter();
@@ -540,6 +557,7 @@ const autoRun = (fn, application) => {
   const paths = tracker.getRemarkable();
   const autoRunner = new AutoRunner({
     paths,
+    modelKey,
     autoRunFn: () => {
       return fn({
         state
@@ -670,9 +688,10 @@ class Store {
     if (this._pendingAutoRunInitializations.length) {
       this._pendingAutoRunInitializations.forEach(initialization => {
         const {
-          autoRunFn
+          autoRunFn,
+          modelKey
         } = initialization;
-        autoRun(autoRunFn, this._application);
+        autoRun(autoRunFn, this._application, modelKey);
       });
 
       this._pendingAutoRunInitializations = [];
@@ -747,7 +766,7 @@ class Store {
           autoRunFn
         });
       } else {
-        autoRun(autoRunFn, this._application);
+        autoRun(autoRunFn, this._application, key);
       }
     });
     this._state[key] = base;
@@ -774,10 +793,12 @@ var useRelinx = (storeName => {
   const {
     dispatch,
     application,
-    componentName
+    componentName,
+    $_modelKey
   } = useContext(context);
+  const nextStoreName = storeName || $_modelKey;
   const proxyState = application === null || application === void 0 ? void 0 : application.proxyState;
-  const state = proxyState.peek([storeName]);
+  const state = proxyState.peek([nextStoreName]);
   const tracker = state.getTracker();
   tracker.setContext(componentName);
   return [state, dispatch];
@@ -1246,6 +1267,10 @@ var observe = (WrappedComponent => {
 
     const patcherUpdated = useRef(0);
     const isMounted = useRef(false);
+    const {
+      $_modelKey,
+      ...restProps
+    } = props;
     useEffect(() => {
       isMounted.current = true;
     });
@@ -1310,9 +1335,14 @@ var observe = (WrappedComponent => {
       patcher: patcher.current,
       componentName: componentName
     };
+
+    if ($_modelKey) {
+      contextValue.$_modelKey = $_modelKey;
+    }
+
     return React.createElement(context.Provider, {
       value: contextValue
-    }, React.createElement(React.Fragment, null, React.createElement(WrappedComponent, Object.assign({}, props)), React.createElement(Helper, {
+    }, React.createElement(React.Fragment, null, React.createElement(WrappedComponent, Object.assign({}, restProps)), React.createElement(Helper, {
       addListener: addListener
     })));
   }

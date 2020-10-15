@@ -1,16 +1,17 @@
-import { AutoRunnerProps } from './types';
+import { AutoRunnerProps, Action } from './types';
 declare class AutoRunner {
     private _isDirty;
     paths: Array<Array<string>>;
     autoRunFn: Function;
     id: string;
     removers: Array<Function>;
-    constructor({ paths, autoRunFn }: AutoRunnerProps);
+    modelKey: string;
+    constructor({ paths, autoRunFn, modelKey }: AutoRunnerProps);
     addRemover(remover: Function): void;
     teardown(): void;
     markDirty(): void;
     markClean(): void;
     isDirty(): boolean;
-    triggerAutoRun(): any;
+    triggerAutoRun(): Action[];
 }
 export default AutoRunner;
