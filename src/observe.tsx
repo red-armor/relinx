@@ -24,6 +24,7 @@ export default (WrappedComponent: FC<any>) => {
     const [_, setState] = useState(0); // eslint-disable-line
     const patcherUpdated = useRef(0);
     const isMounted = useRef(false);
+    const { $_modelKey, ...restProps } = props;
 
     useEffect(() => {
       isMounted.current = true;
@@ -97,10 +98,14 @@ export default (WrappedComponent: FC<any>) => {
       componentName: componentName,
     };
 
+    if ($_modelKey) {
+      contextValue.$_modelKey = $_modelKey;
+    }
+
     return (
       <context.Provider value={contextValue}>
         <React.Fragment>
-          <WrappedComponent {...props} />
+          <WrappedComponent {...restProps} />
           <Helper addListener={addListener} />
         </React.Fragment>
       </context.Provider>

@@ -65,12 +65,12 @@ export default () => ({
       const { bottomBar, goods } = state
 
       return [{
-        type: 'goods/setProps',
+        type: 'setProps',
         payload: {
           bottomBarUpdateCount: bottomBar.count,
         }
       }, {
-        type: 'goods/setProps',
+        type: 'setProps',
         payload: {
           listLength: goods.listData.length,
         }
