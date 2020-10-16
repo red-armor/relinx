@@ -15,10 +15,10 @@ test:
     # - formula lint
     - formula test
 
-
 deploy:production:
   stage: deploy
   script:
+    - npm run build
     - npm publish
   only:
     - /^v\d+\.\d+\.\d+$/
@@ -29,3 +29,11 @@ deploy:prerelease:
     - npm publish --tag=prerelease
   only:
     - /^v\d+\.\d+\.\d+-\d+$/
+
+deploy:alpha:
+  stage: deploy
+  script:
+    - npm run build
+    - npm publish
+  only:
+    - /^v\d+\.\d+\.\d+-alpha\./
