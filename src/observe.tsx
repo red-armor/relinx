@@ -28,7 +28,10 @@ export default (WrappedComponent: FC<any>) => {
 
     useEffect(() => {
       isMounted.current = true;
-    });
+      return () => {
+        isMounted.current = false;
+      };
+    }, []);
 
     const {
       application,
