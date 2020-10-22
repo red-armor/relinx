@@ -25,6 +25,7 @@
     "examples:nest-update-memo": "DIR=nest-update-memo EXT=js webpack-dev-server",
     "examples:simple": "DIR=simple EXT=js webpack-dev-server",
     "examples:immer": "DIR=immer EXT=js webpack-dev-server",
+    "examples:todolist": "DIR=todolist EXT=js webpack-dev-server",
     "examples:ts-basic": "DIR=ts-basic EXT=tsx webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
     "test": "jest --collect-coverage"
@@ -76,7 +77,13 @@
     "typescript": "^4.0.2",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.7",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^3.8.0",
+    "css-loader": "^3.4.2",
+    "less": "^3.11.1",
+    "less-loader": "^5.0.0",
+    "postcss-loader": "^3.0.0",
+    "style-loader": "^1.1.3",
+    "url-loader": "^3.0.0"
   },
   "dependencies": {
     "@types/invariant": "^2.2.33",
