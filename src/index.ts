@@ -8,6 +8,7 @@ import useGlobal from './hooks/useGlobal';
 import thunk from './middleware/thunk';
 import logger from './middleware/logger';
 import observe from './observe';
+import inject from './inject';
 
 export {
   Provider,
@@ -20,6 +21,7 @@ export {
   thunk,
   logger,
   observe,
+  inject,
 };
 
 export * from './types';
