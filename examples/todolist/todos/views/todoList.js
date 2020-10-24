@@ -4,7 +4,7 @@ import TodoItem from './todoItem.js';
 
 const TodoList = () => {
   const [state] = useRelinx('todos')
-  const { filteredTodos = [], todos } = state
+  const { filteredTodos } = state
 
   return (
     <ul className="todo-list">

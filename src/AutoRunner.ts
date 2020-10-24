@@ -40,7 +40,7 @@ class AutoRunner {
   }
 
   triggerAutoRun() {
-    const actions = (this.autoRunFn() || []) as Array<Action>;
+    const actions = [].concat(this.autoRunFn()) as Array<Action>;
     return actions.map(action => {
       const { type, payload } = action;
       // if type is not in `namespace/type` format, then add modelKey as default namespace.

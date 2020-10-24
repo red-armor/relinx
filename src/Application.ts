@@ -24,6 +24,9 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public namespace: string;
   public strictMode: boolean;
   public proxyState: ProxyState;
+  public dirty: boolean;
+  public dirtyState: GenericState<T, K>;
+  public pendingValues: Array<any>;
 
   constructor({
     base,
@@ -35,29 +38,30 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     strictMode: boolean;
   }) {
     this.base = base;
-    this.node = new PathNode();
-    this.autoRunnerNode = new PathNode();
+    this.node = new PathNode('node');
+    this.autoRunnerNode = new PathNode('autoRun');
     this.pendingPatchers = [];
     this.pendingAutoRunners = [];
     this.pendingCleaner = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
     this.proxyState = produce(this.base);
+
+    this.dirty = false;
+    this.dirtyState = this.base;
+    this.pendingValues = [];
+    this.getState = this.getState.bind(this);
   }
 
-  processAutoRunner(values: Array<ChangedValueGroup<K>>) {
-    this.pendingAutoRunners = [];
-
-    try {
-      values.forEach(value => this.treeShakeAutoRunner(value));
-    } catch (err) {
-      infoLog('[Application] processAutoRunner issue ', err);
-    }
+  getState() {
+    if (this.dirty) return this.dirtyState;
+    return this.proxyState;
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
     try {
       values.forEach(value => this.treeShake(value));
+      this.pendingValues.forEach(value => this.updateBase(value));
       values.forEach(value => this.updateBase(value));
     } catch (err) {
       infoLog('[Application] update issue ', err);
@@ -67,20 +71,22 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       patcher.triggerAutoRun();
     });
     this.pendingPatchers = [];
-
     this.pendingAutoRunners = [];
-
     this.pendingCleaner.forEach(clean => clean());
     this.pendingCleaner = [];
+    this.pendingValues = [];
+    this.dirty = false;
   }
 
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
     let actions = [] as Array<Action>;
-
+    this.pendingAutoRunners = [];
     try {
       values.forEach(value => this.treeShake(value));
-      this.processAutoRunner(values);
-      values.forEach(value => this.updateBase(value));
+      values.forEach(value => this.treeShakeAutoRunner(value));
+      values.forEach(value => this.updateDirtyBase(value));
+      this.dirty = true;
+      this.pendingValues = values;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
       });
@@ -89,6 +95,20 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     }
 
     return actions;
+  }
+
+  updateDirtyBase({
+    storeKey,
+    changedValue,
+  }: {
+    storeKey: K;
+    changedValue: object;
+  }) {
+    const origin = this.base[storeKey] || ({} as any);
+    this.dirtyState[storeKey] = {
+      ...origin,
+      ...changedValue,
+    };
   }
 
   updateBase({
@@ -144,6 +164,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   ) {
     const keysToCompare = Object.keys(branch.children);
 
+    if (baseValue !== nextValue) {
+      cb(branch);
+    }
+
     keysToCompare.forEach(key => {
       const oldValue = baseValue[key];
       const newValue = nextValue[key];
@@ -154,7 +178,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         if (isPrimitive(newValue)) {
           if (oldValue !== newValue) {
             cb(branch.children[key]);
-            // this.addPatchers(branch.children[key].patchers);
           }
         }
 
@@ -167,7 +190,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         return;
       }
       cb(branch.children[key]);
-      // this.addPatchers(branch.children[key].patchers);
     });
   }
 
