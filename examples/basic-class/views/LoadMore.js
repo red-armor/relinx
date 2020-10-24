@@ -22,7 +22,7 @@ class LoadMore extends React.PureComponent {
 
   render() {
     return (
-      <div style={styles.wrapper} onClick={this.handleClick}>
+      <div style={styles.wrapper} onClick={this.handleClick.bind(this)}>
         获取更多
       </div>
     )

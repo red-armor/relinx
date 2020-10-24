@@ -28,11 +28,10 @@ module.exports = {
       test: /\.tsx?/,
       loader: 'ts-loader',
     }, {
-      test: /\.(le|c)ss$/,
+      test: /\.css$/,
       use: [
         "style-loader",
-        "css-loader",
-        "less-loader"
+        "css-loader"
       ],
       exclude: /node_modules/
     }, {
