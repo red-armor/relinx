@@ -110,8 +110,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       // Note: on this step, pendingPatchers do not execute
       const derivedActions =
         this._application?.updateDryRun(changedValues) || [];
+
       // model.subscriptions may cause new value update..
       const derivedChangedValue = this.resolveActions(derivedActions!);
+
       this._application?.update(derivedChangedValue);
 
       const storeSubscriptionsKeys = Object.keys(this.subscriptions);

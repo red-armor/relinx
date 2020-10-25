@@ -62,7 +62,8 @@ export default () => ({
   },
   subscriptions: {
     setup({ getState }) {
-      const { bottomBar, goods } = getState()
+      const state = getState()
+      const { bottomBar, goods } = state
 
       return [{
         type: 'setProps',

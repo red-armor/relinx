@@ -80,10 +80,12 @@ export default () => ({
           break;
       }
 
+      debugger
+
       return {
         type: 'setProps',
         payload: {
-          filteredTodos
+          filteredTodos,
         }
       }
     }
