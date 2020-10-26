@@ -29,6 +29,7 @@ class AutoRunner {
 
   markDirty() {
     this._isDirty = true;
+    this.teardown();
   }
 
   markClean() {
