@@ -24,11 +24,13 @@ const autoRun = <T, K extends keyof T>(
     modelKey,
     autoRunFn: () => {
       state.enter();
+      state.getContext().disableBackTracking();
       const actions = fn({ getState: application.getState });
       const tracker = state.getContext().getCurrent();
       const paths = tracker.getRemarkable();
       autoRunner.paths = paths;
       application.addAutoRunner(autoRunner);
+      state.getContext().enableBackTracking();
       state.leave();
       return actions;
     },

@@ -24,9 +24,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public namespace: string;
   public strictMode: boolean;
   public proxyState: ProxyState;
-  public dirty: boolean;
   public dirtyState: GenericState<T, K>;
-  public pendingValues: Array<any>;
 
   constructor({
     base,
@@ -47,9 +45,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.strictMode = strictMode;
     this.proxyState = produce(this.base);
 
-    this.dirty = false;
     this.dirtyState = this.base;
-    this.pendingValues = [];
     this.getState = this.getState.bind(this);
   }
 
@@ -74,8 +70,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingAutoRunners = [];
     this.pendingCleaner.forEach(clean => clean());
     this.pendingCleaner = [];
-    this.pendingValues = [];
-    this.dirty = false;
   }
 
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
@@ -87,8 +81,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
       const merged = this.prepareUpdateBase(values);
       this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
-      this.dirty = true;
-      this.pendingValues = values;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
       });
