@@ -15,7 +15,10 @@ module.exports = {
   "testMatch": [
     "**/__test__/**/Provider.test.tsx",
     "**/__test__/**/createStore.test.tsx",
-    "**/__test__/**/applyMiddleware.test.ts"
+    "**/__test__/**/applyMiddleware.test.ts",
+    "**/__test__/**/infoLog.test.ts",
+    "**/__test__/**/ifType.test.ts",
+    "**/__test__/**/shallowEqual.test.ts"
   ],
   "setupFilesAfterEnv": [
     "<rootDir>/jest.setup.js"

@@ -6,6 +6,7 @@ import {
     logger,
     createStore
 } from '../src/index'
+import Store from '../src/Store'
 import Models from '../examples/basic/models'
 import { $$observable } from './basic/util'
 
@@ -31,5 +32,15 @@ describe('applyMiddleware', () => {
         expect(methods).toContain('subscriptions')
         expect(methods).toContain('_count')
         expect(store._count).toBe(0)
+    })
+
+    it('没有middleware初始化', () => {
+        const store = applyMiddleware()(createStore)({models: new Models()})
+        ReactTestUtils.act(() => {
+            store.dispatch({
+                type: 'init/updateOnline',
+            })
+        })
+        expect(store).toBeInstanceOf(Store)
     })
 })
