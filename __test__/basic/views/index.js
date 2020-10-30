@@ -1,5 +1,5 @@
 import React from 'react'
-import { observe } from '../../../src/index'
+import { observe, useRelinx } from '../../../src/index'
 
 import BottomBar from './BottomBar'
 import GoodsView from './GoodsView'
@@ -33,6 +33,8 @@ const styles = {
 }
 
 const Main = () => {
+  const [state] = useRelinx('init')
+  const { status } = state
   return (
     <div style={styles.body}>
       <div style={styles.simulator}>
@@ -42,6 +44,7 @@ const Main = () => {
         </div>
         <BottomBar />
       </div>
+      <span>{status}</span>
     </div>
   )
 }

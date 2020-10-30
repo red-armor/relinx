@@ -2,7 +2,6 @@
 import 'jsdom-global/register';
 import React from 'react';
 import Renderer from 'react-test-renderer';
-import ReactTestUtils from 'react-dom/test-utils'; 
 import {
     mount,
 } from 'enzyme';
@@ -17,12 +16,12 @@ import App from './basic/views'
 import BottomBar from './basic/views/BottomBar';
 import GoodsView from './basic/views/GoodsView';
 import LoadMore from './basic/views/LoadMore';
-import { getGoods } from '../examples/basic/data-source/goods'
-import { getGoodsViewSpan, getGoodsItems, getGoodsItemsFiveTitle } from './basic/domUtil'
-import { getListLengthValue, getGoodsItemsFiveValue } from './basic/stateUtil'
+import { getGoodsViewSpan, getGoodsItems, getGoodsItemsFiveTitle, getStatusSpanTitle } from './basic/domUtil'
+import { getListLengthValue, getGoodsItemsFiveValue, getStatusValue } from './basic/stateUtil'
+import { sleep, getGoods } from './basic/util'
 
 describe('Provider', () => {
-    it('保存上一次执行的 snapshot', () => {
+    it('是否正常挂载了 view 层', () => {
         const store = createStore({
             models: new Models(),
         }, applyMiddleware(thunk))
@@ -40,7 +39,7 @@ describe('Provider', () => {
     });
 
 
-    it('验证 Provider 的各种功能', async () => {
+    it('验证 state 和 view 是否正常绑定', async () => {
         const store = createStore({
             models: new Models(),
         }, applyMiddleware(thunk))
@@ -50,36 +49,67 @@ describe('Provider', () => {
             </Provider>)
         const renderDom = Renderer.create(<Subject />)
 
-
         let spanDom = getGoodsViewSpan(renderDom)
         let spanDomValue = spanDom.children[0]
         expect(spanDom.type).toEqual('span')
         expect(spanDomValue).toEqual(`bottomBarUpdate 0, length ${getListLengthValue(store.getState())}`)
 
 
-        await ReactTestUtils.act(async () => {
-            const { init: { page } } = store.getState()
-            const result = await getGoods({ page })
-            store.dispatch([{
-                type: 'goods/addGoods',
-                payload: {
-                    goodsList: result,
-                },
-            }, {
-                type: 'init/updatePage',
-            }])
-            return
+        const { init: { page } } = store.getState()
+        const result = getGoods({ page })
+        store.dispatch([{
+            type: 'goods/addGoods',
+            payload: {
+                goodsList: result,
+            },
+        }, {
+            type: 'init/updatePage',
+        }])
+
+        const sleepCallback = jest.fn(() => {
+            spanDom = getGoodsViewSpan(renderDom)
+            spanDomValue = spanDom.children[0]
+            expect(spanDom.type).toEqual('span')
+            expect(spanDomValue).toEqual(`bottomBarUpdate 0, length ${getListLengthValue(store.getState())}`)
+
+            const goodItems = getGoodsItems(renderDom)
+            expect(goodItems.length).toEqual(10)
+            const domTitle = getGoodsItemsFiveTitle(goodItems)
+            const stateTitle = getGoodsItemsFiveValue(store.getState())
+            expect(domTitle).toEqual(stateTitle)
+        });
+        sleep(sleepCallback)
+
+    });
+
+    it('验证 state 和 view 是否正常绑定 Case2', () => {
+        const store = createStore({
+            models: new Models(),
+        }, applyMiddleware(thunk))
+        const Subject = () => (
+            <Provider store={store} >
+                <App />
+            </Provider>)
+        const renderDom = Renderer.create(<Subject />)
+
+        // 获取dom里面的值
+        const spanTitle = getStatusSpanTitle(renderDom)
+        // 获取 state 里面的值
+        const statusValue = getStatusValue(store.getState())
+        expect(statusValue).toEqual('offline')
+        // 比较两者是否相等
+        expect(spanTitle).toEqual(statusValue)
+
+        store.dispatch({
+            type: 'init/updateOnline',
         })
-        spanDom = getGoodsViewSpan(renderDom)
-        spanDomValue = spanDom.children[0]
-        expect(spanDom.type).toEqual('span')
-        expect(spanDomValue).toEqual(`bottomBarUpdate 0, length ${getListLengthValue(store.getState())}`)
 
-        const goodItems = getGoodsItems(renderDom)
-        expect(goodItems.length).toEqual(10)
-        const domTitle = getGoodsItemsFiveTitle(goodItems)
-        const stateTitle = getGoodsItemsFiveValue(store.getState())
-        expect(domTitle).toEqual(stateTitle)
-
+        const sleepCallback = jest.fn(() => {
+            const spanTitleUpdated = getStatusSpanTitle(renderDom)
+            const statusValueUpdated = getStatusValue(store.getState())
+            expect(statusValueUpdated).toEqual('online')
+            expect(spanTitleUpdated).toEqual(statusValueUpdated)
+        });
+        sleep(sleepCallback)
     });
 });

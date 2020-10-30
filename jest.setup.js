@@ -37,3 +37,5 @@ global.cancelAnimationFrame = function (id) {
     clearTimeout(id);
 };
 copyProps(window, global);
+
+jest.setTimeout(10000)

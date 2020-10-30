@@ -12,14 +12,7 @@ module.exports = {
   clearMocks: true,
   cache: false,
   testURL: "http://localhost",
-  "testMatch": [
-    "**/__test__/**/Provider.test.tsx",
-    "**/__test__/**/createStore.test.tsx",
-    "**/__test__/**/applyMiddleware.test.ts",
-    "**/__test__/**/infoLog.test.ts",
-    "**/__test__/**/ifType.test.ts",
-    "**/__test__/**/shallowEqual.test.ts"
-  ],
+  testRegex: "(/__test__/.*|(\\.|/))\\.test.(tsx|ts|js|jsx)?$",
   "setupFilesAfterEnv": [
     "<rootDir>/jest.setup.js"
   ]

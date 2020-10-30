@@ -17,3 +17,9 @@ export function getGoodsItemsFiveTitle(goodItems) {
     return children[0].children[0]
 }
 
+export function getStatusSpanTitle(renderDom) {
+    const domStr = renderDom.toJSON()
+    const spanDom = domStr.children[1].children[0]
+    return spanDom
+}
+
