@@ -80,7 +80,9 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       values.forEach(value => this.treeShakeAutoRunner(value));
 
       const merged = this.prepareUpdateBase(values);
-      this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
+      this.dirtyState = this.base;
+      this.proxyState.batchRelink(merged as any);
+      // this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
       });

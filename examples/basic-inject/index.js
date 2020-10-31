@@ -14,9 +14,6 @@ const store = createStore({
   models: new Models(),
 }, applyMiddleware(thunk))
 
-// store.subscribe(({ oldState, newState, diff }) => {
-//   console.log('old ', oldState, newState, diff)
-// })
 const Basic = () => (
   <Provider store={store}>
     <App />

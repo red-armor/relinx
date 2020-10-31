@@ -12,7 +12,7 @@ const autoRun = <T, K extends keyof T>(
 
   const state = application.proxyState;
 
-  state.enter();
+  state.strictEnter();
   // set autoRun params
   const initialActions = [].concat(fn({ getState: application.getState }));
 
@@ -23,14 +23,13 @@ const autoRun = <T, K extends keyof T>(
     paths,
     modelKey,
     autoRunFn: () => {
-      state.enter();
-      state.getContext().disableBackTracking();
+      // to avoid data back stream when using autoRunFn trigger calculate..
+      state.strictEnter();
       const actions = fn({ getState: application.getState });
       const tracker = state.getContext().getCurrent();
       const paths = tracker.getRemarkable();
       autoRunner.paths = paths;
       application.addAutoRunner(autoRunner);
-      state.getContext().enableBackTracking();
       state.leave();
       return actions;
     },
