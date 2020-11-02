@@ -29,7 +29,7 @@
     "examples:todolist": "DIR=todolist EXT=js webpack-dev-server",
     "examples:ts-basic": "DIR=ts-basic EXT=tsx webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
-    "test": "jest --collect-coverage"
+    "test": "jest --clearCache && jest --collect-coverage --verbose"
   },
   "config": {
     "commitizen": {
@@ -63,16 +63,28 @@
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
+    "@testing-library/jest-dom": "^4.1.0",
+    "@testing-library/react": "^8.0.8",
+    "@testing-library/react-hooks": "^1.1.0",
+    "@types/enzyme": "^3.10.7",
+    "@types/enzyme-adapter-react-16": "^1.0.6",
+    "@types/jest": "^26.0.14",
     "@types/react": "^16.9.48",
     "@types/react-dom": "^16.9.8",
-    "babel-jest": "^25.1.0",
+    "babel-jest": "^26.5.2",
     "babel-loader": "^8.0.6",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.5",
     "html-webpack-plugin": "^3.2.0",
     "husky": "^4.2.5",
-    "jest": "^24.9.0",
-    "react": "^16.13.1",
+    "jest": "^26.4.2",
+    "jsdom": "^16.4.0",
+    "jsdom-global": "3.0.2",
+    "react": "^16.14.0",
     "react-dom": "^16.13.1",
+    "react-test-renderer": "^16.14.0",
     "ts-loader": "^6.0.4",
+    "ts-node": "^9.0.0",
     "tsdx": "^0.13.3",
     "tslib": "^2.0.1",
     "typescript": "^4.0.2",
@@ -85,7 +97,7 @@
     "@types/invariant": "^2.2.33",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
-    "ts-jest": "^25.2.0"
+    "ts-jest": "^26.4.1"
   },
   "dependencies": {
     "invariant": "^2.2.4",

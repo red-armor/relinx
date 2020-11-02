@@ -59,4 +59,5 @@ module.exports = {
   devServer: {
     port: process.env.PORT || '8081',
   },
+  devtool: "cheap-module-eval-source-map"
 };
