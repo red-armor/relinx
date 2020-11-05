@@ -19,9 +19,9 @@ const defaultTodos = [
 ]
 
 export default () => ({
-  state: { 
+  state: {
     todos: defaultTodos,
-    filteredTodos: []
+    filteredTodos: [],
   },
   reducers: {
     add: (state, payload) => {
@@ -58,12 +58,14 @@ export default () => ({
     setProps: (_, payload) => ({ ...payload })
   },
   subscriptions: {
-    setup({ state }) {
+    setup({ getState }) {
+      const state = getState()
       const { filter, todos } = state
       const { filter: filterType } = filter
       const { todos: todoList } = todos
 
       let filteredTodos
+
       switch (filterType) {
         case FilterTypes.ALL:
           filteredTodos = [...todoList]
@@ -77,13 +79,13 @@ export default () => ({
         default:
           break;
       }
-      
-      return [{
+
+      return {
         type: 'setProps',
         payload: {
-          filteredTodos
+          filteredTodos,
         }
-      }]
+      }
     }
   }
 })

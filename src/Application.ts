@@ -24,6 +24,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public namespace: string;
   public strictMode: boolean;
   public proxyState: ProxyState;
+  public dirtyState: GenericState<T, K>;
 
   constructor({
     base,
@@ -35,30 +36,28 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     strictMode: boolean;
   }) {
     this.base = base;
-    this.node = new PathNode();
-    this.autoRunnerNode = new PathNode();
+    this.node = new PathNode('node');
+    this.autoRunnerNode = new PathNode('autoRun');
     this.pendingPatchers = [];
     this.pendingAutoRunners = [];
     this.pendingCleaner = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
     this.proxyState = produce(this.base);
+
+    this.dirtyState = this.base;
+    this.getState = this.getState.bind(this);
   }
 
-  processAutoRunner(values: Array<ChangedValueGroup<K>>) {
-    this.pendingAutoRunners = [];
-
-    try {
-      values.forEach(value => this.treeShakeAutoRunner(value));
-    } catch (err) {
-      infoLog('[Application] processAutoRunner issue ', err);
-    }
+  getState() {
+    return this.proxyState;
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
     try {
-      values.forEach(value => this.treeShake(value));
-      values.forEach(value => this.updateBase(value));
+      values.forEach(value => this.treeShake(value, this.dirtyState));
+      const merged = this.prepareUpdateBase(values);
+      this.proxyState.batchRelink(merged as any);
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
@@ -66,21 +65,24 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingPatchers.forEach(({ patcher }) => {
       patcher.triggerAutoRun();
     });
+
     this.pendingPatchers = [];
-
     this.pendingAutoRunners = [];
-
     this.pendingCleaner.forEach(clean => clean());
     this.pendingCleaner = [];
   }
 
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
     let actions = [] as Array<Action>;
-
+    this.pendingAutoRunners = [];
     try {
       values.forEach(value => this.treeShake(value));
-      this.processAutoRunner(values);
-      values.forEach(value => this.updateBase(value));
+      values.forEach(value => this.treeShakeAutoRunner(value));
+
+      const merged = this.prepareUpdateBase(values);
+      this.dirtyState = this.base;
+      this.proxyState.batchRelink(merged as any);
+      // this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
       });
@@ -89,6 +91,53 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     }
 
     return actions;
+  }
+
+  prepareUpdateBase(changeValues: Array<ChangedValueGroup<K>>) {
+    const merged = changeValues.reduce<
+      {
+        [key in K]: ChangedValueGroup<K>;
+      }
+    >(
+      (acc, cur) => {
+        const { storeKey, changedValue } = cur;
+        if (!acc[storeKey]) {
+          acc[storeKey] = {
+            storeKey,
+            changedValue: {},
+          };
+        }
+        const savedValue = acc[storeKey].changedValue || {};
+
+        acc[storeKey] = {
+          storeKey,
+          changedValue: {
+            ...savedValue,
+            ...changedValue,
+          },
+        };
+
+        return acc;
+      },
+      {} as {
+        [key in K]: ChangedValueGroup<K>;
+      }
+    );
+
+    const keys = Object.keys(merged);
+    return keys.map(key => {
+      const value = merged[key as K];
+      const { storeKey, changedValue } = value;
+      const origin = this.base[storeKey] || ({} as any);
+
+      return {
+        path: [storeKey],
+        value: {
+          ...origin,
+          ...changedValue,
+        },
+      };
+    });
   }
 
   updateBase({
@@ -144,6 +193,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   ) {
     const keysToCompare = Object.keys(branch.children);
 
+    if (baseValue !== nextValue) {
+      cb(branch);
+    }
+
     keysToCompare.forEach(key => {
       const oldValue = baseValue[key];
       const newValue = nextValue[key];
@@ -154,7 +207,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         if (isPrimitive(newValue)) {
           if (oldValue !== newValue) {
             cb(branch.children[key]);
-            // this.addPatchers(branch.children[key].patchers);
           }
         }
 
@@ -167,7 +219,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
         return;
       }
       cb(branch.children[key]);
-      // this.addPatchers(branch.children[key].patchers);
     });
   }
 
@@ -194,9 +245,13 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
    * Recently it only support `Array`, `Object`, `Number`, `String` and `Boolean` five
    * types..
    */
-  treeShake({ storeKey, changedValue }: { storeKey: K; changedValue: object }) {
+  treeShake(
+    { storeKey, changedValue }: { storeKey: K; changedValue: object },
+    possibleBase?: any
+  ) {
+    const base = possibleBase || this.base;
     const branch = this.node.children[storeKey as any];
-    const baseValue = this.base[storeKey];
+    const baseValue = base[storeKey];
     const nextValue = { ...baseValue, ...changedValue };
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4

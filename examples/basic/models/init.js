@@ -8,9 +8,11 @@ export default () => ({
 
   reducers: {
     updateState: (_, { status }) => ({ status }),
-    updatePage: state => ({
-      page: state.page + 1,
-    }),
+    updatePage: state => {
+      return {
+        page: state.page + 1,
+      }
+    },
   },
 
   effects: {

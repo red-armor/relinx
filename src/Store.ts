@@ -110,8 +110,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       // Note: on this step, pendingPatchers do not execute
       const derivedActions =
         this._application?.updateDryRun(changedValues) || [];
+
       // model.subscriptions may cause new value update..
       const derivedChangedValue = this.resolveActions(derivedActions!);
+
       this._application?.update(derivedChangedValue);
 
       const storeSubscriptionsKeys = Object.keys(this.subscriptions);
@@ -161,13 +163,19 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }
 
   runPendingAutoRunInitialization() {
+    let actions = [] as Array<Action>;
+
     if (this._pendingAutoRunInitializations.length) {
       this._pendingAutoRunInitializations.forEach(initialization => {
         const { autoRunFn, modelKey } = initialization;
-        autoRun(autoRunFn, this._application!, modelKey);
+        const initialActions = autoRun(autoRunFn, this._application!, modelKey);
+        actions = actions.concat(initialActions);
       });
       this._pendingAutoRunInitializations = [];
     }
+
+    const changeValues = this.resolveActions(actions);
+    changeValues.forEach(value => this._application?.updateBase(value));
   }
 
   decorateDispatch(chainedMiddleware: Function) {
@@ -238,7 +246,13 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           autoRunFn,
         });
       } else {
-        autoRun<T, MODEL_KEY>(autoRunFn, this._application, key as string);
+        const initialActions = autoRun<T, MODEL_KEY>(
+          autoRunFn,
+          this._application,
+          key as string
+        );
+        const changedValues = this.resolveActions(initialActions);
+        changedValues.forEach(value => this._application?.updateBase(value));
       }
     });
 

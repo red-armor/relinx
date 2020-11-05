@@ -61,7 +61,8 @@ export default () => ({
     },
   },
   subscriptions: {
-    setup({ state }) {
+    setup({ getState }) {
+      const state = getState()
       const { bottomBar, goods } = state
 
       return [{
