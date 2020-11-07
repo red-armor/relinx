@@ -21,14 +21,28 @@ class PathNode {
   public autoRunners: Array<AutoRunner>;
   public children: Children;
   private prop: string;
+  private _type: string;
 
-  constructor(prop?: string, parent?: PathNode) {
+  constructor({
+    prop,
+    parent,
+    type,
+  }: {
+    prop?: string;
+    parent?: PathNode;
+    type: string;
+  }) {
     this.prop = prop || 'root';
+    this._type = type;
 
     this.parent = parent;
     this.children = {};
     this.patchers = [];
     this.autoRunners = [];
+  }
+
+  getType() {
+    return this._type;
   }
 
   addPatcher(path: Array<string>, patcher: Patcher) {
@@ -59,7 +73,12 @@ class PathNode {
       const len = path.length;
       path.reduce<PathNode>((node: PathNode, cur: string, index: number) => {
         // path中前面的值都是为了让我们定位到最后的需要关心的位置
-        if (!node.children[cur]) node.children[cur] = new PathNode(cur, node);
+        if (!node.children[cur])
+          node.children[cur] = new PathNode({
+            type: this._type,
+            prop: cur,
+            parent: node,
+          });
         // 只有到达`path`的最后一个`prop`时，才会进行patcher的添加
         if (index === len - 1) {
           const childNode = node.children[cur];

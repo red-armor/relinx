@@ -101,6 +101,6 @@
   },
   "dependencies": {
     "invariant": "^2.2.4",
-    "state-tracker": "^0.5.0"
+    "state-tracker": "^0.5.1"
   }
 }
