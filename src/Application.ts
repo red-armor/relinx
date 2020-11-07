@@ -36,8 +36,14 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     strictMode: boolean;
   }) {
     this.base = base;
-    this.node = new PathNode('node');
-    this.autoRunnerNode = new PathNode('autoRun');
+    this.node = new PathNode({
+      type: 'patcher',
+      prop: 'node',
+    });
+    this.autoRunnerNode = new PathNode({
+      type: 'autoRun',
+      prop: 'autoRun',
+    });
     this.pendingPatchers = [];
     this.pendingAutoRunners = [];
     this.pendingCleaner = [];
@@ -193,7 +199,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   ) {
     const keysToCompare = Object.keys(branch.children);
 
-    if (baseValue !== nextValue) {
+    if (branch.getType() === 'autoRun' && baseValue !== nextValue) {
       cb(branch);
     }
 
