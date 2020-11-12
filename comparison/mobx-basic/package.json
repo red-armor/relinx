@@ -1,0 +1,15 @@
+{
+  "name": "mobx-basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Store.es6.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "youchao liu",
+  "license": "ISC",
+  "dependencies": {
+    "mobx": "5.15.4",
+    "mobx-react": "6.2.2"
+  }
+}
