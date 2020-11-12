@@ -6,10 +6,10 @@ const { DIR, EXT = 'ts' } = process.env;
 
 module.exports = {
   mode: 'development',
-  entry: `./examples/${DIR}/index.${EXT}`,
+  entry: `./${DIR}/index.${EXT}`,
   plugins: [
     new HtmlWebpackPlugin({
-      template: `./examples/${DIR}/public/index.html`,
+      template: `./${DIR}/public/index.html`,
     }),
   ],
   module: {

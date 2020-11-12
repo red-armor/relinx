@@ -113,11 +113,12 @@ const RowInner = ({ data }) => {
   const select = () => {
     dispatch({ type: "BENCH/SELECT", payload: { id: data.id } })
   };
+
   const remove = () => { dispatch({ type: "BENCH/REMOVE", payload: { id: data.id } }); };
   return (
     <tr className={data.selected ? "danger" : ""}>
       <td className="col-md-1">{data.id}</td>
-      <td className="col-md-4"><a onClick={select}>{data.label}</a></td>
+      <td className="col-md-4"><a onClick={remove}>{data.label}</a></td>
       <td className="col-md-1"><a onClick={remove}>{GlyphIcon}</a></td>
       <td className="col-md-6"></td>
     </tr>
@@ -133,33 +134,6 @@ const RowListInner = () => {
   });
 }
 const RowList = observe(RowListInner)
-
-// const RowInner = ({ index }) => {
-//   const [state, dispatch] = useRelinx('BENCH')
-//   const data = state.data[index]
-//   const select = () => {
-//     dispatch({ type: "BENCH/SELECT", payload: { id: data.id } })
-//   };
-//   const remove = () => { dispatch({ type: "BENCH/REMOVE", payload: { id: data.id } }); };
-//   return (
-//     <tr className={data.selected ? "danger" : ""}>
-//       <td className="col-md-1">{data.id}</td>
-//       <td className="col-md-4"><a onClick={select}>{data.label}</a></td>
-//       <td className="col-md-1"><a onClick={remove}>{GlyphIcon}</a></td>
-//       <td className="col-md-6"></td>
-//     </tr>
-//   )
-// }
-// const Row = observe(RowInner)
-
-// const RowListInner = () => {
-//   const [state] = useRelinx('BENCH')
-//   const rows = state.data
-//   return rows.map((data, index) => {
-//     return <Row key={data.id} index={index} />
-//   });
-// }
-// const RowList = observe(RowListInner)
 
 const Button = React.memo(({ id, title, cb }) => (
   <div className="col-sm-6 smallpad">

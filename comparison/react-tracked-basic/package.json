@@ -1,0 +1,14 @@
+{
+  "name": "react-tracked-basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "youchao liu",
+  "license": "ISC",
+  "dependencies": {
+    "react-tracked": "^1.4.2"
+  }
+}
