@@ -11,6 +11,7 @@ _A fast, intuitive, access path based reactive react state management_
 3. 对 PathNode 进行创建时，只会对那些被使用到的属性才进行创建，从而在进行 diff 遍历时提高性能
 4. 为了更好的拥抱社区，中间件是基于 Redux-middleware 来实现，可以很快的接入 Redux 社区丰富的中间件库
 5. 通过 access paths 的记录，可以更精准的知道组件具体需要的属性以实现粒度化渲染的控制
+6. 支持class的写法
 
 ## Introduction
 
@@ -22,7 +23,7 @@ Relinx 的设计理念很简单
 
 > 记录组件访问的具体属性路径，当源数据变化时触发对应节点上监听的组件
 
-![flow](./docs/flow.png)
+![flow](./docs/relinx.png)
 
 ### Tracker
 
@@ -31,7 +32,7 @@ Relinx 的设计理念很简单
 ## 安装
 
 ```bash
-$ npm install relinx --save
+$ npm install @xhs/relinx --save
 ```
 
 ## 基本概念
@@ -45,7 +46,7 @@ import ReactDOM from "react-dom"
 import {logger, Provider, createStore, applyMiddleware, thunk} from "relinx"
 import Models from "./models"
 
-import App from "./views"
+import App from "./container"
 
 const store = createStore(
   {
@@ -65,15 +66,17 @@ ReactDOM.render(<Simple />, document.getElementById("app"))
 
 ```js
 // models.js
-import appModel from "./appModel"
+import createAppModel from "../container/model"
+import createInfoModel from '../views/info/model'
 
 export default () => ({
-  app: new appModel()
+  app: createAppModel(),
+  info: createInfoModel(),
 })
 ```
 
 ```js
-// appModel.js
+// container/model.js
 export default () => ({
   state: {count: 0},
   reducers: {
@@ -83,25 +86,64 @@ export default () => ({
 ```
 
 ```js
-// app.js
+// container/index.js
 import React, {useCallback} from "react"
 import {useRelinx, observe} from "relinx"
+import Info from '../views/info'
 
 export default observe(() => {
   const [state, dispatch] = useRelinx("app")
 
   const {count} = state
-  const handleClick = useCallback(() => dispatch({type: "increment"}), [])
+  const handleClick = useCallback(() => dispatch({type: "app/increment"}), [])
 
   return (
     <div>
       <span>{count}</span>
-      <button onclick={handleClick}>+</button>
+      <button onClick={handleClick}>+</button>
+      <Info />
     </div>
   )
 })
 ```
 
+```js
+// views/info/index.js
+import React from 'react'
+import {useRelinx, observe} from "relinx"
+
+const Info = () => {
+  const [state] = useRelinx('info')
+
+  return (
+    <div>
+      {`current count ${state.count}`}
+    </div>
+  )
+}
+
+export default observe(Info)
+```
+
+```js
+// views/info/model.js
+
+export default () => ({
+  state: {count: 0},
+  reducers: {
+    setProps: (_, payload) => ({ ...payload })
+  },
+  subscriptions: {
+    listenCount: ({ getState }) => {
+      const { app: { count }} = getState()
+      return {
+        type: 'setProps',
+        payload: { count }
+      }
+    }
+  }
+})
+```
 ### state
 
 在 component 中可以通过`useRelinx`方法返回一个 state. 这个是一个独立的`proxy`对象；每一次 property 的调用都会被记录下来作为当前 component 会访问到的 paths。
@@ -117,6 +159,10 @@ action 由两部分组成`type`和`payload`，和`Redux`中的概念一样，是
 ### effects
 
 进行异步的数据处理，包含所有的 ajax 请求
+
+### subscriptions
+
+主要是用来跨model层之间的属性值变化的监听；比如app层的userInfo，同时被A，B两个组件使用，这个时候可以在A，B的model中通过subscriptions来监听app中的userInfo
 
 ## API
 
@@ -160,10 +206,6 @@ const [dispatch: Function] = useDispatch()
 
 ### Props
 
-#### useProxy
-
-控制 Tracker 对于 path 的搜集机制是通过`Proxy`还是还是`defineProperty`；默认为 true，同时 Relinx 也会自己判断是否支持`Proxy`以确保运行无误
-
 #### strictMode
 
 默认为 false，在开发模式下为了提示 component 中使用到了哪些在 model 中未声明的字段，以确保 ES5 和 ES6 表现是一致的
@@ -171,6 +213,27 @@ const [dispatch: Function] = useDispatch()
 #### namespace
 
 可选填，如果不填的话，Relinx 会对当前的 application 生成一个 key 以确保在多 application 模式下能够正常的运行。
+
+## Class Component
+
+在Relinx中是通过`inject`的方式将`store`注入到component，同时在component中通过`state` prop来进行访问，具体如下
+
+```js
+class BottomBar extends React.PureComponent {
+  render() {
+    const { count } = this.props.state
+    return (
+      <div style={styles.wrapper}>
+        <span style={styles.text}>
+          {`number ${count}`}
+        </span>
+      </div>
+    )
+  }
+}
+
+export default inject('bottomBar')(BottomBar)
+```
 
 ## 问题
 
