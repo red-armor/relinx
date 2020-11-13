@@ -53,8 +53,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
     this.dirtyState = this.base;
     this.getState = this.getState.bind(this);
-
-    console.log('this node ', this.node);
   }
 
   getState() {
@@ -62,7 +60,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
-    console.log('this --- node ', this.node);
     try {
       values.forEach(value => this.treeShake(value, this.dirtyState));
       const merged = this.prepareUpdateBase(values);
@@ -70,7 +67,6 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
-    console.log('pending patchers ', this.pendingPatchers);
 
     this.pendingPatchers.forEach(({ patcher }) => {
       patcher.triggerAutoRun();
