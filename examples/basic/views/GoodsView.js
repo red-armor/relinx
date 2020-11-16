@@ -23,9 +23,9 @@ const GoodsView = () => {
       </span>
       {listData.map((data, key) => (
         <GoodsItem
-          key={key}
+          key={data.id}
           data={data}
-          index={key}
+          // index={key}
         />
       ))}
     </div>

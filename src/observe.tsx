@@ -4,11 +4,13 @@ import React, {
   useRef,
   useEffect,
   useCallback,
+  // memo,
   FC,
 } from 'react';
 import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
+const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 
 let count = 0;
 
@@ -25,13 +27,8 @@ export default (WrappedComponent: FC<any>) => {
     const patcherUpdated = useRef(0);
     const isMounted = useRef(false);
     const { $_modelKey, ...restProps } = props;
-
-    useEffect(() => {
-      isMounted.current = true;
-      return () => {
-        isMounted.current = false;
-      };
-    }, []);
+    const originRef = useRef();
+    const observablesRef = useRef(Object.create(null));
 
     const {
       application,
@@ -42,6 +39,32 @@ export default (WrappedComponent: FC<any>) => {
       useRelinkMode,
       ...rest
     } = useContext(context);
+
+    useEffect(() => {
+      isMounted.current = true;
+      return () => {
+        isMounted.current = false;
+      };
+    }, []);
+
+    for (let key in restProps) {
+      if (restProps.hasOwnProperty(key)) {
+        const value = (restProps as any)[key];
+        if (isObject(value) && typeof value.getTracker === 'function') {
+          if (
+            typeof originRef.current === 'undefined' ||
+            originRef.current !== value
+          ) {
+            originRef.current = value;
+            observablesRef.current[key] = value;
+          } else {
+            const pathTracker = value.getPathTracker();
+            const paths = pathTracker.getPath();
+            observablesRef.current[key] = application?.proxyState.peek(paths);
+          }
+        }
+      }
+    }
 
     const incrementCount = useRef(count++)  // eslint-disable-line
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
@@ -76,6 +99,7 @@ export default (WrappedComponent: FC<any>) => {
     );
 
     const addListener = useCallback(() => {
+      // take care, this may cause patcher teardown.
       patcher.current?.appendTo(parentPatcher); // maybe not needs
 
       // @ts-ignore
@@ -108,7 +132,7 @@ export default (WrappedComponent: FC<any>) => {
     return (
       <context.Provider value={contextValue}>
         <React.Fragment>
-          <WrappedComponent {...restProps} />
+          <WrappedComponent {...restProps} {...observablesRef.current} />
           <Helper addListener={addListener} />
         </React.Fragment>
       </context.Provider>

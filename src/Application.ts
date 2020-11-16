@@ -199,6 +199,16 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   ) {
     const keysToCompare = Object.keys(branch.children);
 
+    if (keysToCompare.indexOf('length') !== -1) {
+      const oldValue = baseValue.length;
+      const newValue = nextValue.length;
+
+      if (newValue < oldValue) {
+        cb(branch.children['length']);
+        return;
+      }
+    }
+
     if (branch.getType() === 'autoRun' && baseValue !== nextValue) {
       cb(branch);
     }

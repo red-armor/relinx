@@ -41,7 +41,6 @@ const styles = {
 }
 
 const GoodsItem = props => {
-  const { index } = props
   const [dispatch] = useDispatch()
   const { data: { title, id, count } } = props
   const updateCount = useRef(0)
@@ -56,14 +55,14 @@ const GoodsItem = props => {
   const increment = useCallback(() => {
     dispatch({
       type: 'goods/increment',
-      payload: { id, index },
+      payload: { id },
     })
   }, [])
 
   const decrement = useCallback(() => {
     dispatch({
       type: 'goods/decrement',
-      payload: { id, index },
+      payload: { id },
     })
   }, [])
 
@@ -85,4 +84,4 @@ const GoodsItem = props => {
   )
 }
 
-export default observe(GoodsItem)
+export default observe(React.memo(props => <GoodsItem {...props} />))

@@ -31,7 +31,7 @@ const bench = () => ({
   },
   reducers: {
     "RUN": () => {
-      const data = buildData(1000)
+      const data = buildData(100)
       data[0].selected = true
       return { data };
     },
@@ -124,7 +124,13 @@ const RowInner = ({ data }) => {
     </tr>
   )
 }
+
 const Row = observe(RowInner)
+// const Row = observe(React.memo(props => <RowInner {...props} />))
+// const Row = observe(React.memo(props => <RowInner {...props} />, (prev, next) => {
+//   // console.log('pve ', prev.data === next.data)
+//   return prev.data === next.data
+// }))
 
 const RowListInner = () => {
   const [state] = useRelinx('BENCH')
