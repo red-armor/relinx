@@ -27,7 +27,7 @@ export default (WrappedComponent: FC<any>) => {
     const patcherUpdated = useRef(0);
     const isMounted = useRef(false);
     const { $_modelKey, ...restProps } = props;
-    const originRef = useRef();
+    const originRef = useRef(Object.create(null));
     const observablesRef = useRef(Object.create(null));
 
     const {
@@ -52,10 +52,10 @@ export default (WrappedComponent: FC<any>) => {
         const value = (restProps as any)[key];
         if (isObject(value) && typeof value.getTracker === 'function') {
           if (
-            typeof originRef.current === 'undefined' ||
-            originRef.current !== value
+            typeof originRef.current[key] === 'undefined' ||
+            originRef.current[key] !== value
           ) {
-            originRef.current = value;
+            originRef.current[key] = value;
             observablesRef.current[key] = value;
           } else {
             const pathTracker = value.getPathTracker();
