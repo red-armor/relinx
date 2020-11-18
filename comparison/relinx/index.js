@@ -31,7 +31,7 @@ const bench = () => ({
   },
   reducers: {
     "RUN": () => {
-      const data = buildData(100)
+      const data = buildData(1000)
       data[0].selected = true
       return { data };
     },
@@ -125,7 +125,7 @@ const RowInner = ({ data }) => {
   )
 }
 
-const Row = observe(RowInner)
+const Row = observe(React.memo(props => <RowInner {...props}/>))
 // const Row = observe(React.memo(props => <RowInner {...props} />))
 // const Row = observe(React.memo(props => <RowInner {...props} />, (prev, next) => {
 //   // console.log('pve ', prev.data === next.data)
