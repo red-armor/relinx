@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react'
-import { observe, useDispatch, useRelinx } from 'relinx'
-
-import Helper from './Helper'
-import BottomBar from './BottomBar'
-import GoodsView from './GoodsView'
-import LoadMore from './LoadMore'
+import React from 'react'
+import { inject } from 'relinx'
+import BottomBar from '../../views/bottom-bar'
+import GoodsView from '../../views/goods'
+import LoadMore from '../../views/load-more'
 
 const styles = {
   body: {
@@ -33,30 +31,29 @@ const styles = {
   },
 }
 
-const Main = () => {
-  const [dispatch] = useDispatch()
-
-  useEffect(() => {
+class Main extends React.PureComponent {
+  componentDidMount() {
+    const { dispatch } = this.props
     dispatch([{
       type: 'init/updateOnline',
     }, {
       type: 'init/getGoodsList',
     }])
+  }
 
-  }, [])
-
-  return (
-    <div style={styles.body}>
-      <div style={styles.simulator}>
-        <div style={styles.goodsWrapper}>
-          <GoodsView />
-          <LoadMore />
+  render() {
+    return (
+      <div style={styles.body}>
+        <div style={styles.simulator}>
+          <div style={styles.goodsWrapper}>
+            <GoodsView />
+            <LoadMore />
+          </div>
+          <BottomBar />
         </div>
-        <BottomBar />
-        <Helper />
       </div>
-    </div>
-  )
+    )
+  }
 }
 
-export default observe(Main)
+export default inject('goods')(Main)

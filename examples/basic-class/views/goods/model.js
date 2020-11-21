@@ -52,18 +52,18 @@ export default () => ({
     setProps: (_, payload) => ({ ...payload })
   },
   effects: {
-    increment: ({ id, index }) => dispatch => {
+    increment: ({ id }) => dispatch => {
       dispatch([{
         type: 'incrementItemCount',
-        payload: { id, index },
+        payload: { id },
       }, {
         type: 'bottomBar/incrementTotalCount',
       }])
     },
-    decrement: ({ id, index }) => dispatch => {
+    decrement: ({ id }) => dispatch => {
       dispatch([{
         type: 'decrementItemCount',
-        payload: { id, index },
+        payload: { id },
       }, {
         type: 'bottomBar/decrementTotalCount',
       }])

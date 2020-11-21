@@ -1,6 +1,6 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { inject } from 'relinx'
-import GoodsItem from '../components/GoodsItem'
+import GoodsItem from './GoodsItem'
 
 const spanStyle = {
   position: 'absolute',
@@ -20,18 +20,17 @@ class GoodsView extends React.PureComponent {
   }
 
   render() {
-    const { listData, bottomBarUpdateCount, listLength } = this.props.state
+    const { listData, listLength } = this.props.state
 
     return (
       <div>
         <span style={spanStyle}>
-          {`view update ${this.updateCount}, bottomBarUpdate ${bottomBarUpdateCount}, length ${listLength}`}
+          {`view update ${this.updateCount}, length ${listLength}`}
         </span>
         {listData.map((data, key) => (
           <GoodsItem
             key={key}
             data={data}
-            index={key}
           />
         ))}
       </div>

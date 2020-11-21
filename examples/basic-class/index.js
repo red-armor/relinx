@@ -9,7 +9,7 @@ import {
 } from 'relinx'
 import Models from './models'
 
-import App from './views'
+import App from './containers/app'
 
 const store = createStore({
   models: new Models(),

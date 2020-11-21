@@ -1,4 +1,4 @@
-import { getGoods } from '../data-source/goods'
+import { getGoods } from '../../data-source/goods'
 
 export default () => ({
   state: {
@@ -8,9 +8,11 @@ export default () => ({
 
   reducers: {
     updateState: (_, { status }) => ({ status }),
-    updatePage: state => ({
-      page: state.page + 1,
-    }),
+    updatePage: state => {
+      return {
+        page: state.page + 1,
+      }
+    },
   },
 
   effects: {
@@ -24,11 +26,6 @@ export default () => ({
           },
         }, {
           type: 'updatePage',
-        }, {
-          type: 'goods-v2/addGoods',
-          payload: {
-            goodsList: result,
-          }
         }])
       })
     },

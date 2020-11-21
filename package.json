@@ -20,7 +20,6 @@
     "examples:basic": "DIR=examples/basic EXT=js webpack-dev-server",
     "examples:basic-class": "DIR=examples/basic-class EXT=js webpack-dev-server",
     "examples:bench2": "DIR=examples/bench2 EXT=js webpack-dev-server",
-    "examples:basic-inject": "DIR=examples/basic-inject EXT=js webpack-dev-server",
     "examples:memo": "DIR=examples/memo EXT=js webpack-dev-server",
     "examples:nest-update": "DIR=examples/nest-update EXT=js webpack-dev-server",
     "examples:nest-update-memo": "DIR=examples/nest-update-memo EXT=js webpack-dev-server",

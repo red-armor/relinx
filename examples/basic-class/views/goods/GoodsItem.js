@@ -55,18 +55,18 @@ class GoodsItem extends React.PureComponent {
   }
 
   increment() {
-    const { data: { id }, index, dispatch } = this.props
+    const { data: { id }, dispatch } = this.props
     dispatch({
       type: 'goods/increment',
-      payload: { id, index },
+      payload: { id },
     })
   }
 
   decrement() {
-    const { data: { id }, index, dispatch } = this.props
+    const { data: { id }, dispatch } = this.props
     dispatch({
       type: 'goods/decrement',
-      payload: { id, index },
+      payload: { id },
     })
   }
 

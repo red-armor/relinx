@@ -10,23 +10,32 @@ export default () => ({
         listData: [].concat(state.listData, goodsList),
       }
     },
-    incrementItemCount(state, { id, index }) {
+    incrementItemCount(state, { id }) {
       const { listData } = state
-      const item = listData[index]
       const next = [...listData]
-      next[index] = {
-        ...item,
-        count: item.count + 1
+      const index = next.findIndex(item => item.id === id)
+      const item = listData[index]
+
+      if (index !== -1) {
+        next[index] = {
+          ...item,
+          count: item.count + 1
+        }
       }
+
       return {
         listData: next,
       }
     },
-    decrementItemCount(state, { id, index }) {
+    decrementItemCount(state, { id }) {
       const { listData } = state
+      const index = listData.findIndex(item => item.id === id)
+      if (index === -1) return {}
+
       const item = listData[index]
       const next = [...listData]
       const nextCount = item.count - 1
+
       if (nextCount <= 0) {
         next.splice(index, 1)
       } else {
@@ -43,18 +52,18 @@ export default () => ({
     setProps: (_, payload) => ({ ...payload })
   },
   effects: {
-    increment: ({ id, index }) => dispatch => {
+    increment: ({ id }) => dispatch => {
       dispatch([{
         type: 'incrementItemCount',
-        payload: { id, index },
+        payload: { id },
       }, {
         type: 'bottomBar/incrementTotalCount',
       }])
     },
-    decrement: ({ id, index }) => dispatch => {
+    decrement: ({ id }) => dispatch => {
       dispatch([{
         type: 'decrementItemCount',
-        payload: { id, index },
+        payload: { id },
       }, {
         type: 'bottomBar/decrementTotalCount',
       }])
@@ -62,7 +71,8 @@ export default () => ({
   },
   subscriptions: {
     setup({ getState }) {
-      const { bottomBar, goods } = getState()
+      const state = getState()
+      const { bottomBar, goods } = state
 
       return [{
         type: 'setProps',
