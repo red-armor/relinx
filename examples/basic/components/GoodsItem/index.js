@@ -57,14 +57,14 @@ const GoodsItem = props => {
       type: 'goods/increment',
       payload: { id },
     })
-  }, [])
+  }, [id])
 
   const decrement = useCallback(() => {
     dispatch({
       type: 'goods/decrement',
       payload: { id },
     })
-  }, [])
+  }, [id])
 
   return (
     <div style={styles.container}>
@@ -84,4 +84,5 @@ const GoodsItem = props => {
   )
 }
 
-export default observe(React.memo(props => <GoodsItem {...props} />))
+export default observe(GoodsItem)
+// export default observe(React.memo(props => <GoodsItem {...props} />))

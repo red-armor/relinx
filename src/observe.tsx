@@ -10,6 +10,7 @@ import { StateTrackerUtil } from 'state-tracker';
 import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
+import { UPDATE_TYPE } from './types';
 const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 
 let count = 0;
@@ -39,6 +40,7 @@ export default (WrappedComponent: FC<any>) => {
       useRelinkMode,
       ...rest
     } = useContext(context);
+    const patcher = useRef<undefined | Patcher>();
 
     useEffect(() => {
       isMounted.current = true;
@@ -50,28 +52,65 @@ export default (WrappedComponent: FC<any>) => {
     for (let key in restProps) {
       if (restProps.hasOwnProperty(key)) {
         const value = (restProps as any)[key];
+
         if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
           if (
             typeof originRef.current[key] === 'undefined' ||
             originRef.current[key] !== value
           ) {
+            // update is triggered by parent
             originRef.current[key] = value;
             observablesRef.current[key] = value;
           } else {
+            // update is triggered by itself
             const pathTracker = StateTrackerUtil.getPathTracker(value);
             const paths = pathTracker.getPath();
-            observablesRef.current[key] = StateTrackerUtil.peek(
+            const nextValue = StateTrackerUtil.peek(
               application!.proxyState,
               paths
             );
+
+            if (nextValue !== observablesRef.current[key]) {
+              observablesRef.current[key] = nextValue;
+            }
           }
         }
       }
     }
 
+    // for (let key in restProps) {
+    //   if (restProps.hasOwnProperty(key)) {
+    //     const value = (restProps as any)[key];
+    //     if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
+    //       if (typeof originRef.current[key] === 'undefined') {
+    //         originRef.current[key] = value;
+    //         observablesRef.current[key] = value;
+    //       } else if (originRef.current[key] === value) {
+    //         const pathTracker = StateTrackerUtil.getPathTracker(value)
+    //         const paths = pathTracker.getPath();
+    //         observablesRef.current[key] = StateTrackerUtil.peek(
+    //           application!.proxyState,
+    //           paths
+    //         );
+    //       } else {
+    //         const originRefTracker = StateTrackerUtil.getTracker(originRef.current[key] as any)
+    //         const observableTracker = StateTrackerUtil.getTracker(value)
+
+    //         if (originRefTracker._base !== observableTracker._base) {
+    //           const pathTracker = StateTrackerUtil.getPathTracker(value)
+    //           const paths = pathTracker.getPath();
+    //           observablesRef.current[key] = StateTrackerUtil.peek(
+    //             application!.proxyState,
+    //             paths
+    //           );
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
     const incrementCount = useRef(count++)  // eslint-disable-line
     const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
-    const patcher = useRef<undefined | Patcher>();
 
     shadowState.current += 1;
 
@@ -92,6 +131,7 @@ export default (WrappedComponent: FC<any>) => {
       });
     }
 
+    // !!! enter must followed by an leave, or may cause path collection issue.
     StateTrackerUtil.enter(application!.proxyState, componentName);
 
     useEffect(
@@ -102,15 +142,21 @@ export default (WrappedComponent: FC<any>) => {
     );
 
     const addListener = useCallback(() => {
-      // take care, this may cause patcher teardown.
-      patcher.current?.appendTo(parentPatcher); // maybe not needs
-
       // @ts-ignore
       const paths = StateTrackerUtil.getContext(application?.proxyState)
         .getCurrent()
         .getRemarkable();
-
+      patcher.current?.appendTo(parentPatcher); // maybe not needs
+      if (
+        application?.getUpdateType() === UPDATE_TYPE.ARRAY_LENGTH_CHANGE &&
+        !paths.length
+      ) {
+        // !!! leave must follow an enter. or it may cause path collection error
+        StateTrackerUtil.leave(application!.proxyState);
+        return;
+      }
       patcher.current?.update({ paths: paths! });
+      // take care, this may cause patcher teardown.
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;
       StateTrackerUtil.leave(application!.proxyState);
