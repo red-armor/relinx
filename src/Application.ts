@@ -9,12 +9,14 @@ import {
   PendingPatcher,
   PendingAutoRunner,
   ChangedValueGroup,
+  UPDATE_TYPE,
 } from './types';
 import Patcher from './Patcher';
 import produce, { ProxyState, StateTrackerUtil } from 'state-tracker';
 import AutoRunner from './AutoRunner';
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
+  private _updateType: UPDATE_TYPE | null;
   public base: GenericState<T, K>;
   public node: PathNode;
   public autoRunnerNode: PathNode;
@@ -53,10 +55,15 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
     this.dirtyState = this.base;
     this.getState = this.getState.bind(this);
+    this._updateType = null;
   }
 
   getState() {
     return this.proxyState;
+  }
+
+  getUpdateType() {
+    return this._updateType;
   }
 
   update(values: Array<ChangedValueGroup<K>>) {
@@ -68,9 +75,12 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       infoLog('[Application] update issue ', err);
     }
 
-    this.pendingPatchers.forEach(({ patcher }) => {
+    this.pendingPatchers.forEach(pendingPatcher => {
+      const { patcher, updateType } = pendingPatcher;
+      this._updateType = updateType;
       patcher.triggerAutoRun();
     });
+    this._updateType = null;
 
     this.pendingPatchers = [];
     this.pendingAutoRunners = [];
@@ -160,10 +170,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     });
   }
 
-  addPatchers(patchers: Array<Patcher>) {
+  addPatchers(patchers: Array<Patcher>, updateType: UPDATE_TYPE) {
     if (patchers.length) {
       patchers.forEach(patcher => {
-        this.pendingPatchers.push({ patcher });
+        this.pendingPatchers.push({ patcher, updateType });
       });
       patchers.forEach(patcher => {
         patcher.markDirty();
@@ -171,11 +181,11 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     }
   }
 
-  addAutoRunners(autoRunners: Array<AutoRunner>) {
+  addAutoRunners(autoRunners: Array<AutoRunner>, updateType: UPDATE_TYPE) {
     if (autoRunners.length) {
       autoRunners.forEach(autoRunner => {
         if (!autoRunner.isDirty()) {
-          this.pendingAutoRunners.push({ autoRunner });
+          this.pendingAutoRunners.push({ autoRunner, updateType });
           this.pendingCleaner.push(autoRunner.markClean.bind(autoRunner));
         }
       });
@@ -194,7 +204,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       [key: string]: any;
     },
     cb: {
-      (pathNode: PathNode): void;
+      (pathNode: PathNode, updateType?: UPDATE_TYPE): void;
     }
   ) {
     const keysToCompare = Object.keys(branch.children);
@@ -204,7 +214,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       const newValue = nextValue.length;
 
       if (newValue < oldValue) {
-        cb(branch.children['length']);
+        cb(branch.children['length'], UPDATE_TYPE.ARRAY_LENGTH_CHANGE);
         return;
       }
     }
@@ -222,7 +232,11 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       if (isTypeEqual(oldValue, newValue)) {
         if (isPrimitive(newValue)) {
           if (oldValue !== newValue) {
-            cb(branch.children[key]);
+            const type =
+              key === 'length'
+                ? UPDATE_TYPE.ARRAY_LENGTH_CHANGE
+                : UPDATE_TYPE.BASIC_VALUE_CHANGE;
+            cb(branch.children[key], type);
           }
         }
 
@@ -251,9 +265,17 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
     if (!branch) return;
-    this.compare(branch, baseValue, nextValue, (pathNode: PathNode) => {
-      this.addAutoRunners(pathNode.autoRunners);
-    });
+    this.compare(
+      branch,
+      baseValue,
+      nextValue,
+      (pathNode: PathNode, updateType?: UPDATE_TYPE) => {
+        this.addAutoRunners(
+          pathNode.autoRunners,
+          updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE
+        );
+      }
+    );
   }
 
   /**
@@ -272,9 +294,17 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
     if (!branch) return;
-    this.compare(branch, baseValue, nextValue, (pathNode: PathNode) => {
-      this.addPatchers(pathNode.patchers);
-    });
+    this.compare(
+      branch,
+      baseValue,
+      nextValue,
+      (pathNode: PathNode, updateType?: UPDATE_TYPE) => {
+        this.addPatchers(
+          pathNode.patchers,
+          updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE
+        );
+      }
+    );
   }
 
   addPatcher(patcher: Patcher) {
