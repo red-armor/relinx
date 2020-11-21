@@ -4,7 +4,6 @@ import React, {
   useRef,
   useEffect,
   useCallback,
-  // memo,
   FC,
 } from 'react';
 import { StateTrackerUtil } from 'state-tracker';
@@ -51,7 +50,7 @@ export default (WrappedComponent: FC<any>) => {
     for (let key in restProps) {
       if (restProps.hasOwnProperty(key)) {
         const value = (restProps as any)[key];
-        if (isObject(value) && typeof value.getTracker === 'function') {
+        if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
           if (
             typeof originRef.current[key] === 'undefined' ||
             originRef.current[key] !== value
@@ -59,7 +58,7 @@ export default (WrappedComponent: FC<any>) => {
             originRef.current[key] = value;
             observablesRef.current[key] = value;
           } else {
-            const pathTracker = value.getPathTracker();
+            const pathTracker = StateTrackerUtil.getPathTracker(value);
             const paths = pathTracker.getPath();
             observablesRef.current[key] = StateTrackerUtil.peek(
               application!.proxyState,

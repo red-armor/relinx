@@ -32,7 +32,7 @@ class PathNode {
     parent?: PathNode;
     type: string;
   }) {
-    this.prop = prop || 'root';
+    this.prop = typeof prop === 'undefined' ? 'root' : prop;
     this._type = type;
 
     this.parent = parent;
