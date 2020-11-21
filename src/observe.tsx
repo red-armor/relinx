@@ -4,9 +4,9 @@ import React, {
   useRef,
   useEffect,
   useCallback,
-  // memo,
   FC,
 } from 'react';
+import { StateTrackerUtil } from 'state-tracker';
 import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
@@ -50,7 +50,7 @@ export default (WrappedComponent: FC<any>) => {
     for (let key in restProps) {
       if (restProps.hasOwnProperty(key)) {
         const value = (restProps as any)[key];
-        if (isObject(value) && typeof value.getTracker === 'function') {
+        if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
           if (
             typeof originRef.current[key] === 'undefined' ||
             originRef.current[key] !== value
@@ -58,9 +58,12 @@ export default (WrappedComponent: FC<any>) => {
             originRef.current[key] = value;
             observablesRef.current[key] = value;
           } else {
-            const pathTracker = value.getPathTracker();
+            const pathTracker = StateTrackerUtil.getPathTracker(value);
             const paths = pathTracker.getPath();
-            observablesRef.current[key] = application?.proxyState.peek(paths);
+            observablesRef.current[key] = StateTrackerUtil.peek(
+              application!.proxyState,
+              paths
+            );
           }
         }
       }
@@ -89,7 +92,7 @@ export default (WrappedComponent: FC<any>) => {
       });
     }
 
-    application?.proxyState.enter(componentName);
+    StateTrackerUtil.enter(application!.proxyState, componentName);
 
     useEffect(
       () => () => {
@@ -103,15 +106,14 @@ export default (WrappedComponent: FC<any>) => {
       patcher.current?.appendTo(parentPatcher); // maybe not needs
 
       // @ts-ignore
-      const paths = application?.proxyState
-        .getContext()
+      const paths = StateTrackerUtil.getContext(application?.proxyState)
         .getCurrent()
         .getRemarkable();
 
       patcher.current?.update({ paths: paths! });
       if (patcher.current) application?.addPatcher(patcher.current);
       patcherUpdated.current += 1;
-      application?.proxyState.leave();
+      StateTrackerUtil.leave(application!.proxyState);
     }, []); // eslint-disable-line
 
     const contextValue = {

@@ -11,7 +11,7 @@ import {
   ChangedValueGroup,
 } from './types';
 import Patcher from './Patcher';
-import produce, { ProxyState } from 'state-tracker';
+import produce, { ProxyState, StateTrackerUtil } from 'state-tracker';
 import AutoRunner from './AutoRunner';
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
@@ -63,7 +63,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     try {
       values.forEach(value => this.treeShake(value, this.dirtyState));
       const merged = this.prepareUpdateBase(values);
-      this.proxyState.batchRelink(merged as any);
+      StateTrackerUtil.batchRelink(this.proxyState, merged as any);
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
@@ -87,7 +87,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
 
       const merged = this.prepareUpdateBase(values);
       this.dirtyState = this.base;
-      this.proxyState.batchRelink(merged as any);
+      StateTrackerUtil.batchRelink(this.proxyState, merged as any);
       // this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
@@ -154,7 +154,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     changedValue: object;
   }) {
     const origin = this.base[storeKey] || ({} as any);
-    this.proxyState.relink([storeKey as string], {
+    StateTrackerUtil.relink(this.proxyState, [storeKey as string], {
       ...origin,
       ...changedValue,
     });
