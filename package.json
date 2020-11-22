@@ -35,7 +35,9 @@
     "comparison:react-tracked-basic": "DIR=comparison/react-tracked-basic EXT=js webpack-dev-server",
     "comparison:mobx-basic": "DIR=comparison/mobx-basic EXT=js webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
-    "test": "jest --clearCache && jest --collect-coverage --verbose"
+    "test": "jest --clearCache && jest --collect-coverage --verbose",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "config": {
     "commitizen": {
@@ -71,6 +73,10 @@
     "@babel/plugin-proposal-decorators": "^7.12.1",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
+    "@storybook/addon-actions": "^6.1.2",
+    "@storybook/addon-essentials": "^6.1.2",
+    "@storybook/addon-links": "^6.1.2",
+    "@storybook/react": "^6.1.2",
     "@testing-library/jest-dom": "^4.1.0",
     "@testing-library/react": "^8.0.8",
     "@testing-library/react-hooks": "^1.1.0",
@@ -108,6 +114,7 @@
     "webpack-dev-server": "^3.8.0"
   },
   "dependencies": {
+    "core-js": "^3.7.0",
     "invariant": "^2.2.4",
     "state-tracker": "^1.1.3"
   }
