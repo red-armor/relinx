@@ -118,14 +118,15 @@ const RowInner = ({ data }) => {
   return (
     <tr className={data.selected ? "danger" : ""}>
       <td className="col-md-1">{data.id}</td>
-      <td className="col-md-4"><a onClick={remove}>{data.label}</a></td>
+      <td className="col-md-4"><a onClick={select}>{data.label}</a></td>
       <td className="col-md-1"><a onClick={remove}>{GlyphIcon}</a></td>
       <td className="col-md-6"></td>
     </tr>
   )
 }
 
-const Row = observe(React.memo(props => <RowInner {...props}/>))
+const Row = observe(RowInner)
+// const Row = observe(React.memo(props => <RowInner {...props}/>))
 // const Row = observe(React.memo(props => <RowInner {...props} />))
 // const Row = observe(React.memo(props => <RowInner {...props} />, (prev, next) => {
 //   // console.log('pve ', prev.data === next.data)
