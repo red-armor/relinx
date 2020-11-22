@@ -1,16 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import { observe, useDispatch } from 'relinx'
-import { addTodo } from '../actions.js';
-import { ADD_TODO } from '../actionTypes'
+import { ADD_TODO } from '../../util/commons'
+
+let nextTodoId = 10
 
 const AddTodo = () => {
   const [dispatch] = useDispatch()
   const [value, setValue] = useState('')
 
-  const onAdd = useCallback((inputValue) => {
+  const onAdd = useCallback(text => {
     dispatch({
       type: ADD_TODO,
-      payload: addTodo(inputValue),
+      payload: {
+        completed: false,
+        id: nextTodoId++,
+        text: text
+      }
     })
   }, [])
 

@@ -1,4 +1,4 @@
-import { FilterTypes }from '../../constants'
+import { FilterTypes }from '../../util/commons'
 
 export default () => ({
   state: { filter: FilterTypes.ALL },

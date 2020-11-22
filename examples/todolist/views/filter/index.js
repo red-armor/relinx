@@ -1,7 +1,7 @@
 import React from 'react';
 import { observe } from 'relinx'
 import Link from './link.js';
-import {FilterTypes} from '../../constants.js'
+import {FilterTypes} from '../../util/commons'
 import './style.css';
 
 const Filters = () => {

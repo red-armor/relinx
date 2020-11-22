@@ -1,4 +1,4 @@
-import { FilterTypes } from '../../constants'
+import { FilterTypes } from '../../util/commons'
 
 const defaultTodos = [
   {
@@ -60,9 +60,9 @@ export default () => ({
   subscriptions: {
     setup({ getState }) {
       const state = getState()
-      const { filter, todos } = state
+      const { filter, todo } = state
       const { filter: filterType } = filter
-      const { todos: todoList } = todos
+      const { todos: todoList } = todo
 
       let filteredTodos
 

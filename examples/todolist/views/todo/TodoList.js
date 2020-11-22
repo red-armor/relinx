@@ -3,7 +3,7 @@ import { observe, useRelinx } from 'relinx'
 import TodoItem from './todoItem.js';
 
 const TodoList = () => {
-  const [state] = useRelinx('todos')
+  const [state] = useRelinx('todo')
   const { filteredTodos } = state
 
   return (

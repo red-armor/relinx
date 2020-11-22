@@ -1,7 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { observe, useRelinx } from 'relinx'
-import { setFilter } from '../actions.js';
-import { SET_FILTER } from '../actionTypes.js';
+import { SET_FILTER } from '../../util/commons'
 
 const Link = ({ filter, children }) => {
   const [state, dispatch] = useRelinx('filter')
@@ -14,7 +13,7 @@ const Link = ({ filter, children }) => {
     ev.preventDefault();
     dispatch({
       type: SET_FILTER,
-      payload: setFilter(filter)
+      payload: { filter }
     })
   }, [filter])
 

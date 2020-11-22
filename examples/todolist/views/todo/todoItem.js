@@ -1,21 +1,20 @@
 import React, { useCallback } from 'react';
 import { observe, useDispatch } from 'relinx'
-import { toggleTodo, removeTodo } from '../actions.js';
-import { TOGGLE_TODO, REMOVE_TODO } from '../actionTypes'
+import { TOGGLE_TODO, REMOVE_TODO } from '../../util/commons'
 
 const TodoItem = ({ completed, text, id }) => {
   const [dispatch] = useDispatch()
   const onToggle = useCallback(() => {
     dispatch({
       type: TOGGLE_TODO,
-      payload: toggleTodo(id),
+      payload: { id }
     })
   }, [id])
 
   const onRemove = useCallback(() => {
     dispatch({
       type: REMOVE_TODO,
-      payload: removeTodo(id),
+      payload: { id }
     })
   }, [id])
 
@@ -25,7 +24,12 @@ const TodoItem = ({ completed, text, id }) => {
         textDecoration: completed ? 'line-through' : 'none'
       }}
     >
-      <input className="toggle" type="checkbox" checked={completed ? "checked" : ""} readOnly onClick={onToggle} />
+      <input
+        className="toggle"
+        type="checkbox"
+        checked={completed ? "checked" : ""}
+        readOnly onClick={onToggle}
+      />
       <label className="text">{text}</label>
       <button className="remove" onClick={onRemove}>×</button>
     </li>

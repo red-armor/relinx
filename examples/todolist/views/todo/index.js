@@ -1,10 +1,10 @@
 import React from 'react';
 import { observe } from 'relinx'
-import AddTodo from './addTodo.js';
-import TodoList from './todoList.js';
+import AddTodo from './AddTodo'
+import TodoList from './TodoList'
 import './style.css';
 
-const todos = () => {
+const Todo = () => {
   return (
     <div className="todos">
       <AddTodo />
@@ -13,5 +13,5 @@ const todos = () => {
   );
 }
 
-export default observe(todos)
+export default observe(Todo)
 

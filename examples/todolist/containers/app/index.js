@@ -1,12 +1,12 @@
 import React from 'react';
 import { observe } from 'relinx'
-import {view as Todos} from './todos/';
-import {view as Filter} from './filter/';
+import Todo from '../../views/todo';
+import Filter from '../../views/filter';
 
 function TodoApp() {
   return (
     <div>
-      <Todos />
+      <Todo />
       <Filter />
     </div>
   );
