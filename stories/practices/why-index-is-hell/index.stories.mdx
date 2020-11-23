@@ -1,0 +1,38 @@
+import Good from './Good'
+import Bad from './Bad'
+
+<Meta title="Practices/why-index-is-hell" />
+
+## Why index is hell
+
+> 使用index作为key或者props的话，都会造成大量的重复渲染，它主要体现在array长度发生变化时，比如删除一个item，或者在array的前面追加item
+
+&#128077; 通过key并且没有将index作为key的值；当删除一个item时，除了parent，item没有任何的重复渲染
+
+```jsx
+{state.data.map(item => (
+  <Row
+    key={item.id}
+    item={item}
+    selected={state.selected === item.id}
+    dispatch={dispatch}
+  />
+))}
+```
+
+<Good />
+
+&#128078; 尽管在用key进行渲染的优化，但是错误的将key的值设置为index；当删除一个item时，item下的所有item都会重复渲染
+
+```jsx
+{state.data.map((item, index) => (
+  <Row
+    key={index}
+    item={item}
+    selected={state.selected === item.id}
+    dispatch={dispatch}
+  />
+))}
+```
+
+<Bad />
