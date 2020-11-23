@@ -24,12 +24,8 @@
 export default {
   name: 'GoodsItem',
   props: {
-    id: {
-      type: Number,
-      default: -1,
-    },
-    index: {
-      type: Number,
+    item: {
+      type: Object,
       default: -1,
     },
   },
@@ -39,27 +35,34 @@ export default {
     };
   },
   computed:{
-    title(){
-      return this.$store.state.goods.listData[this.index].title
+    id() {
+      return this.item.id
     },
+
+    title(){
+      return this.item.title
+    },
+
     count(){
-      return this.$store.state.goods.listData[this.index].count
+      return this.item.count
     }
   },
   methods: {
     increment() {
       this.$store.dispatch('goods/increment', {
         id: this.id,
-        index: this.index,
       });
     },
     decrement() {
       this.$store.dispatch('goods/decrement', {
         id: this.id,
-        index: this.index,
       });
     },
   },
+  beforeUpdate() {
+    console.log('data ', this.item)
+    this.current +=1
+  }
 };
 </script>
 

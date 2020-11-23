@@ -2,10 +2,9 @@
   <div>
     <span class="span-style">view update {{current}}, length {{listLength}}</span>
     <goods-item
-      v-for="(item, index) in listData"
-      :key="index"
-      :id="item.id"
-      :index="index"
+      v-for="(item) in listData"
+      :key="item.id"
+      :item="item"
     ></goods-item>
   </div>
 </template>

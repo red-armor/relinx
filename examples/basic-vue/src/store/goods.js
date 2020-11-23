@@ -10,21 +10,29 @@ export default {
       state.listData = [].concat(state.listData, goodsList)
       state.listLength = state.listData.length
     },
-    incrementItemCount(state, { index }) {
+    incrementItemCount(state, { id }) {
       const { listData } = state
-      const item = listData[index]
       const next = [...listData]
-      next[index] = {
-        ...item,
-        count: item.count + 1
+      const index = next.findIndex(item => item.id === id)
+      const item = listData[index]
+
+      if (index !== -1) {
+        next[index] = {
+          ...item,
+          count: item.count + 1
+        }
       }
       state.listData = next;
     },
-    decrementItemCount(state, { index }) {
+    decrementItemCount(state, { id }) {
       const { listData } = state
+      const index = listData.findIndex(item => item.id === id)
+      if (index === -1) return {}
+
       const item = listData[index]
       const next = [...listData]
       const nextCount = item.count - 1
+
       if (nextCount <= 0) {
         next.splice(index, 1)
       } else {
@@ -35,9 +43,6 @@ export default {
       }
       state.listData = next;
     },
-    setProps: (state, payload) => (
-      state = { ...state, ...payload }
-    )
   },
   actions: {
     increment: ({ commit }, { id, index }) => {

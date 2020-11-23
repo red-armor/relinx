@@ -1,4 +1,6 @@
 const path = require('path')
+const images = require('remark-images')
+const emoji = require('remark-emoji')
 
 module.exports = {
   "stories": [
