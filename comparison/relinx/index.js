@@ -106,7 +106,7 @@ const store = createStore(
   applyMiddleware()
 )
 
-const GlyphIcon = <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>;
+// const GlyphIcon = <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>;
 
 const RowInner = ({ data }) => {
   const [dispatch] = useDispatch()
@@ -114,18 +114,21 @@ const RowInner = ({ data }) => {
     dispatch({ type: "BENCH/SELECT", payload: { id: data.id } })
   };
 
+  console.log('update ', data.id)
+
   const remove = () => { dispatch({ type: "BENCH/REMOVE", payload: { id: data.id } }); };
   return (
     <tr className={data.selected ? "danger" : ""}>
       <td className="col-md-1">{data.id}</td>
-      <td className="col-md-4"><a onClick={remove}>{data.label}</a></td>
-      <td className="col-md-1"><a onClick={remove}>{GlyphIcon}</a></td>
+      <td className="col-md-4"><a onClick={select}>{data.label}</a></td>
+      <td className="col-md-1"><a onClick={remove}>x</a></td>
       <td className="col-md-6"></td>
     </tr>
   )
 }
 
-const Row = observe(React.memo(props => <RowInner {...props}/>))
+const Row = observe(RowInner)
+// const Row = observe(React.memo(props => <RowInner {...props}/>))
 // const Row = observe(React.memo(props => <RowInner {...props} />))
 // const Row = observe(React.memo(props => <RowInner {...props} />, (prev, next) => {
 //   // console.log('pve ', prev.data === next.data)

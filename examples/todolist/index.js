@@ -1,12 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'relinx'
-import TodoApp from './TodoApp';
-import store from './Store.js';
+import {
+  Provider, logger, createStore, applyMiddleware, thunk,
+} from 'relinx'
+
+import App from './containers/app';
+import Models from './models'
+
+const store = createStore(
+  {
+    models: Models(),
+  },
+  applyMiddleware(thunk, logger)
+)
 
 ReactDOM.render(
   <Provider store={store}>
-    <TodoApp />
+    <App />
   </Provider>,
   document.getElementById('app')
 );

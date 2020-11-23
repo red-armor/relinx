@@ -1,0 +1,38 @@
+import Good from './Good'
+import Bad from './Bad'
+
+<Meta title="Practices/how-to-select" />
+
+## How to select
+
+> 选中一个，反选另一个
+
+&#128077; 将computed selected作为props传入item
+
+```jsx
+{state.data.map(item => (
+  <Row
+    key={item.id}
+    item={item}
+    selected={state.selected === item.id}
+    dispatch={dispatch}
+  />
+))}
+```
+
+<Good />
+
+&#128078; 应该将selectId作为props传入item
+
+```jsx
+{state.data.map(item => (
+  <Row
+    key={item.id}
+    item={item}
+    selectedId={item.id}
+    dispatch={dispatch}
+  />
+))}
+```
+点击一个item进行选中
+<Bad />

@@ -1,0 +1,70 @@
+import Good from './Good'
+import Bad from './Bad'
+
+<Meta title="Practices/why-selector-needed" />
+
+## Why selector needed
+
+```jsx
+// 点击'update every 10th row'，会触发10th中label字段值的更新
+case 'UPDATE':
+  const newData = data.slice(0);
+  for (let i = 0; i < newData.length; i += 10) {
+    const r = newData[i];
+    newData[i] = { id: r.id, label: r.label + " !!!" };
+  }
+  return { data: newData, selected };
+
+// 点击'update redundant field'，会触发未使用字段redundant的更新
+case 'UPDATE_REDUNDANT':
+  const nextData = data.slice(0);
+  for (let i = 0; i < nextData.length; i += 10) {
+    const r = nextData[i];
+    nextData[i] = { ...nextData[i], redundant: r.redundant + " !!!" }
+  }
+  return { data: nextData, selected };
+```
+
+&#128077; 对于不使用到的字段，通过在memo deps function中进行selector约束，从而规避不必要的重复渲染
+
+```jsx
+const Row = memo(({ selected, item, dispatch }) => {
+  const select = useCallback(() => dispatch({ type: 'SELECT', id: item.id }), [item.id]),
+    remove = useCallback(() => dispatch({ type: 'REMOVE', id: item.id }), [item.id]);
+
+  return (<tr className={selected ? "danger" : ""}>
+    <td className="col-md-1">{item.id}</td>
+    <td className="col-md-4"><a onClick={select}>{item.label}</a></td>
+    <td className="col-md-1 remove"><a onClick={remove}>x</a></td>
+  </tr>);
+}, (prev, next) => {
+  const { item: { id: prevId, label: prevLabel }} = prev
+  const { item: { id: nextId, label: nextLabel }} = next
+
+  return prevId === nextId && prevLabel === nextLabel
+});
+```
+
+1. 点击'update every 10th row'时，对10th进行更新并且不存在冗余的重复渲染
+2. 点击'update redundant field'时，因为更新的数据'redundant'并没有被使用到，同时当前属性的变化被memo selector过滤掉了，所以没有任何组件的重复渲染
+
+<Good />
+
+&#128078; 只是对使用到的对象进行浅比较
+
+```jsx
+const Row = memo(({ selected, item, dispatch }) => {
+  const select = useCallback(() => dispatch({ type: 'SELECT', id: item.id }), [item.id]),
+    remove = useCallback(() => dispatch({ type: 'REMOVE', id: item.id }), [item.id]);
+
+  return (<tr className={selected ? "danger" : ""}>
+    <td className="col-md-1">{item.id}</td>
+    <td className="col-md-4"><a onClick={select}>{item.label}</a></td>
+    <td className="col-md-1 remove"><a onClick={remove}>x</a></td>
+  </tr>);
+});
+```
+1. 点击'update every 10th row'时，对10th进行更新并且不存在冗余的重复渲染
+2. 点击'update redundant field'时，尽管更新的数据'redundant'并没有被使用到，但是在memo看来item依旧时变化了，所以会触发不必要的重复渲染
+
+<Bad />

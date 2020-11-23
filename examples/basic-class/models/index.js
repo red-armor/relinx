@@ -1,9 +1,9 @@
-import init from './init'
-import goods from './goods'
-import bottomBar from './bottomBar'
+import createInit from '../containers/app/model'
+import createGoods from '../views/goods/model'
+import createBottomBar from '../views/bottom-bar/model'
 
 export default () => ({
-  init: new init(),
-  goods: new goods(),
-  bottomBar: new bottomBar(),
+  init: createInit(),
+  goods: createGoods(),
+  bottomBar: createBottomBar(),
 })

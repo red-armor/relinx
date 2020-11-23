@@ -1,14 +1,14 @@
-export default {
-  namespaced: true,
+export default () => ({
   state: {
     listData: [],
-    bottomBarUpdateCount: 0,// todo
+    bottomBarUpdateCount: 0,
     listLength: 0,
   },
-  mutations: {
+  reducers: {
     addGoods(state, { goodsList }) {
-      state.listData = [].concat(state.listData, goodsList)
-      state.listLength = state.listData.length
+      return {
+        listData: [].concat(state.listData, goodsList),
+      }
     },
     incrementItemCount(state, { id }) {
       const { listData } = state
@@ -22,7 +22,10 @@ export default {
           count: item.count + 1
         }
       }
-      state.listData = next;
+
+      return {
+        listData: next,
+      }
     },
     decrementItemCount(state, { id }) {
       const { listData } = state
@@ -41,21 +44,47 @@ export default {
           count: nextCount,
         }
       }
-      state.listData = next;
+
+      return {
+        listData: next,
+      }
     },
+    setProps: (_, payload) => ({ ...payload })
   },
-  actions: {
-    increment: ({ commit }, { id, index }) => {
-      commit('incrementItemCount', { id, index })
-      commit({
+  effects: {
+    increment: ({ id }) => dispatch => {
+      dispatch([{
+        type: 'incrementItemCount',
+        payload: { id },
+      }, {
         type: 'bottomBar/incrementTotalCount',
-      }, { root: true })
+      }])
     },
-    decrement: ({ commit }, { id, index }) => {
-      commit('decrementItemCount', { id, index })
-      commit({
+    decrement: ({ id }) => dispatch => {
+      dispatch([{
+        type: 'decrementItemCount',
+        payload: { id },
+      }, {
         type: 'bottomBar/decrementTotalCount',
-      }, { root: true })
+      }])
     },
   },
-}
+  subscriptions: {
+    setup({ getState }) {
+      const state = getState()
+      const { bottomBar, goods } = state
+
+      return [{
+        type: 'setProps',
+        payload: {
+          bottomBarUpdateCount: bottomBar.count,
+        }
+      }, {
+        type: 'setProps',
+        payload: {
+          listLength: goods.listData.length,
+        }
+      }]
+    }
+  }
+})

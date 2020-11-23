@@ -20,7 +20,6 @@
     "examples:basic": "DIR=examples/basic EXT=js webpack-dev-server",
     "examples:basic-class": "DIR=examples/basic-class EXT=js webpack-dev-server",
     "examples:bench2": "DIR=examples/bench2 EXT=js webpack-dev-server",
-    "examples:basic-inject": "DIR=examples/basic-inject EXT=js webpack-dev-server",
     "examples:memo": "DIR=examples/memo EXT=js webpack-dev-server",
     "examples:nest-update": "DIR=examples/nest-update EXT=js webpack-dev-server",
     "examples:nest-update-memo": "DIR=examples/nest-update-memo EXT=js webpack-dev-server",
@@ -36,7 +35,9 @@
     "comparison:react-tracked-basic": "DIR=comparison/react-tracked-basic EXT=js webpack-dev-server",
     "comparison:mobx-basic": "DIR=comparison/mobx-basic EXT=js webpack-dev-server",
     "flow-check": "flow check --show-all-errors",
-    "test": "jest --clearCache && jest --collect-coverage --verbose"
+    "test": "jest --clearCache && jest --collect-coverage --verbose",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "config": {
     "commitizen": {
@@ -72,6 +73,10 @@
     "@babel/plugin-proposal-decorators": "^7.12.1",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
+    "@storybook/addon-actions": "^6.1.2",
+    "@storybook/addon-essentials": "^6.1.2",
+    "@storybook/addon-links": "^6.1.2",
+    "@storybook/react": "^6.1.2",
     "@testing-library/jest-dom": "^4.1.0",
     "@testing-library/react": "^8.0.8",
     "@testing-library/react-hooks": "^1.1.0",
@@ -85,6 +90,7 @@
     "@typescript-eslint/parser": "^4.0.1",
     "babel-jest": "^26.5.2",
     "babel-loader": "^8.0.6",
+    "core-js": "^3.7.0",
     "css-loader": "^3.4.2",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.5",
@@ -96,6 +102,8 @@
     "react": "^16.14.0",
     "react-dom": "^16.13.1",
     "react-test-renderer": "^16.14.0",
+    "remark-emoji": "^2.1.0",
+    "remark-images": "^2.0.0",
     "style-loader": "^1.1.3",
     "ts-jest": "^26.4.1",
     "ts-loader": "^6.0.4",

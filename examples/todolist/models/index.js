@@ -1,10 +1,7 @@
-import Todos from '../todos/modules/todos'
-import Filter from '../filter/modules/filter'
+import createTodoModel from '../views/todo/model'
+import createFilterModel from '../views/filter/model'
 
-export default () => {
-  const result = {
-    todos: Todos(),
-    filter: Filter()
-  }
-  return result
-}
+export default () => ({
+  todo: createTodoModel(),
+  filter: createFilterModel(),
+})
