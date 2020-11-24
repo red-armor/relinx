@@ -17,6 +17,9 @@ import autoRun from './autoRun';
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null;
   private _count: number;
+  private _initialValue: {
+    [key in MODEL_KEY]: object;
+  };
   public dispatch: InternalDispatch;
   private _state: ExtractStateTypeOnlyModels<T>;
   private _reducers: ExtractReducersTypeOnlyModels<T>;
@@ -35,7 +38,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     };
   }) {
     const models = configs.models;
-    const initialValue = configs.initialValue || ({} as any);
+    this._initialValue = configs.initialValue || ({} as any);
 
     this._state = {} as ExtractStateTypeOnlyModels<T>;
     this._reducers = {} as ExtractReducersTypeOnlyModels<T>;
@@ -46,7 +49,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     const keys = Object.keys(models) as Array<MODEL_KEY>;
 
     keys.forEach(key => {
-      this.injectModel(key, models[key], initialValue[key]);
+      this.injectModel(key, models[key]);
     });
 
     this.dispatch = () => {};
@@ -196,10 +199,12 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   injectModel(key: MODEL_KEY, model: any, initialValue: any = {}) {
     const { state, reducers = {}, effects = {} } = model;
+    const _internalInitialValue = this._initialValue[key] || {};
     const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
     // consume all the pending actions.
     let base = this._application?.getStoreData(key) || {
       ...state,
+      ..._internalInitialValue,
       ...initialValue,
     };
 

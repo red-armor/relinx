@@ -22,5 +22,5 @@ export default function createStore<
     return enhancer<T, MODEL_KEY>(createStore)(configs);
   }
 
-  return new Store(configs);
+  return new Store(configs as any);
 }
