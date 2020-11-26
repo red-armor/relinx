@@ -64,6 +64,7 @@ const Row = memo(({ selected, item, dispatch }) => {
   const select = useCallback(() => dispatch({ type: 'SELECT', id: item.id }), [item.id]),
     remove = useCallback(() => dispatch({ type: 'REMOVE', id: item.id }), [item.id]);
 
+  console.log('item ', item)
   return (<tr className={selected ? "danger" : ""}>
     <td className="col-md-1">{item.id}</td>
     <td className="col-md-4"><a onClick={select}>{item.label}</a></td>
