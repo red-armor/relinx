@@ -1,0 +1,38 @@
+import Why from './Why'
+
+<Meta title="Practices/why-not-context" />
+
+## Why not context
+
+> 为什么直接用context会存在问题
+
+
+```jsx
+const Main = () => {
+  const [state, setState] = useState(defaultValue)
+  const increment = useCallback(() => {
+    setState(state => ({
+      ...state,
+      count: state.count + 1,
+    }))
+  }, [])
+
+  const changeTitle = useCallback(() => {
+    setState(state => ({
+      ...state,
+      title: generateKey()
+    }))
+  }, [])
+
+  return (
+    <context.Provider value={state}>
+      <button onClick={increment} className="btn btn-primary">increment</button>
+      <button onClick={changeTitle} className="btn btn-primary">changeTitle</button>
+      <Title />
+      <Counter />
+    </context.Provider>
+  )
+}
+```
+
+<Why />
