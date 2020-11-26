@@ -58,7 +58,7 @@ const Row = memo(({ selected, item, dispatch }) => {
 
   console.log('update ', item.id)
 
-  return (<tr className={selected ? "danger" : ""}>
+  return (<tr className={selected === item.id ? "danger" : ""}>
     <td className="col-md-1">{item.id}</td>
     <td className="col-md-4"><a onClick={select}>{item.label}</a></td>
     <td className="col-md-1 remove"><a onClick={remove}>x</a></td>
@@ -106,7 +106,7 @@ const Main = () => {
           <Row
             key={index}
             item={item}
-            selected={state.selected === item.id}
+            selected={state.selected}
             dispatch={dispatch}
           />
         ))}
