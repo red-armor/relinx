@@ -240,6 +240,17 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       return storeKey !== key;
     });
 
+    this._state[key] = base;
+    this._pendingActions = nextPendingActions;
+
+    this._application?.updateBase({
+      storeKey: key,
+      changedValue: base,
+    });
+
+    if (reducers) this._reducers[key] = reducers as any;
+    if (effects) this._effects[key] = effects as any;
+
     const subscriptionsKeys = Object.keys(subscriptions);
     subscriptionsKeys.forEach(autoRunKey => {
       const autoRunFn = subscriptions[autoRunKey];
@@ -260,17 +271,6 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         changedValues.forEach(value => this._application?.updateBase(value));
       }
     });
-
-    this._state[key] = base;
-    this._pendingActions = nextPendingActions;
-
-    this._application?.updateBase({
-      storeKey: key,
-      changedValue: base,
-    });
-
-    if (reducers) this._reducers[key] = reducers as any;
-    if (effects) this._effects[key] = effects as any;
   }
 }
 
