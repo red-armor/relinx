@@ -25,15 +25,11 @@ class AutoRunner {
   teardown() {
     this.removers.forEach(remover => remover());
     this.removers = [];
+    this._isDirty = false;
   }
 
   markDirty() {
     this._isDirty = true;
-    this.teardown();
-  }
-
-  markClean() {
-    this._isDirty = false;
   }
 
   isDirty(): boolean {
