@@ -178,14 +178,20 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   }
 
   addAutoRunners(autoRunners: Array<AutoRunner>, updateType: UPDATE_TYPE) {
+    // if (autoRunners.length) {
+    //   autoRunners.forEach(autoRunner => {
+    //     if (!autoRunner.isDirty()) {
+    //       this.pendingAutoRunners.push({ autoRunner, updateType });
+    //       autoRunner.markDirty();
+    //     }
+    //   });
+    //   autoRunners.forEach(autoRunner => {
+    //     autoRunner.teardown();
+    //   });
+    // }
     if (autoRunners.length) {
       autoRunners.forEach(autoRunner => {
-        if (!autoRunner.isDirty()) {
-          this.pendingAutoRunners.push({ autoRunner, updateType });
-          autoRunner.markDirty();
-        }
-      });
-      autoRunners.forEach(autoRunner => {
+        this.pendingAutoRunners.push({ autoRunner, updateType });
         autoRunner.teardown();
       });
     }
