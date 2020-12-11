@@ -273,7 +273,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       nextValue,
       (pathNode: PathNode, updateType?: UPDATE_TYPE) => {
         this.addAutoRunners(
-          pathNode.autoRunners,
+          pathNode.autoRunners.slice(),
           updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE
         );
       }
@@ -302,7 +302,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       nextValue,
       (pathNode: PathNode, updateType?: UPDATE_TYPE) => {
         this.addPatchers(
-          pathNode.patchers,
+          pathNode.patchers.slice(),
           updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE
         );
       }
