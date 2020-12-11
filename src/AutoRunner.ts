@@ -2,7 +2,6 @@ import { AutoRunnerProps, Action } from './types';
 
 let count = 1;
 class AutoRunner {
-  private _isDirty: boolean;
   public paths: Array<Array<string>>;
   public autoRunFn: Function;
   public id: string;
@@ -13,7 +12,6 @@ class AutoRunner {
     this.id = `autoRunner_${count++}`;
     this.paths = paths;
     this.autoRunFn = autoRunFn;
-    this._isDirty = false;
     this.removers = [];
     this.modelKey = modelKey;
   }
@@ -25,15 +23,6 @@ class AutoRunner {
   teardown() {
     this.removers.forEach(remover => remover());
     this.removers = [];
-    this._isDirty = false;
-  }
-
-  markDirty() {
-    this._isDirty = true;
-  }
-
-  isDirty(): boolean {
-    return this._isDirty;
   }
 
   triggerAutoRun() {
