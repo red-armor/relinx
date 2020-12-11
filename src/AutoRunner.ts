@@ -26,18 +26,26 @@ class AutoRunner {
   }
 
   triggerAutoRun() {
-    const actions = [].concat(this.autoRunFn()) as Array<Action>;
-    return actions.map(action => {
-      const { type, payload } = action;
-      // if type is not in `namespace/type` format, then add modelKey as default namespace.
-      if (!/\//.test(type)) {
-        return {
-          type: `${this.modelKey}/${type}`,
-          payload,
-        };
-      }
-      return action;
-    });
+    try {
+      const actions = []
+        .concat(this.autoRunFn())
+        .filter((v: Action) => v) as Array<Action>;
+
+      return actions.map(action => {
+        const { type, payload } = action;
+        // if type is not in `namespace/type` format, then add modelKey as default namespace.
+        if (!/\//.test(type)) {
+          return {
+            type: `${this.modelKey}/${type}`,
+            payload,
+          };
+        }
+        return action;
+      });
+    } catch (err) {
+      console.log('[trigger auto run] with error ', err);
+      return [];
+    }
   }
 }
 

@@ -26,7 +26,11 @@ export default (WrappedComponent: FC<any>) => {
     // @ts-ignore
     const [_, setState] = useState(0); // eslint-disable-line
     const patcherUpdated = useRef(0);
-    const isMounted = useRef(false);
+
+    // default as true, it will cause collection fail when component is dynamic
+    // injected. use case: ProfitBanner in goodsDetail
+    // After mount component, then trigger autoRun, `isMounted` is false actually.
+    const isMounted = useRef(true);
     const { $_modelKey, ...restProps } = props;
     const originRef = useRef(Object.create(null));
     const observablesRef = useRef(Object.create(null));
