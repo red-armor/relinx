@@ -40,15 +40,19 @@ const autoRun = <T, K extends keyof T>(
 
   StateTrackerUtil.leave(state);
 
-  const nextActions = initialActions.map(action => {
+  const nextActions = [] as Array<Action>;
+  initialActions.forEach(action => {
+    if (!action) return;
     const { type, payload } = action;
+    if (!type) return;
+
     if (!/\//.test(type)) {
-      return {
+      nextActions.push({
         type: `${modelKey}/${type}`,
         payload,
-      };
+      });
     }
-    return action;
+    nextActions.push(action);
   });
 
   return nextActions;
