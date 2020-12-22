@@ -8,6 +8,7 @@ import {
   ApplyMiddlewareAPI,
   ExtractEffectsTypeOnlyModels,
 } from '../types';
+import error from '../utils/error';
 
 /**
  * The basic format of action type is `storeKey/${type}`.
@@ -90,9 +91,14 @@ export default <T extends BasicModelType<T>>({
     const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
       T
     >[keyof T];
-    const currentEffects = store.getEffects()[storeKey];
-    const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-    dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
+    try {
+      const currentEffects = store.getEffects()[storeKey];
+      const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
+
+      dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
+    } catch (err) {
+      error(10001, err, type);
+    }
   });
 };
