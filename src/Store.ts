@@ -13,23 +13,33 @@ import {
   PendingAutoRunInitialization,
 } from './types';
 import autoRun from './autoRun';
+import SyntheticModelKeyManager from './SyntheticModelKeyManager';
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
-  private _application: Application<T, MODEL_KEY> | null;
-  private _count: number;
+  private _application: Application<T, MODEL_KEY> | null = null;
+  private _count: number = 0;
   private _initialValue: {
     [key in MODEL_KEY]: object;
   };
-  public dispatch: InternalDispatch;
-  private _state: ExtractStateTypeOnlyModels<T>;
-  private _reducers: ExtractReducersTypeOnlyModels<T>;
-  private _effects: ExtractEffectsTypeOnlyModels<T>;
-  private _pendingAutoRunInitializations: Array<PendingAutoRunInitialization>;
-  private _pendingActions: Array<Action>;
+  public dispatch: InternalDispatch = () => {};
+  private _state: ExtractStateTypeOnlyModels<
+    T
+  > = {} as ExtractStateTypeOnlyModels<T>;
+  private _reducers: ExtractReducersTypeOnlyModels<
+    T
+  > = {} as ExtractReducersTypeOnlyModels<T>;
+  private _effects: ExtractEffectsTypeOnlyModels<
+    T
+  > = {} as ExtractEffectsTypeOnlyModels<T>;
+  private _pendingAutoRunInitializations: Array<
+    PendingAutoRunInitialization
+  > = [];
+  private _syntheticModelKeyManager: SyntheticModelKeyManager = new SyntheticModelKeyManager();
+  private _pendingActions: Array<Action> = [];
   public initialState: any;
   public subscriptions: {
     [key: string]: Subscription<ExtractStateTypeOnlyModels<T>>;
-  };
+  } = {};
 
   constructor(configs: {
     models: CreateStoreOnlyModels<T>;
@@ -40,22 +50,14 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     const models = configs.models;
     this._initialValue = configs.initialValue || ({} as any);
 
-    this._state = {} as ExtractStateTypeOnlyModels<T>;
-    this._reducers = {} as ExtractReducersTypeOnlyModels<T>;
-    this._effects = {} as ExtractEffectsTypeOnlyModels<T>;
-    this._pendingActions = [];
-    this._pendingAutoRunInitializations = [];
-
     const keys = Object.keys(models) as Array<MODEL_KEY>;
 
     keys.forEach(key => {
-      this.injectModel(key, models[key]);
+      this.injectModel({
+        originalKey: key,
+        model: models[key],
+      });
     });
-
-    this.dispatch = () => {};
-    this._application = null;
-    this.subscriptions = {};
-    this._count = 0;
   }
 
   getState(): ExtractStateTypeOnlyModels<T> {
@@ -141,10 +143,12 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           }
         );
         const oldState = {
-          ...this._application?.base,
+          // ...this._application?.base,
+          ...this.getState(),
         } as ExtractStateTypeOnlyModels<T>;
         const newState = {
-          ...this._application?.base,
+          // ...this._application?.base,
+          ...this.getState(),
           ...toObject,
         } as ExtractStateTypeOnlyModels<T>;
         for (let i = 0; i < storeSubscriptionsKeysLength; i++) {
@@ -197,16 +201,45 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return () => delete this.subscriptions[key];
   }
 
-  injectModel(key: MODEL_KEY, model: any, initialValue: any = {}) {
+  getModelKey(key: MODEL_KEY) {
+    return this._syntheticModelKeyManager.getDelegationKey(key as string);
+  }
+
+  getModel(key: MODEL_KEY) {
+    const modelKey = this.getModelKey(key);
+    return this._state[modelKey as MODEL_KEY];
+  }
+
+  injectModel({
+    key,
+    model,
+    initialValue = {},
+    targetKey,
+  }: {
+    key: MODEL_KEY;
+    model: any;
+    initialValue: any;
+    targetKey?: MODEL_KEY;
+  }) {
+    this._syntheticModelKeyManager.add({
+      originalKey: key as string,
+      targetKey: (targetKey || key) as string,
+    });
     const { state, reducers = {}, effects = {} } = model;
+
     const _internalInitialValue = this._initialValue[key] || {};
     const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
     // consume all the pending actions.
-    let base = this._application?.getStoreData(key) || {
+    let base = this.getModel(key) || {
       ...state,
       ..._internalInitialValue,
       ...initialValue,
     };
+    // let base = this._application?.getStoreData(key) || {
+    //   ...state,
+    //   ..._internalInitialValue,
+    //   ...initialValue,
+    // };
 
     const nextPendingActions = this._pendingActions.filter(action => {
       const { type, payload } = action;

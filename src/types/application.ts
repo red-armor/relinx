@@ -1,12 +1,13 @@
-import PathNode from '../PathNode';
+// import PathNode from '../PathNode';
 import Patcher from '../Patcher';
-import { GenericState } from './';
+// import { GenericState } from './';
+import { BasicModelType } from './createStore';
 import AutoRunner from '../AutoRunner';
+import Store from '../Store';
 
 export type IApplication<T, K extends keyof T> = {
-  base: GenericState<T, K>;
-  node: PathNode;
-  pendingPatchers: Array<PendingPatcher>;
+  // base: GenericState<T, K>;
+  store: Store<BasicModelType<T>, K>;
   namespace: string;
   strictMode: boolean;
 };

@@ -10,14 +10,17 @@ import {
   PendingAutoRunner,
   ChangedValueGroup,
   UPDATE_TYPE,
+  BasicModelType,
 } from './types';
 import Patcher from './Patcher';
 import produce, { ProxyState, StateTrackerUtil } from 'state-tracker';
 import AutoRunner from './AutoRunner';
+import Store from './Store';
 
 class Application<T, K extends keyof T> implements IApplication<T, K> {
   private _updateType: UPDATE_TYPE | null;
-  public base: GenericState<T, K>;
+  // public store: GenericState<T, K>;
+  public store: Store<BasicModelType<T>, K>;
   public node: PathNode;
   public autoRunnerNode: PathNode;
   public pendingPatchers: Array<PendingPatcher>;
@@ -26,17 +29,11 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public strictMode: boolean;
   public proxyState: ProxyState;
   public dirtyState: GenericState<T, K>;
+  private _base: GenericState<T, K>;
 
-  constructor({
-    base,
-    namespace,
-    strictMode,
-  }: {
-    base: GenericState<T, K>;
-    namespace: string;
-    strictMode: boolean;
-  }) {
-    this.base = base;
+  constructor({ store, namespace, strictMode }: IApplication<T, K>) {
+    // this._base = base;
+    this.store = store;
     this.node = new PathNode({
       type: 'patcher',
       prop: 'node',
@@ -49,9 +46,9 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     this.pendingAutoRunners = [];
     this.namespace = namespace;
     this.strictMode = strictMode;
-    this.proxyState = produce(this.base);
+    this.proxyState = produce(this._base);
 
-    this.dirtyState = this.base;
+    this.dirtyState = this._base;
     this.getState = this.getState.bind(this);
     this._updateType = null;
   }
@@ -92,7 +89,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
       values.forEach(value => this.treeShakeAutoRunner(value));
 
       const merged = this.prepareUpdateBase(values);
-      this.dirtyState = this.base;
+      this.dirtyState = this._base;
       StateTrackerUtil.batchRelink(this.proxyState, merged as any);
       // this.dirtyState = this.proxyState.batchRelink(merged as any) as any;
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
@@ -140,7 +137,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     return keys.map(key => {
       const value = merged[key as K];
       const { storeKey, changedValue } = value;
-      const origin = this.base[storeKey] || ({} as any);
+      const origin = this._base[storeKey] || ({} as any);
 
       return {
         path: [storeKey],
@@ -159,7 +156,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     storeKey: K;
     changedValue: object;
   }) {
-    const origin = this.base[storeKey] || ({} as any);
+    const origin = this._base[storeKey] || ({} as any);
     StateTrackerUtil.relink(this.proxyState, [storeKey as string], {
       ...origin,
       ...changedValue,
@@ -262,7 +259,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     changedValue: object;
   }) {
     const branch = this.autoRunnerNode.children[storeKey as any];
-    const baseValue = this.base[storeKey];
+    const baseValue = this._base[storeKey];
     const nextValue = { ...baseValue, ...changedValue };
 
     // why it could be undefined. please refer to https://github.com/ryuever/relinx/issues/4
@@ -289,7 +286,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     { storeKey, changedValue }: { storeKey: K; changedValue: object },
     possibleBase?: any
   ) {
-    const base = possibleBase || this.base;
+    const base = possibleBase || this._base;
     const branch = this.node.children[storeKey as any];
     const baseValue = base[storeKey];
     const nextValue = { ...baseValue, ...changedValue };
@@ -325,7 +322,7 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   }
 
   getStoreData(storeName: K): T[K] {
-    const storeValue = this.base[storeName];
+    const storeValue = this._base[storeName];
     return storeValue;
   }
 }
