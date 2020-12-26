@@ -54,7 +54,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
     keys.forEach(key => {
       this.injectModel({
-        originalKey: key,
+        key,
         model: models[key],
       });
     });
@@ -88,7 +88,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         if (!usedReducer) {
           this._pendingActions.push(action);
         } else if (usedReducer[actionType]) {
-          const currentState = this._application.base[storeKey];
+          const currentState = this.getModel(storeKey);
           const changedValue = usedReducer[actionType](currentState, payload);
           changedValueGroup.push({
             storeKey,
@@ -218,7 +218,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }: {
     key: MODEL_KEY;
     model: any;
-    initialValue: any;
+    initialValue?: any;
     targetKey?: MODEL_KEY;
   }) {
     this._syntheticModelKeyManager.add({

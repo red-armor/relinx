@@ -17,10 +17,11 @@ import produce, { ProxyState, StateTrackerUtil } from 'state-tracker';
 import AutoRunner from './AutoRunner';
 import Store from './Store';
 
-class Application<T, K extends keyof T> implements IApplication<T, K> {
+class Application<T extends BasicModelType<T>, K extends keyof T>
+  implements IApplication<T> {
   private _updateType: UPDATE_TYPE | null;
   // public store: GenericState<T, K>;
-  public store: Store<BasicModelType<T>, K>;
+  public store: Store<T>;
   public node: PathNode;
   public autoRunnerNode: PathNode;
   public pendingPatchers: Array<PendingPatcher>;
@@ -31,9 +32,9 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
   public dirtyState: GenericState<T, K>;
   private _base: GenericState<T, K>;
 
-  constructor({ store, namespace, strictMode }: IApplication<T, K>) {
-    // this._base = base;
+  constructor({ store, namespace, strictMode }: IApplication<T>) {
     this.store = store;
+    this._base = this.store.getState() as any;
     this.node = new PathNode({
       type: 'patcher',
       prop: 'node',
@@ -156,8 +157,11 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     storeKey: K;
     changedValue: object;
   }) {
-    const origin = this._base[storeKey] || ({} as any);
-    StateTrackerUtil.relink(this.proxyState, [storeKey as string], {
+    const modelKey = this.store.getModelKey(storeKey);
+    const origin = this.store.getModel(storeKey);
+
+    // const origin = this._base[storeKey] || ({} as any);
+    StateTrackerUtil.relink(this.proxyState, [modelKey as string], {
       ...origin,
       ...changedValue,
     });
@@ -321,10 +325,10 @@ class Application<T, K extends keyof T> implements IApplication<T, K> {
     });
   }
 
-  getStoreData(storeName: K): T[K] {
-    const storeValue = this._base[storeName];
-    return storeValue;
-  }
+  // getStoreData(storeName: K): T[K] {
+  //   const storeValue = this._base[storeName];
+  //   return storeValue;
+  // }
 }
 
 export default Application;
