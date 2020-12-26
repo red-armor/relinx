@@ -1,12 +1,19 @@
 import print from './print';
 import { Next, Action, ApplyMiddlewareAPI, BasicModelType } from '../../types';
 
+const NODE_ENV = process.env.NODE_ENV;
+
 export default <T extends BasicModelType<T>>({
   getState,
 }: ApplyMiddlewareAPI<T>) => (next: Next) => (
   actions: Array<Action> | Function
 ) => {
   if (typeof actions !== 'function') {
+    if (NODE_ENV === 'production') {
+      next(actions);
+      return;
+    }
+
     const startTime = Date.now();
     const prevState = JSON.parse(JSON.stringify(getState()));
 
