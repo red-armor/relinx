@@ -14,6 +14,16 @@ class SyntheticModelKeyManager {
     if (!this._collection.has(key)) die(10002);
     const current = this._collection.get(key);
     const delegatedModelKey = current!.getTarget();
+
+    if (!this._collection.has(delegatedModelKey)) {
+      this._collection.set(
+        delegatedModelKey,
+        new SyntheticModelKey({
+          originalKey: delegatedModelKey,
+          targetKey: delegatedModelKey,
+        })
+      );
+    }
     const delegated = this._collection.get(delegatedModelKey);
     delegated?.setDelegation(key);
   }

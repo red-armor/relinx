@@ -69,9 +69,15 @@ export default (WrappedComponent: FC<any>) => {
             // update is triggered by itself
             const pathTracker = StateTrackerUtil.getPathTracker(value);
             const paths = pathTracker.getPath();
+            const first = application?.store.getModelKey(paths[0])!;
+            const nextPaths = ([] as Array<string>).concat(
+              first,
+              paths.slice(1)
+            );
+
             const nextValue = StateTrackerUtil.peek(
               application!.proxyState,
-              paths
+              nextPaths
             );
 
             if (nextValue !== observablesRef.current[key]) {

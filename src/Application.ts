@@ -48,7 +48,6 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     this.namespace = namespace;
     this.strictMode = strictMode;
     this.proxyState = produce(this._base);
-
     this.dirtyState = this._base;
     this.getState = this.getState.bind(this);
     this._updateType = null;
@@ -157,8 +156,8 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     storeKey: K;
     changedValue: object;
   }) {
-    const modelKey = this.store.getModelKey(storeKey);
-    const origin = this.store.getModel(storeKey);
+    const modelKey = storeKey;
+    const origin = this.store.getModel(storeKey, true);
 
     // const origin = this._base[storeKey] || ({} as any);
     StateTrackerUtil.relink(this.proxyState, [modelKey as string], {

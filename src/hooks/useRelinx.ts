@@ -14,8 +14,9 @@ export default <T, M, K extends keyof T = any>(
   const { dispatch, application, $_modelKey } = useContext<
     ContextDefaultValue<T, M>
   >(context);
+  const store = application!.store;
 
-  const nextStoreName = storeName || $_modelKey;
+  const nextStoreName = store.getModelKey((storeName || $_modelKey) as string);
   const proxyState = application?.proxyState;
   const state = StateTrackerUtil.peek(proxyState!, [nextStoreName as string]);
 

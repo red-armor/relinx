@@ -11,6 +11,7 @@ import {
   ExtractEffectsTypeOnlyModels,
   ExtractReducersTypeOnlyModels,
   PendingAutoRunInitialization,
+  ModelKey,
 } from './types';
 import autoRun from './autoRun';
 import SyntheticModelKeyManager from './SyntheticModelKeyManager';
@@ -81,17 +82,20 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           MODEL_KEY,
           keyof ExtractReducersTypeOnlyModels<T>
         ];
-        const usedReducer = this._reducers[storeKey];
+
+        const modelKey = this.getModelKey(storeKey) as MODEL_KEY;
+
+        const usedReducer = this._reducers[modelKey];
 
         // If usedReducer is null, Maybe you have dispatched an unregistered action.
         // On this condition, put these actions to `this._pendingActions`
         if (!usedReducer) {
           this._pendingActions.push(action);
         } else if (usedReducer[actionType]) {
-          const currentState = this.getModel(storeKey);
+          const currentState = this.getModel(modelKey);
           const changedValue = usedReducer[actionType](currentState, payload);
           changedValueGroup.push({
-            storeKey,
+            storeKey: modelKey,
             changedValue,
           });
         } else {
@@ -205,9 +209,18 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return this._syntheticModelKeyManager.getDelegationKey(key as string);
   }
 
-  getModel(key: MODEL_KEY) {
-    const modelKey = this.getModelKey(key);
+  /**
+   *
+   * @param key modelKey/storeKey, if it is a storeKey, then it should be transformed before use.
+   * @param falsy indicate key should be transformed or not.
+   */
+  getModel(key: MODEL_KEY, falsy?: boolean) {
+    const modelKey = falsy ? key : this.getModelKey(key);
     return this._state[modelKey as MODEL_KEY];
+  }
+
+  transfer(key: ModelKey) {
+    this._syntheticModelKeyManager.transfer(key);
   }
 
   injectModel({
@@ -235,11 +248,6 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       ..._internalInitialValue,
       ...initialValue,
     };
-    // let base = this._application?.getStoreData(key) || {
-    //   ...state,
-    //   ..._internalInitialValue,
-    //   ...initialValue,
-    // };
 
     const nextPendingActions = this._pendingActions.filter(action => {
       const { type, payload } = action;
@@ -249,7 +257,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       ];
 
       // only process action with current injected model's tag
-      if (key === storeKey) {
+      // if (storeKey === key) {
+      if (this.getModelKey(storeKey) === key) {
         const reducer = reducers[actionType];
         const effect = effects[actionType];
 
@@ -268,9 +277,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
             `Maybe you have dispatched an unregistered model's effect action(${action})`
           );
         }
+        return false;
       }
 
-      return storeKey !== key;
+      return true;
     });
 
     this._state[key] = base;
