@@ -1,5 +1,6 @@
 import { ProxyState } from 'state-tracker';
 import { Action } from './createStore';
+import Store from '../Store';
 
 export type Subscription<T> = ({
   oldState,
@@ -28,3 +29,5 @@ export type PendingAutoRunInitialization = {
   autoRunKey: string;
   autoRunFn: Function;
 };
+
+export { Store };

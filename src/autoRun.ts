@@ -2,9 +2,9 @@ import invariant from 'invariant';
 import { StateTrackerUtil } from 'state-tracker';
 import Application from './Application';
 import AutoRunner from './AutoRunner';
-import { Action } from './types';
+import { Action, BasicModelType } from './types';
 
-const autoRun = <T, K extends keyof T>(
+const autoRun = <T extends BasicModelType<T>, K extends keyof T>(
   fn: Function,
   application: Application<T, K>,
   modelKey: string

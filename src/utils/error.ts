@@ -4,6 +4,7 @@ const errors: {
   10001: (error: Error, type: string) => {
     return `process effect action ${type} with error: \n ${error.message}`;
   },
+  10002: `model key should be defined before used to transfer`,
 };
 
 const error = (code: number, ...args: Array<any>) => {

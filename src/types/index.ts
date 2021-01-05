@@ -10,3 +10,4 @@ export * from './thunk';
 export * from './store';
 export * from './globalHelper';
 export * from './autoRunner';
+export * from './syntheticModelKeyManager';

@@ -25,9 +25,16 @@ const store = createStore({
   }
 }, applyMiddleware(thunk))
 
-store.injectModel('goods', createGoods())
-store.injectModel('init', createInit(), {
-  page: 1,
+store.injectModel({
+  key: 'goods',
+  model: createGoods(),
+})
+store.injectModel({
+  key: 'init',
+  model: createInit(),
+  initialValue: {
+    page: 1,
+  }
 })
 
 const Basic = () => (

@@ -19,7 +19,7 @@ function Provider<T extends BasicModelType<T>, K extends keyof T = keyof T>({
   const application = useRef<Application<T, K>>();
   if (!application.current) {
     application.current = new Application<T, K>({
-      base: store.getState() as any,
+      store,
       namespace: namespaceRef.current,
       strictMode,
     });

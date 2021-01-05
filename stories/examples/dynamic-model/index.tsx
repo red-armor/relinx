@@ -62,8 +62,10 @@ export default () => {
 
   const injectModel = useCallback(() => {
     if (infoModelLoaded) return
-    store.injectModel('info', createInfoModel(), {
-      count: 1,
+    store.injectModel({
+      key: 'info',
+      model: createInfoModel(),
+      initialValue: { count: 1 }
     })
     setInfoModelLoad(true)
   }, [infoModelLoaded])
