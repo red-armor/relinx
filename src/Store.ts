@@ -35,7 +35,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _pendingAutoRunInitializations: Array<
     PendingAutoRunInitialization
   > = [];
-  private _syntheticModelKeyManager: SyntheticModelKeyManager = new SyntheticModelKeyManager();
+  private _syntheticModelKeyManager: SyntheticModelKeyManager;
   private _pendingActions: Array<Action> = [];
   public initialState: any;
   public subscriptions: {
@@ -50,6 +50,9 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }) {
     const models = configs.models;
     this._initialValue = configs.initialValue || ({} as any);
+    this._syntheticModelKeyManager = new SyntheticModelKeyManager({
+      store: this,
+    });
 
     const keys = Object.keys(models) as Array<MODEL_KEY>;
 
@@ -73,6 +76,14 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return this._effects;
   }
 
+  clearPendingActions(key: string) {
+    this._pendingActions = this._pendingActions.filter(action => {
+      const { type } = action;
+      const [storeKey] = type.split('/');
+      return storeKey !== key;
+    });
+  }
+
   resolveActions(actions: Array<Action>) {
     return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
       (changedValueGroup, action) => {
@@ -82,6 +93,30 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           MODEL_KEY,
           keyof ExtractReducersTypeOnlyModels<T>
         ];
+
+        const syntheticModelKeyManager = this._syntheticModelKeyManager.get(
+          storeKey as string
+        );
+        if (!syntheticModelKeyManager) {
+          const list = this._syntheticModelKeyManager.getByTargetKey(
+            storeKey as string
+          );
+          list.forEach(manager => {
+            const originalKey = manager.getOriginal();
+            const currentState = this.getModel(originalKey as MODEL_KEY, true);
+            const usedReducer = this._reducers[originalKey as MODEL_KEY];
+            if (usedReducer) {
+              const changedValue = usedReducer[actionType](
+                currentState,
+                payload
+              );
+              changedValueGroup.push({
+                storeKey: modelKey,
+                changedValue,
+              });
+            }
+          });
+        }
 
         const modelKey = this.getModelKey(storeKey) as MODEL_KEY;
 
@@ -234,9 +269,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     initialValue?: any;
     targetKey?: MODEL_KEY;
   }) {
-    this._syntheticModelKeyManager.add({
+    const syntheticManager = this._syntheticModelKeyManager.add({
       originalKey: key as string,
-      targetKey: (targetKey || key) as string,
+      // target should not be set with default value!!
+      targetKey: targetKey as string,
     });
     const { state, reducers = {}, effects = {} } = model;
 
@@ -256,9 +292,12 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         keyof ExtractReducersTypeOnlyModels<T>
       ];
 
+      // const manager = this._syntheticModelKeyManager.get(storeKey as string);
+
       // only process action with current injected model's tag
       // if (storeKey === key) {
-      if (this.getModelKey(storeKey) === key) {
+      // if (this.getModelKey(storeKey) === key) {
+      if (syntheticManager!.getTarget() === storeKey) {
         const reducer = reducers[actionType];
         const effect = effects[actionType];
 
@@ -277,7 +316,13 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
             `Maybe you have dispatched an unregistered model's effect action(${action})`
           );
         }
-        return false;
+
+        if (
+          !syntheticManager?.isSyntheticMode() ||
+          syntheticManager.getCommitted()
+        ) {
+          return false;
+        }
       }
 
       return true;
