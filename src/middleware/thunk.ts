@@ -66,7 +66,8 @@ export default <T extends BasicModelType<T>>({
         const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
           T
         >[typeof storeKey];
-        const currentEffects = store.getEffects()[storeKey];
+        const modelKey = store.getModelKey(storeKey);
+        const currentEffects = store.getEffects()[modelKey as keyof T];
 
         if (currentEffects && currentEffects[actionType]) {
           return effectActions.push(action);
@@ -93,10 +94,14 @@ export default <T extends BasicModelType<T>>({
     >[keyof T];
 
     try {
-      const currentEffects = store.getEffects()[storeKey];
-      const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
+      const modelKey = store.getModelKey(storeKey);
+      if (modelKey) {
+        const currentEffects = store.getEffects()[modelKey as keyof T];
+        const handler = (currentEffects[actionType] as unknown) as ThunkFn<T>;
 
-      dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
+        // dispatch is `nextDispatch` on the beginning. storeKey no need to transform
+        dispatch && (dispatch as ThunkDispatch<T>)(handler(payload), storeKey);
+      }
     } catch (err) {
       error(10001, err, type);
     }
