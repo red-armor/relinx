@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { SyntheticModelKeyProps } from './types';
+import { SyntheticModelKeyProps, ModelKey } from './types';
 import die from './utils/error';
 import Store from './Store';
 
@@ -32,8 +32,27 @@ class SyntheticModelKeyManager {
         })
       );
     }
+
+    this._store.transferModel(key as ModelKey, delegatedModelKey as ModelKey);
+
+    // if (this._store._state[key]) {
+    //   this._store._state[delegatedModelKey] = this._store._state[key]
+    //   this._store._reducers[delegatedModelKey] = this._store._reducers[key]
+    //   this._store._effects[delegatedModelKey] = this._store._effects[key]
+    // }
+
+    // if (delegatedModelKey !== key) {
+    //   delete this._store._state[key]
+    //   delete this._store._reducers[key]
+    //   delete this._store._effects[key]
+    // }
+
     const delegated = this._collection.get(delegatedModelKey);
     delegated?.setDelegation(key);
+    // to handle autoRun condition!!
+    if (current?.getCurrent() !== key) {
+      current?.setDelegation(key);
+    }
     this._store.clearPendingActions(delegatedModelKey);
   }
 
