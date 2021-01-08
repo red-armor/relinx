@@ -258,6 +258,12 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     this._syntheticModelKeyManager.transfer(key);
   }
 
+  transferModel(from: MODEL_KEY, to: MODEL_KEY) {
+    if (this._state[from]) this._state[to] = this._state[from];
+    if (this._reducers[from]) this._reducers[to] = this._reducers[from];
+    if (this._effects[from]) this._effects[to] = this._effects[from];
+  }
+
   injectModel({
     key,
     model,
@@ -276,7 +282,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     });
     const { state, reducers = {}, effects = {} } = model;
 
-    const _internalInitialValue = this._initialValue[key] || {};
+    const _internalInitialValue =
+      this._initialValue[syntheticManager!.getTarget() as MODEL_KEY] || {};
     const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
     // consume all the pending actions.
     let base = this.getModel(key) || {
