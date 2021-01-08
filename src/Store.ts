@@ -15,6 +15,7 @@ import {
 } from './types';
 import autoRun from './autoRun';
 import SyntheticModelKeyManager from './SyntheticModelKeyManager';
+import error from './utils/error';
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null = null;
@@ -85,62 +86,70 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }
 
   resolveActions(actions: Array<Action>) {
-    return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
-      (changedValueGroup, action) => {
-        if (!this._application) return [];
-        const { type, payload } = action;
-        const [storeKey, actionType] = type.split('/') as [
-          MODEL_KEY,
-          keyof ExtractReducersTypeOnlyModels<T>
-        ];
+    try {
+      return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
+        (changedValueGroup, action) => {
+          if (!this._application) return [];
+          const { type, payload } = action;
+          const [storeKey, actionType] = type.split('/') as [
+            MODEL_KEY,
+            keyof ExtractReducersTypeOnlyModels<T>
+          ];
 
-        const syntheticModelKeyManager = this._syntheticModelKeyManager.get(
-          storeKey as string
-        );
-        if (!syntheticModelKeyManager) {
-          const list = this._syntheticModelKeyManager.getByTargetKey(
+          const syntheticModelKeyManager = this._syntheticModelKeyManager.get(
             storeKey as string
           );
-          list.forEach(manager => {
-            const originalKey = manager.getOriginal();
-            const currentState = this.getModel(originalKey as MODEL_KEY, true);
-            const usedReducer = this._reducers[originalKey as MODEL_KEY];
-            if (usedReducer) {
-              const changedValue = usedReducer[actionType](
-                currentState,
-                payload
-              );
-              changedValueGroup.push({
-                storeKey: modelKey,
-                changedValue,
-              });
-            }
-          });
-        }
 
-        const modelKey = this.getModelKey(storeKey) as MODEL_KEY;
+          // It means storeKey is in synthetic mode and not committed.
+          // The incoming action should update model with `targetKey` is key
+          if (!syntheticModelKeyManager) {
+            const list = this._syntheticModelKeyManager.getByTargetKey(
+              storeKey as string
+            );
+            list.forEach(manager => {
+              const originalKey = manager.getOriginal() as MODEL_KEY;
+              const currentState = this.getModel(originalKey, true);
+              const usedReducer = this._reducers[originalKey];
+              if (usedReducer) {
+                const changedValue = usedReducer[actionType](
+                  currentState,
+                  payload
+                );
+                changedValueGroup.push({
+                  storeKey: originalKey,
+                  changedValue,
+                });
+              }
+            });
+          }
 
-        const usedReducer = this._reducers[modelKey];
+          const modelKey = this.getModelKey(storeKey) as MODEL_KEY;
 
-        // If usedReducer is null, Maybe you have dispatched an unregistered action.
-        // On this condition, put these actions to `this._pendingActions`
-        if (!usedReducer) {
-          this._pendingActions.push(action);
-        } else if (usedReducer[actionType]) {
-          const currentState = this.getModel(modelKey);
-          const changedValue = usedReducer[actionType](currentState, payload);
-          changedValueGroup.push({
-            storeKey: modelKey,
-            changedValue,
-          });
-        } else {
-          console.warn(`Do not have action '${actionType}'`);
-        }
+          const usedReducer = this._reducers[modelKey];
 
-        return changedValueGroup;
-      },
-      []
-    );
+          // If usedReducer is null, Maybe you have dispatched an unregistered action.
+          // On this condition, put these actions to `this._pendingActions`
+          if (!usedReducer) {
+            this._pendingActions.push(action);
+          } else if (usedReducer[actionType]) {
+            const currentState = this.getModel(modelKey);
+            const changedValue = usedReducer[actionType](currentState, payload);
+            changedValueGroup.push({
+              storeKey: modelKey,
+              changedValue,
+            });
+          } else {
+            console.warn(`Do not have action '${actionType}'`);
+          }
+
+          return changedValueGroup;
+        },
+        []
+      );
+    } catch (err) {
+      error(10003);
+      return [];
+    }
   }
 
   setValue(actions: Array<Action>) {
