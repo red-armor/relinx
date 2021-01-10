@@ -15,7 +15,7 @@ import {
 } from './types';
 import autoRun from './autoRun';
 import SyntheticModelKeyManager from './SyntheticModelKeyManager';
-import error from './utils/error';
+import { error, warn } from './utils/logger';
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _application: Application<T, MODEL_KEY> | null = null;
@@ -268,6 +268,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }
 
   transferModel(from: MODEL_KEY, to: MODEL_KEY) {
+    if (from !== to) warn(20001, to, from);
     if (this._state[from]) this._state[to] = this._state[from];
     if (this._reducers[from]) this._reducers[to] = this._reducers[from];
     if (this._effects[from]) this._effects[to] = this._effects[from];

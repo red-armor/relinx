@@ -8,7 +8,7 @@ import {
   ApplyMiddlewareAPI,
   ExtractEffectsTypeOnlyModels,
 } from '../types';
-import error from '../utils/error';
+import { error } from '../utils/logger';
 
 /**
  * The basic format of action type is `storeKey/${type}`.
