@@ -1,6 +1,6 @@
 import invariant from 'invariant';
 import { SyntheticModelKeyProps, ModelKey } from './types';
-import die from './utils/error';
+import { error } from './utils/logger';
 import Store from './Store';
 
 class SyntheticModelKeyManager {
@@ -20,7 +20,7 @@ class SyntheticModelKeyManager {
   }
 
   transfer(key: string) {
-    if (!this._collection.has(key)) die(10002);
+    if (!this._collection.has(key)) error(10002);
     const current = this._collection.get(key);
     const delegatedModelKey = current!.getTarget();
 

@@ -8,6 +8,14 @@ const errors: {
   10003: `resolveActions failed`,
 };
 
+const warnings: {
+  [key: number]: Function | string;
+} = {
+  20001: (from: string, to: string) => {
+    return `Model key ${from} has been delegated with ${to}`;
+  },
+};
+
 const NODE_ENV = process.env.NODE_ENV;
 
 const error = (code: number, ...args: Array<any>) => {
@@ -27,4 +35,14 @@ const error = (code: number, ...args: Array<any>) => {
   throw err;
 };
 
-export default error;
+const warn = (code: number, ...args: Array<any>) => {
+  const e = warnings[code];
+  const message = typeof e === 'function' ? e.apply(null, args) : e;
+  const err = `[relinx warning] ${message}`;
+
+  if (NODE_ENV !== 'production') {
+    console.warn(err);
+  }
+};
+
+export { error, warn };
