@@ -139,7 +139,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
               changedValue,
             });
           } else {
-            console.warn(`Do not have action '${actionType}'`);
+            warn(20004, type);
           }
 
           return changedValueGroup;
@@ -268,10 +268,34 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }
 
   transferModel(from: MODEL_KEY, to: MODEL_KEY) {
-    if (from !== to) warn(20001, to, from);
-    if (this._state[from]) this._state[to] = this._state[from];
-    if (this._reducers[from]) this._reducers[to] = this._reducers[from];
-    if (this._effects[from]) this._effects[to] = this._effects[from];
+    if (from !== to) {
+      warn(20001, to, from);
+      if (this._state[from]) this._state[to] = this._state[from];
+      if (this._reducers[from]) this._reducers[to] = this._reducers[from];
+      if (this._effects[from]) this._effects[to] = this._effects[from];
+
+      const actionsObject = {} as {
+        [key: string]: Action;
+      };
+
+      this._pendingActions = this._pendingActions.filter(action => {
+        const { type } = action;
+        const [storeKey, actionType] = type.split('/') as [
+          MODEL_KEY,
+          keyof ExtractReducersTypeOnlyModels<T>
+        ];
+        const effects = this._effects[to];
+
+        if (storeKey === to && effects && effects[actionType]) {
+          actionsObject[actionType as any] = effects[actionType];
+          warn(20005, type);
+          return false;
+        }
+        return true;
+      });
+
+      this.dispatch(Object.values(actionsObject));
+    }
   }
 
   injectModel({
@@ -302,6 +326,9 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       ...initialValue,
     };
 
+    if (reducers) this._reducers[key] = reducers as any;
+    if (effects) this._effects[key] = effects as any;
+
     const nextPendingActions = this._pendingActions.filter(action => {
       const { type, payload } = action;
       const [storeKey, actionType] = type.split('/') as [
@@ -327,11 +354,11 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           // But, there is still a condition, effects followed by normal reducer...
           // The result may override by effect...
         } else if (typeof effect === 'function') {
-          this.dispatch(action);
+          // Pending effect only be trigger directly on `un-synthetic mode`.
+          if (!syntheticManager?.isSyntheticMode()) this.dispatch(action);
+          warn(20002, type);
         } else {
-          console.warn(
-            `Maybe you have dispatched an unregistered model's effect action(${action})`
-          );
+          warn(20003, type);
         }
 
         if (
@@ -345,16 +372,13 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       return true;
     });
 
-    this._state[key] = base;
     this._pendingActions = nextPendingActions;
+    this._state[key] = base;
 
     this._application?.updateBase({
       storeKey: key,
       changedValue: base,
     });
-
-    if (reducers) this._reducers[key] = reducers as any;
-    if (effects) this._effects[key] = effects as any;
 
     const subscriptionsKeys = Object.keys(subscriptions);
     subscriptionsKeys.forEach(autoRunKey => {

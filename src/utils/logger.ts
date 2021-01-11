@@ -14,6 +14,18 @@ const warnings: {
   20001: (from: string, to: string) => {
     return `Model key ${from} has been delegated with ${to}`;
   },
+  20002: (type: string) => {
+    return `Effect ${type} is dispatch before store is created. This may become a potential bug`;
+  },
+  20003: (type: string) => {
+    return `Maybe you have dispatched an unregistered model's effect action(${type})`;
+  },
+  20004: (type: string) => {
+    return `Maybe you have defined an non-exist action ${type}`;
+  },
+  20005: (type: string) => {
+    return `Effect ${type} is dispatch before store is created in synthetic mode. This may become a potential bug`;
+  },
 };
 
 const NODE_ENV = process.env.NODE_ENV;
