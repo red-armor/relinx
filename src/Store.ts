@@ -42,6 +42,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   public subscriptions: {
     [key: string]: Subscription<ExtractStateTypeOnlyModels<T>>;
   } = {};
+  private _initializationErrorAutoRunList: Map<Function, Function> = new Map();
 
   constructor(configs: {
     models: CreateStoreOnlyModels<T>;
@@ -224,7 +225,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       this._pendingAutoRunInitializations.forEach(initialization => {
         const { autoRunFn, modelKey } = initialization;
         const initialActions = autoRun(autoRunFn, this._application!, modelKey);
-        actions = actions.concat(initialActions);
+        if (initialActions !== -1) actions = actions.concat(initialActions);
       });
       this._pendingAutoRunInitializations = [];
     }
@@ -391,14 +392,42 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           autoRunFn,
         });
       } else {
-        const initialActions = autoRun<T, MODEL_KEY>(
-          autoRunFn,
-          this._application,
-          key as string
-        );
-        const changedValues = this.resolveActions(initialActions);
-        changedValues.forEach(value => this._application?.updateBase(value));
+        this.initializeAutoRun(autoRunFn, key as string, autoRunKey);
       }
+    });
+
+    this.processErrorAutoRunList();
+  }
+
+  initializeAutoRun(
+    autoRunFn: Function,
+    key: string,
+    autoRunKey: string
+  ): -1 | undefined {
+    const initialActions = autoRun<T, MODEL_KEY>(
+      autoRunFn,
+      this._application!,
+      key as string
+    );
+    if (initialActions === -1) {
+      if (!this._initializationErrorAutoRunList.has(autoRunFn)) {
+        warn(20006, key, autoRunKey);
+        this._initializationErrorAutoRunList.set(autoRunFn, () => {
+          return this.initializeAutoRun(autoRunFn, key, autoRunKey);
+        });
+      }
+      return -1;
+    } else {
+      const changedValues = this.resolveActions(initialActions);
+      changedValues.forEach(value => this._application?.updateBase(value));
+    }
+    return;
+  }
+
+  processErrorAutoRunList() {
+    this._initializationErrorAutoRunList.forEach((autoRun, key) => {
+      const value = autoRun.call(this);
+      if (value !== -1) this._initializationErrorAutoRunList.delete(key);
     });
   }
 }
