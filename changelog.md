@@ -1,5 +1,9 @@
 # changelog
 
+## v3.5.8
+
+1. fix: secondary subscription trigger autoRun should be called after consume the changed value caused by preceding autorun
+
 ## v3.5.7
 
 1. feat: support one level reactive in subscription function
