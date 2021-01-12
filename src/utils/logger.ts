@@ -26,6 +26,25 @@ const warnings: {
   20005: (type: string) => {
     return `Effect ${type} is dispatch before store is created in synthetic mode. This may become a potential bug`;
   },
+  20006: (key: string, autoRunKey: string) => {
+    return (
+      `Error happens when initialize '${key}/${autoRunKey}' subscription\n` +
+      'It may has following reason: \n' +
+      '   1. Attempt to access an dynamic model but it not injected yet.\n' +
+      '   2. May access a not existing model \n\n' +
+      'If it is condition 1, please reconsider whether model deps is reasonable !!!\n\n' +
+      'However, the following solution is not recommended: \n' +
+      '\n' +
+      'subscriptions: {\n' +
+      '  setup: ({ getState }) => { \n' +
+      '    const { headerBar } = getState()\n' +
+      '    if (headerBar) return null\n' +
+      '    console.log(headerBar.value) \n' +
+      '  },\n' +
+      '}\n\n' +
+      'It only could be consider as temp fix and may has potential bug'
+    );
+  },
 };
 
 const NODE_ENV = process.env.NODE_ENV;
