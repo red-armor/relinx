@@ -17,7 +17,8 @@ const safeFnCall = (fn: Function, cleanup: Function) => {
 const autoRun = <T extends BasicModelType<T>, K extends keyof T>(
   fn: Function,
   application: Application<T, K>,
-  modelKey: string
+  modelKey: string,
+  dispatch: Function
 ): Array<Action> | -1 => {
   invariant(application, 'application is required to be initialized already !');
 
@@ -25,11 +26,11 @@ const autoRun = <T extends BasicModelType<T>, K extends keyof T>(
 
   StateTrackerUtil.enter(state);
   const initialAutoRun = safeFnCall(
-    () => fn({ getState: application.getState }),
+    () => fn({ getState: application.getState, dispatch }),
     () => StateTrackerUtil.leave(state)
   );
 
-  if (initialAutoRun === -1) {
+  if (initialAutoRun === -1 || initialAutoRun === 'unhandled') {
     return -1;
   }
   // set autoRun params
@@ -45,9 +46,10 @@ const autoRun = <T extends BasicModelType<T>, K extends keyof T>(
       // to avoid data back stream when using autoRunFn trigger calculate..
       StateTrackerUtil.enter(state);
       const actions = safeFnCall(
-        () => fn({ getState: application.getState }),
+        () => fn({ getState: application.getState, dispatch }),
         () => StateTrackerUtil.leave(state)
       );
+      if (actions === -1 || actions === 'unhandled') return;
       const tracker = StateTrackerUtil.getContext(state).getCurrent();
       const paths = tracker.getRemarkable();
       autoRunner.paths = paths;

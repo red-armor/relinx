@@ -17,6 +17,7 @@ export interface PendingPatcher {
 export interface PendingAutoRunner {
   autoRunner: AutoRunner;
   updateType: UPDATE_TYPE;
+  storeKey: string;
 }
 
 export interface Operation {
