@@ -1,5 +1,9 @@
 # changelog
 
+## v3.5.7
+
+1. feat: support one level reactive in subscription function
+
 ## v3.5.6
 
 1. feat: handler initialize error subscription, retry on every dynamic model injected
