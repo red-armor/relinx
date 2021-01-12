@@ -82,6 +82,21 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     this.pendingAutoRunners = [];
   }
 
+  preUpdate(values: Array<ChangedValueGroup<K>>): Array<Action> {
+    let actions = [] as Array<Action>;
+    values.forEach(value => this.treeShake(value, this.dirtyState));
+    const merged = this.prepareUpdateBase(values);
+    StateTrackerUtil.batchRelink(this.proxyState, merged as any);
+    this.pendingAutoRunners.forEach(({ autoRunner, storeKey }) => {
+      const newActions = autoRunner.triggerAutoRun();
+      warn(20007, newActions, storeKey);
+
+      actions = actions.concat(newActions);
+    });
+    this.pendingAutoRunners = [];
+    return actions;
+  }
+
   updateDryRun(values: Array<ChangedValueGroup<K>>): Array<Action> {
     let actions = [] as Array<Action>;
     this.pendingAutoRunners = [];
@@ -96,6 +111,7 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
       this.pendingAutoRunners.forEach(({ autoRunner }) => {
         actions = actions.concat(autoRunner.triggerAutoRun());
       });
+      this.pendingAutoRunners = [];
     } catch (err) {
       infoLog('[Application] update issue ', err);
     }
@@ -103,27 +119,8 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     return actions;
   }
 
-  processSubscriptionOneMoreDeep(
-    values: Array<ChangedValueGroup<K>>
-  ): Array<Action> {
-    let actions = [] as Array<Action>;
-    this.pendingAutoRunners = [];
-    try {
-      values.forEach(value => this.treeShakeAutoRunner(value));
-      const merged = this.prepareUpdateBase(values);
-      this.dirtyState = this._base;
-      StateTrackerUtil.batchRelink(this.proxyState, merged as any);
-      this.pendingAutoRunners.forEach(({ autoRunner, storeKey }) => {
-        const newActions = autoRunner.triggerAutoRun();
-        warn(20007, newActions, storeKey);
-
-        actions = actions.concat(newActions);
-      });
-    } catch (err) {
-      infoLog('[Application] update issue ', err);
-    }
-
-    return actions;
+  processSubscriptionOneMoreDeep(values: Array<ChangedValueGroup<K>>) {
+    values.forEach(value => this.treeShakeAutoRunner(value));
   }
 
   prepareUpdateBase(changeValues: Array<ChangedValueGroup<K>>) {

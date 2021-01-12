@@ -173,17 +173,17 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       const derivedActions =
         this._application?.updateDryRun(changedValues) || [];
 
-      const furtherMoreActions =
-        this._application?.processSubscriptionOneMoreDeep(
-          this.resolveActions(derivedActions)
-        ) || [];
-
-      // model.subscriptions may cause new value update..
-      const derivedChangedValue = this.resolveActions(
-        derivedActions.concat(furtherMoreActions)
+      this._application?.processSubscriptionOneMoreDeep(
+        this.resolveActions(derivedActions)
       );
 
-      this._application?.update(derivedChangedValue);
+      // model.subscriptions may cause new value update..
+      const derivedChangedValue = this.resolveActions(derivedActions);
+
+      const furtherMoreActions =
+        this._application?.preUpdate(derivedChangedValue) || [];
+      const furtherMoreChangedValues = this.resolveActions(furtherMoreActions);
+      this._application?.update(furtherMoreChangedValues);
 
       const storeSubscriptionsKeys = Object.keys(this.subscriptions);
       const storeSubscriptionsKeysLength = storeSubscriptionsKeys.length;
