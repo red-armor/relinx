@@ -33,8 +33,7 @@ const warnings: {
       '   1. Attempt to access an dynamic model but it not injected yet.\n' +
       '   2. May access a not existing model \n\n' +
       'If it is condition 1, please reconsider whether model deps is reasonable !!!\n\n' +
-      'However, the following solution is not recommended: \n' +
-      '\n' +
+      'However, the following solution is not recommended: \n\n' +
       'subscriptions: {\n' +
       '  setup: ({ getState }) => { \n' +
       '    const { headerBar } = getState()\n' +
@@ -43,6 +42,33 @@ const warnings: {
       '  },\n' +
       '}\n\n' +
       'It only could be consider as temp fix and may has potential bug'
+    );
+  },
+  20007: (actions: any, storeKey: string) => {
+    let str = '';
+
+    [].concat(actions).forEach(action => {
+      const { type } = action;
+      str += `\n    ${type},`;
+    });
+    return (
+      `Subscription derived action ${str}\n` +
+      `is triggered by value change in ${storeKey}.\n\n` +
+      `Maybe it is an reasonable logic, but take care to avoid circular call.\n`
+    );
+  },
+  20008: (actions: any) => {
+    let str = '';
+
+    [].concat(actions).forEach(action => {
+      const { type } = action;
+      str += `\n    ${type},`;
+    });
+
+    return (
+      `Dispatch is an unsafe operation in subscription. In order to avoid\n` +
+      `circular call you'd better dispatch to self model.\n\n` +
+      `Please consider again following actions : ${str}`
     );
   },
 };

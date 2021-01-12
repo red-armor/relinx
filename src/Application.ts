@@ -16,6 +16,7 @@ import Patcher from './Patcher';
 import produce, { ProxyState, StateTrackerUtil } from 'state-tracker';
 import AutoRunner from './AutoRunner';
 import Store from './Store';
+import { warn } from './utils/logger';
 
 class Application<T extends BasicModelType<T>, K extends keyof T>
   implements IApplication<T> {
@@ -102,6 +103,29 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     return actions;
   }
 
+  processSubscriptionOneMoreDeep(
+    values: Array<ChangedValueGroup<K>>
+  ): Array<Action> {
+    let actions = [] as Array<Action>;
+    this.pendingAutoRunners = [];
+    try {
+      values.forEach(value => this.treeShakeAutoRunner(value));
+      const merged = this.prepareUpdateBase(values);
+      this.dirtyState = this._base;
+      StateTrackerUtil.batchRelink(this.proxyState, merged as any);
+      this.pendingAutoRunners.forEach(({ autoRunner, storeKey }) => {
+        const newActions = autoRunner.triggerAutoRun();
+        warn(20007, newActions, storeKey);
+
+        actions = actions.concat(newActions);
+      });
+    } catch (err) {
+      infoLog('[Application] update issue ', err);
+    }
+
+    return actions;
+  }
+
   prepareUpdateBase(changeValues: Array<ChangedValueGroup<K>>) {
     const merged = changeValues.reduce<
       {
@@ -177,7 +201,11 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     }
   }
 
-  addAutoRunners(autoRunners: Array<AutoRunner>, updateType: UPDATE_TYPE) {
+  addAutoRunners(
+    autoRunners: Array<AutoRunner>,
+    updateType: UPDATE_TYPE,
+    storeKey: K
+  ) {
     // if (autoRunners.length) {
     //   autoRunners.forEach(autoRunner => {
     //     if (!autoRunner.isDirty()) {
@@ -191,7 +219,11 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
     // }
     if (autoRunners.length) {
       autoRunners.forEach(autoRunner => {
-        this.pendingAutoRunners.push({ autoRunner, updateType });
+        this.pendingAutoRunners.push({
+          autoRunner,
+          updateType,
+          storeKey: storeKey as string,
+        });
         autoRunner.teardown();
       });
     }
@@ -274,7 +306,8 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
       (pathNode: PathNode, updateType?: UPDATE_TYPE) => {
         this.addAutoRunners(
           pathNode.autoRunners.slice(),
-          updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE
+          updateType || UPDATE_TYPE.BASIC_VALUE_CHANGE,
+          storeKey
         );
       }
     );
@@ -323,11 +356,6 @@ class Application<T extends BasicModelType<T>, K extends keyof T>
       this.autoRunnerNode.addAutoRunner(fullPath, autoRunner);
     });
   }
-
-  // getStoreData(storeName: K): T[K] {
-  //   const storeValue = this._base[storeName];
-  //   return storeValue;
-  // }
 }
 
 export default Application;

@@ -43,6 +43,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     [key: string]: Subscription<ExtractStateTypeOnlyModels<T>>;
   } = {};
   private _initializationErrorAutoRunList: Map<Function, Function> = new Map();
+  private _unsafeDispatch: Function;
 
   constructor(configs: {
     models: CreateStoreOnlyModels<T>;
@@ -64,6 +65,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         model: models[key],
       });
     });
+
+    this._unsafeDispatch = this.unsafeDispatch.bind(this);
   }
 
   getState(): ExtractStateTypeOnlyModels<T> {
@@ -84,6 +87,11 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       const [storeKey] = type.split('/');
       return storeKey !== key;
     });
+  }
+
+  unsafeDispatch(actions: Action) {
+    warn(20008, actions);
+    this.dispatch(actions);
   }
 
   resolveActions(actions: Array<Action>) {
@@ -165,8 +173,15 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       const derivedActions =
         this._application?.updateDryRun(changedValues) || [];
 
+      const furtherMoreActions =
+        this._application?.processSubscriptionOneMoreDeep(
+          this.resolveActions(derivedActions)
+        ) || [];
+
       // model.subscriptions may cause new value update..
-      const derivedChangedValue = this.resolveActions(derivedActions!);
+      const derivedChangedValue = this.resolveActions(
+        derivedActions.concat(furtherMoreActions)
+      );
 
       this._application?.update(derivedChangedValue);
 
@@ -224,7 +239,12 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     if (this._pendingAutoRunInitializations.length) {
       this._pendingAutoRunInitializations.forEach(initialization => {
         const { autoRunFn, modelKey } = initialization;
-        const initialActions = autoRun(autoRunFn, this._application!, modelKey);
+        const initialActions = autoRun(
+          autoRunFn,
+          this._application!,
+          modelKey,
+          this._unsafeDispatch
+        );
         if (initialActions !== -1) actions = actions.concat(initialActions);
       });
       this._pendingAutoRunInitializations = [];
@@ -381,6 +401,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       changedValue: base,
     });
 
+    this.processErrorAutoRunList();
     const subscriptionsKeys = Object.keys(subscriptions);
     subscriptionsKeys.forEach(autoRunKey => {
       const autoRunFn = subscriptions[autoRunKey];
@@ -395,8 +416,6 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         this.initializeAutoRun(autoRunFn, key as string, autoRunKey);
       }
     });
-
-    this.processErrorAutoRunList();
   }
 
   initializeAutoRun(
@@ -407,7 +426,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     const initialActions = autoRun<T, MODEL_KEY>(
       autoRunFn,
       this._application!,
-      key as string
+      key as string,
+      this._unsafeDispatch
     );
     if (initialActions === -1) {
       if (!this._initializationErrorAutoRunList.has(autoRunFn)) {
