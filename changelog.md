@@ -1,5 +1,9 @@
 # changelog
 
+## v3.5.6
+
+1. feat: handler initialize error subscription, retry on every dynamic model injected
+
 ## v3.5.5
 
 1. feat: pending effects should be handled and be warned
