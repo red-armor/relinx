@@ -115,6 +115,7 @@ class SyntheticModelKey {
   }
 
   getCurrent() {
+    if (!this.isSyntheticMode() && this._committed) return this._originalKey;
     return this._currentKey;
   }
 
