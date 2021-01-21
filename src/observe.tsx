@@ -14,6 +14,7 @@ import { UPDATE_TYPE } from './types';
 const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 
 let count = 0;
+const NODE_ENV = process.env.NODE_ENV;
 
 const Helper = ({ addListener }: { addListener: Function }) => {
   addListener();
@@ -202,5 +203,40 @@ export default (WrappedComponent: FC<any>) => {
     WrappedComponent.name ||
     'ObservedComponent';
 
-  return React.memo(props => <NextComponent {...props} />);
+  if (NODE_ENV === 'production') {
+    return React.memo(props => <NextComponent {...props} />);
+  }
+
+  return React.memo(
+    props => <NextComponent {...props} />,
+    (prevProps: any, nextProps: any) => {
+      const keys = Object.keys(prevProps);
+      let falsy = true;
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        if (prevProps[key] !== nextProps[key]) {
+          falsy = false;
+          console.groupCollapsed(
+            `%c[relinx, why did you update ${NextComponent.displayName} component]`,
+            'color: #b37feb'
+          );
+          console.group(`%cupdated key '${key}'`, 'color: #95de64');
+          console.log(
+            '%cprev value',
+            'color: #ff4d4f; font-weight: bold',
+            prevProps[key]
+          );
+          console.log(
+            '%cnext value',
+            'color: #ff4d4f; font-weight: bold',
+            nextProps[key]
+          );
+          console.groupEnd();
+          console.groupEnd();
+        }
+      }
+
+      return falsy;
+    }
+  );
 };
