@@ -1,7 +1,11 @@
 # changelog
 
+## v3.5.10
+1. feat: support why did you update
+
 ## v3.5.9
 1. fix: once committed, current should be original key
+
 ## v3.5.8
 
 1. fix: secondary subscription trigger autoRun should be called after consume the changed value caused by preceding autorun
