@@ -224,17 +224,24 @@ export type SafeAction<
     : T extends keyof P
     ? P[T]
     : void
-> = R extends void
-  ? {
-      // If A is assigned with a value, type should be same as A
-      type: A extends string ? A : T;
-    }
-  : {
-      // If A is assigned with a value, type should be same as A
-      type: A extends string ? A : T;
-      // payload?: T extends keyof P ? P[T] : never;
-      payload: R;
-    };
+> =
+  /**
+   * https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-0.html#new-unknown-top-type
+   * In TS 3.0 `unknown` become a new type, payload will be unknown type if it is not provided.
+   *
+   * dispatch({ type: 'app/init' })
+   */
+  R extends void | unknown
+    ? {
+        // If A is assigned with a value, type should be same as A
+        type: A extends string ? A : T;
+      }
+    : {
+        // If A is assigned with a value, type should be same as A
+        type: A extends string ? A : T;
+        // payload?: T extends keyof P ? P[T] : never;
+        payload: R;
+      };
 
 export type Dispatch<
   T,
