@@ -31,6 +31,7 @@ const Basic = () => (
 )
 
 
+
 ReactDOM.render(<Basic />, document.getElementById('app'))
 
 // export type TotalState = ExtractStateTypeOnlyModels<Models>

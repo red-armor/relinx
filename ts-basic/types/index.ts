@@ -2,7 +2,7 @@ import { CSSProperties } from 'react'
 import { ContainerModel } from './container'
 import { BottomBarModel } from './bottomBar'
 import { GoodsViewModel } from './goodsView'
-// import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction, GetEffectPayload, EffectPayload, ExtractEffectsTypeOnlyModels } from '../../src/types'
+import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction, GetTotalKey, EffectPayload, ExtractEffectsTypeOnlyModels } from '../../src/types'
 
 export interface Styles {
   [key: string]: CSSProperties
@@ -25,6 +25,8 @@ export type Models = {
 //     key extends 'goods' ? GoodsViewModel : never
 // }
 
+type x = unknown extends unknown ? string : number
+
 export type KeyMap = {
   'init/updateState': 'updateState',
   'init/updatePage': 'updatePage',
@@ -40,6 +42,13 @@ export type KeyMap = {
   'bottomBar/incrementTotalCount': 'incrementTotalCount',
   'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
+
+type OKM = keyof KeyMap
+type TK = GetTotalKey<Models>
+type MK = OKM | TK
+type T  = GetMergedPayload<Models>
+type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
+
 
 // type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
 // type Payload = GetMergedPayload<Models>

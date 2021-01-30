@@ -179,18 +179,31 @@ export type GetKeys<T> = {
 export type GetStateKey<T> = GetKeys<ExtractStateTypeOnlyModels<T>>;
 
 export type ReducerPayload<R> = {
-  [key in keyof R]: {
-    [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
-  }[keyof R[key]];
+  // In order to avoid return `unknown` type. unknown will cause MergedPayload to be unknown
+  // 1. if reducers not exist, then it will be unknown.
+  [key in keyof R]: keyof R[key] extends string
+    ? {
+        [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
+      }[keyof R[key]]
+    : never;
 }[keyof R];
 
 export type EffectPayload<E> = {
-  [key in keyof E]: E[key] extends never
-    ? never
-    : {
+  // In order to avoid return `unknown` type.
+  [key in keyof E]: keyof E[key] extends string
+    ? {
         [k in keyof E[key]]: [k, GetEffectPayload<E[key][k]>];
-      }[keyof E[key]];
+      }[keyof E[key]]
+    : never;
 }[keyof E];
+
+// export type EffectPayload<E> = {
+//   [key in keyof E]: E[key] extends never
+//     ? never
+//     : {
+//         [k in keyof E[key]]: [k, GetEffectPayload<E[key][k]>];
+//       }[keyof E[key]];
+// }[keyof E];
 
 export type GetMergedPayload<
   T,
@@ -224,24 +237,17 @@ export type SafeAction<
     : T extends keyof P
     ? P[T]
     : void
-> =
-  /**
-   * https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-0.html#new-unknown-top-type
-   * In TS 3.0 `unknown` become a new type, payload will be unknown type if it is not provided.
-   *
-   * dispatch({ type: 'app/init' })
-   */
-  R extends void | unknown
-    ? {
-        // If A is assigned with a value, type should be same as A
-        type: A extends string ? A : T;
-      }
-    : {
-        // If A is assigned with a value, type should be same as A
-        type: A extends string ? A : T;
-        // payload?: T extends keyof P ? P[T] : never;
-        payload: R;
-      };
+> = R extends void
+  ? {
+      // If A is assigned with a value, type should be same as A
+      type: A extends string ? A : T;
+    }
+  : {
+      // If A is assigned with a value, type should be same as A
+      type: A extends string ? A : T;
+      // payload?: T extends keyof P ? P[T] : never;
+      payload: R;
+    };
 
 export type Dispatch<
   T,
