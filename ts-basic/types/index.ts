@@ -43,12 +43,29 @@ export type KeyMap = {
   'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
 
-type OKM = keyof KeyMap
-type TK = GetTotalKey<Models>
-type MK = OKM | TK
-type T  = GetMergedPayload<Models>
-type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
-
+/**
+ * The following may help to find safe dispatch not work issue
+ *
+ *
+ * type OKM = keyof KeyMap
+ * type TK = GetTotalKey<Models>
+ * type MK = OKM | TK
+ * type T  = GetMergedPayload<Models>
+ * type R = ExtractReducersTypeOnlyModels<Models>
+ * type E = ExtractEffectsTypeOnlyModels<Models>
+ *
+ * type RK = GetKeys<R>
+ * type EK = GetKeys<E>
+ * type RP = ReducerPayload<R>
+ * type EP = EffectPayload<E>
+ * type Merged = GetMergedPayload<Models>
+ *
+ * type PPP = unknown extends any ? string : number
+ *
+ * type KW = never | unknown
+ *
+ * type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
+ */
 
 // type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
 // type Payload = GetMergedPayload<Models>
