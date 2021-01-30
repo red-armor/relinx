@@ -179,18 +179,31 @@ export type GetKeys<T> = {
 export type GetStateKey<T> = GetKeys<ExtractStateTypeOnlyModels<T>>;
 
 export type ReducerPayload<R> = {
-  [key in keyof R]: {
-    [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
-  }[keyof R[key]];
+  // In order to avoid return `unknown` type. unknown will cause MergedPayload to be unknown
+  // 1. if reducers not exist, then it will be unknown.
+  [key in keyof R]: keyof R[key] extends string
+    ? {
+        [k in keyof R[key]]: [k, GetReducerPayload<R[key][k]>];
+      }[keyof R[key]]
+    : never;
 }[keyof R];
 
 export type EffectPayload<E> = {
-  [key in keyof E]: E[key] extends never
-    ? never
-    : {
+  // In order to avoid return `unknown` type.
+  [key in keyof E]: keyof E[key] extends string
+    ? {
         [k in keyof E[key]]: [k, GetEffectPayload<E[key][k]>];
-      }[keyof E[key]];
+      }[keyof E[key]]
+    : never;
 }[keyof E];
+
+// export type EffectPayload<E> = {
+//   [key in keyof E]: E[key] extends never
+//     ? never
+//     : {
+//         [k in keyof E[key]]: [k, GetEffectPayload<E[key][k]>];
+//       }[keyof E[key]];
+// }[keyof E];
 
 export type GetMergedPayload<
   T,

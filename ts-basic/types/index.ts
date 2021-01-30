@@ -2,7 +2,7 @@ import { CSSProperties } from 'react'
 import { ContainerModel } from './container'
 import { BottomBarModel } from './bottomBar'
 import { GoodsViewModel } from './goodsView'
-// import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction, GetEffectPayload, EffectPayload, ExtractEffectsTypeOnlyModels } from '../../src/types'
+import { GetMergedPayload, MergedP, KeyValueTupleToObject, SafeAction, GetTotalKey, EffectPayload, ExtractEffectsTypeOnlyModels } from '../../src/types'
 
 export interface Styles {
   [key: string]: CSSProperties
@@ -25,6 +25,8 @@ export type Models = {
 //     key extends 'goods' ? GoodsViewModel : never
 // }
 
+type x = unknown extends unknown ? string : number
+
 export type KeyMap = {
   'init/updateState': 'updateState',
   'init/updatePage': 'updatePage',
@@ -40,6 +42,30 @@ export type KeyMap = {
   'bottomBar/incrementTotalCount': 'incrementTotalCount',
   'bottomBar/decrementTotalCount': 'decrementTotalCount'
 }
+
+/**
+ * The following may help to find safe dispatch not work issue
+ *
+ *
+ * type OKM = keyof KeyMap
+ * type TK = GetTotalKey<Models>
+ * type MK = OKM | TK
+ * type T  = GetMergedPayload<Models>
+ * type R = ExtractReducersTypeOnlyModels<Models>
+ * type E = ExtractEffectsTypeOnlyModels<Models>
+ *
+ * type RK = GetKeys<R>
+ * type EK = GetKeys<E>
+ * type RP = ReducerPayload<R>
+ * type EP = EffectPayload<E>
+ * type Merged = GetMergedPayload<Models>
+ *
+ * type PPP = unknown extends any ? string : number
+ *
+ * type KW = never | unknown
+ *
+ * type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
+ */
 
 // type P1 = KeyValueTupleToObject<GetMergedPayload<Models>>
 // type Payload = GetMergedPayload<Models>
