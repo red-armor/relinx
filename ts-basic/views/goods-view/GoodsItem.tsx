@@ -44,7 +44,7 @@ const styles: Styles = {
 
 const GoodsItem = props => {
   const { index } = props
-  const [dispatch] = useDispatch<Models, KeyMap>()
+  const [dispatch] = useDispatch<Models>()
 
   const { data: { title, id, count } } = props
   const updateCount = useRef(0)

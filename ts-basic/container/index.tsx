@@ -35,7 +35,7 @@ const styles: Styles = {
 }
 
 const Main = () => {
-  const [dispatch] = useDispatch<Models, KeyMap>()
+  const [dispatch] = useDispatch<Models>()
 
   useEffect(() => {
     dispatch([{
