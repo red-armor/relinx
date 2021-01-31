@@ -15,7 +15,7 @@ const styles: Styles = {
 }
 
 const LoadMore = () => {
-  const [dispatch] = useDispatch<Models, KeyMap>()
+  const [dispatch] = useDispatch<Models>()
   const handleClick = useCallback(() => {
     dispatch({
       type: 'init/getGoodsList',

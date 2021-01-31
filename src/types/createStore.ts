@@ -249,9 +249,55 @@ export type SafeAction<
       payload: R;
     };
 
+/**
+ * The key point is how to get `KeyMap`, `tupleToObject` seems to the only solution.
+ */
+export type CreateTuple<R> = {
+  // In order to avoid return `unknown` type. unknown will cause MergedPayload to be unknown
+  // 1. if reducers not exist, then it will be unknown.
+  [key in keyof R]: keyof R[key] extends string
+    ? {
+      /**
+       * https://devblogs.microsoft.com/typescript/announcing-typescript-4-1/#template-literal-types
+       * https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
+       * https://dev.to/phenomnominal/i-need-to-learn-about-typescript-template-literal-types-51po
+       * template literal types is introduced in TS4.1
+       *
+       * However, tsdx will cause build error, Because it used typescript 3.x version.
+       * https://github.com/formium/tsdx/issues/952#issuecomment-754120955
+       * The solution could be resolved with `resolutions` option in package.json
+       * https://github.com/formium/tsdx/issues/926#issuecomment-751936109
+       *
+       * However, `resolutions` is only supported in yarn, npm not works.
+       * https://classic.yarnpkg.com/en/docs/selective-version-resolutions/
+       * https://stackoverflow.com/questions/52416312/npm-equivalent-of-yarn-resolutions
+       *
+       * for tsdx, ts4.x will be supported in v0.16.0  https://github.com/formium/tsdx/milestone/4
+       *
+       * For recently, the solution is to use yarn instead !!! waiting for tsdx 0.16.0 release..
+       *
+       * Prettier support !!!
+       * https://prettier.io/blog/2020/11/20/2.2.0.html maybe there is still some issues when using with tsdx
+       * So it is disabled hear.
+       */
+        [k in keyof R[key]]: key extends string ? [`${key}/${k}`, k] : [key, k]; // eslint-disable-line
+      }[keyof R[key]]
+    : never;
+}[keyof R];
+
+export type Mapping<
+  T,
+  R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
+  E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
+  // RT extends CreateTuple<R | E> = CreateTuple<R | E>,
+  // ET extends CreateTuple<E> = CreateTuple<E>,
+  // RM extends KeyValueTupleToObject<RT> = KeyValueTupleToObject<RT>,
+  // EM extends KeyValueTupleToObject<ET> = KeyValueTupleToObject<ET>,
+> = KeyValueTupleToObject<CreateTuple<R|E>>
+
 export type Dispatch<
   T,
-  KM extends {} = {},
+  KM extends Mapping<T> = Mapping<T>,
   OKM extends keyof KM = keyof KM,
   TK extends GetTotalKey<T> = GetTotalKey<T>,
   MK extends OKM | TK = OKM | TK,
@@ -692,3 +738,113 @@ export type Dispatch<
 //     ? P[T]
 //     : never;
 // };
+
+
+// type Model = {
+//   app: {
+//     state: {
+//       count: number,
+//     },
+//     reducers: {
+//       setProps: () => void,
+//       increment: () => void,
+//     },
+//     effects: {
+//       fetch: () => () => void
+//     }
+//   },
+//   goods: {
+//     state: {
+//       number: number,
+//     },
+//     reducers: {
+//       setProps: () => void,
+//       update: () => void,
+//     },
+//     effects: {
+//       fetch: () => () => void
+//     }
+//   }
+// }
+
+// type KMR = ExtractReducersTypeOnlyModels<Model>
+// type Red = CreateTuple<KMR>
+
+// // type KM<T> = {
+// //   [modelKey in keyof T]: modelKey extends string ? {
+// //     [key in keyof T[modelKey]]: key extends 'reducers' ? {
+// //       [reducerKey in keyof T[modelKey][key] as reducerKey extends string ?`${modelKey}/${reducerKey}` : reducerKey]: reducerKey extends string ? [`${modelKey}/${reducerKey}`, reducerKey] : reducerKey
+// //     }: key extends 'effects' ? {
+// //       [effectKey in keyof T[modelKey][key] as effectKey extends string ?`${modelKey}/${effectKey}` : effectKey]: effectKey extends string ?`${modelKey}/${effectKey}` : effectKey
+// //     } : {}
+// //   }[keyof T[modelKey]]: {}
+// // }[keyof T]
+
+// // type KM<
+// //   T,
+// //   modelKey extends keyof T = keyof T,
+// //   R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
+// //   RK extends keyof R = keyof R
+// // > = RK extends keyof T[modelKey]['reducers'] ? T[modelKey]['reducers'][RK] : string
+
+
+
+// // export type CreateTuple<R> = {
+// //   // In order to avoid return `unknown` type. unknown will cause MergedPayload to be unknown
+// //   // 1. if reducers not exist, then it will be unknown.
+// //   [key in keyof R]: keyof R[key] extends string
+// //     ? {
+// //         [k in keyof R[key]]: key extends string ? [`${key}/${k}`, k] : [k, k];
+// //       }[keyof R[key]]
+// //     : never;
+// // }[keyof R];
+
+
+// // type Mapping<
+// //   T,
+// //   R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
+// //   E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
+// //   RT extends CreateTuple<R> = CreateTuple<R>,
+// //   ET extends CreateTuple<E> = CreateTuple<E>,
+// //   RM extends KeyValueTupleToObject<RT> = KeyValueTupleToObject<RT>,
+// //   EM extends KeyValueTupleToObject<ET> = KeyValueTupleToObject<ET>,
+// // > = EM | RM
+
+
+// type RedNext = KeyValueTupleToObject<Red>
+
+// type m = Mapping<Model>
+
+// type x = keyof m
+
+
+// type TU<
+//   T,
+//   K extends keyof T= keyof T,
+//   KT extends keyof T[K] = keyof T[K]
+// > = K extends string ? KT extends string ? [`${K}/${KT}`, KT] : string : void
+// // type TU<
+// //   T,
+// //   K extends keyof T= keyof T,
+// //   KT extends keyof T[K] = keyof T[K]
+// // > = K extends string ? KT extends string ? [`${K}/${KT}`, KT] : string : void
+
+// // [`${K}/${KT}`, KT]
+// type M = TU<KMR>
+
+// type F = KM<Model>
+// type XX = ExtractReducersTypeOnlyModels<KM<Model>>
+
+// type FF<X, K extends keyof X = keyof X> = X[K] extends {} ? {
+//   [key in keyof X[K]]: number
+// } : string
+
+// type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+// type Expand<T> = T extends Primitive ? T : { [K in keyof T]: T[K] };
+
+// type getX = FF<XX, keyof XX>
+
+// // export type ExtractReducersTypeOnlyModels<Models> = {
+// //   [key in keyof Models]: ExtractKey<Models[key], 'reducers'>;
+// // };

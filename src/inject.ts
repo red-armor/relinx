@@ -42,18 +42,16 @@ export type IWrappedComponent<P> = {
 //   target: T
 // ) => T & (T extends IReactComponent<infer P> ? IWrappedComponent<P> : never);
 
-export default function inject<T, M, K extends keyof T = any>(
-  storeName?: string
-) {
+export default function inject<T, K extends keyof T = any>(storeName?: string) {
   return (componentClass: React.ComponentClass<any, any>) => {
     let Injected;
 
     if (storeName && storeName.trim()) {
       Injected = (props: any) => {
-        const dispatchRef = useRef<RelinxDispatch<T, M>>();
-        const stateRef = useRef<RelinxState<T, M, K>>();
+        const dispatchRef = useRef<RelinxDispatch<T>>();
+        const stateRef = useRef<RelinxState<T, K>>();
 
-        const parts = useRelinx<T, M>(storeName as any);
+        const parts = useRelinx<T>(storeName as any);
         stateRef.current = parts[0];
         dispatchRef.current = parts[1];
 
@@ -68,8 +66,8 @@ export default function inject<T, M, K extends keyof T = any>(
       };
     } else {
       Injected = (props: any) => {
-        const dispatchRef = useRef<RelinxDispatch<T, M>>();
-        const parts = useDispatch<T, M>();
+        const dispatchRef = useRef<RelinxDispatch<T>>();
+        const parts = useDispatch<T>();
         dispatchRef.current = parts[0];
 
         const nextProps = {

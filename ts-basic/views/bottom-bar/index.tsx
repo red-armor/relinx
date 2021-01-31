@@ -30,10 +30,10 @@ const styles: Styles = {
 
 type S = ExtractStateTypeOnlyModels<Models>['bottomBar']
 
-type P = RelinxState<Models, KeyMap, 'bottomBar'>
+type P = RelinxState<Models, 'bottomBar'>
 
 const BottomBar = () => {
-  const [state, dispatch] = useRelinx<Models, KeyMap, 'bottomBar'>('bottomBar')
+  const [state, dispatch] = useRelinx<Models, 'bottomBar'>('bottomBar')
   const value = useGlobal()
   const namespace = useNamespace()
 

@@ -3,9 +3,9 @@ import { Dispatch } from './createStore';
 import Application from '../Application';
 import Patcher from '../Patcher';
 
-export interface ContextDefaultValue<T, M> {
+export interface ContextDefaultValue<T> {
   computation: null;
-  dispatch: Dispatch<T, M>;
+  dispatch: Dispatch<T>;
   attachStoreName: AttachStoreName;
   application: null | Application<any, any>;
   useProxy: boolean;
