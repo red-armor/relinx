@@ -10,7 +10,7 @@ import { StateTrackerUtil } from 'state-tracker';
 import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
-import { UPDATE_TYPE } from './types';
+import { UPDATE_TYPE, InjectedObserverProps } from './types';
 const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 
 let count = 0;
@@ -21,8 +21,11 @@ const Helper = ({ addListener }: { addListener: Function }) => {
   return null;
 };
 
-export default (WrappedComponent: FC<any>) => {
-  function NextComponent(props: any) {
+// https://medium.com/@jrwebdev/react-higher-order-component-patterns-in-typescript-42278f7590fb
+const observe = <P extends {}>(WrappedComponent: FC<P>) => {
+  const NextComponent = (
+    props: Omit<P, keyof InjectedObserverProps> & InjectedObserverProps
+  ) => {
     const shadowState = useRef(0);
     // @ts-ignore
     const [_, setState] = useState(0); // eslint-disable-line
@@ -196,7 +199,7 @@ export default (WrappedComponent: FC<any>) => {
         </React.Fragment>
       </context.Provider>
     );
-  }
+  };
 
   NextComponent.displayName =
     WrappedComponent.displayName ||
@@ -204,11 +207,15 @@ export default (WrappedComponent: FC<any>) => {
     'ObservedComponent';
 
   if (NODE_ENV === 'production') {
-    return React.memo(props => <NextComponent {...props} />);
+    return React.memo((props: Omit<P, keyof InjectedObserverProps>) => (
+      <NextComponent {...props} />
+    ));
   }
 
   return React.memo(
-    props => <NextComponent {...props} />,
+    (props: Omit<P, keyof InjectedObserverProps>) => (
+      <NextComponent {...props} />
+    ),
     (prevProps: any, nextProps: any) => {
       const keys = Object.keys(prevProps);
       let falsy = true;
@@ -240,3 +247,5 @@ export default (WrappedComponent: FC<any>) => {
     }
   );
 };
+
+export default observe;
