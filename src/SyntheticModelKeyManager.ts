@@ -49,9 +49,11 @@ class SyntheticModelKeyManager {
 
     const delegated = this._collection.get(delegatedModelKey);
     delegated?.setDelegation(key);
-    // to handle autoRun condition!!
-    if (current?.getCurrent() !== key) {
-      current?.setDelegation(key);
+    // To handle autoRun condition!!
+    // Because `AutoRunner` is initialized with original modelKey,
+    // If model key is delegated, then derived action should change accordingly!
+    if (current?.getCurrent() !== delegatedModelKey) {
+      current?.setDelegation(delegatedModelKey);
     }
     this._store.clearPendingActions(delegatedModelKey);
   }
