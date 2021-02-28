@@ -40,12 +40,12 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
     const observablesRef = useRef(Object.create(null));
 
     const {
-      application,
       useProxy,
       useScope,
       namespace,
-      patcher: parentPatcher,
+      application,
       useRelinkMode,
+      patcher: parentPatcher,
       ...rest
     } = useContext(context);
     const patcher = useRef<undefined | Patcher>();
@@ -206,7 +206,7 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
     WrappedComponent.name ||
     'ObservedComponent';
 
-  if (NODE_ENV === 'production') {
+  if (NODE_ENV !== 'development') {
     return React.memo((props: Omit<P, keyof InjectedObserverProps>) => (
       <NextComponent {...props} />
     ));
