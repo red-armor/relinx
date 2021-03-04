@@ -188,6 +188,10 @@ By default, its value is `true`. It makes `backend` Tracker to use `Proxy` or `d
 
 By default, its value is false. Normally, it is used on dev condition. It helps to log the undeclared properties used by `state`. It's meaningful when `ES5` should be supported. [The below section have made a detail explanation](do-not-use-undeclared-properties)
 
+#### useWhy
+
+By default, Relinx will display the message why a component update in development mode. But it could be set with `false` to disable.
+
 #### namespace
 
 It is optional, In order to support multiple `Provider` in `app`, Relinx will create a random `namespaceKey` if it is omitted.

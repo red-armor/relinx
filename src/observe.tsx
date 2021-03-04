@@ -11,6 +11,8 @@ import context from './context';
 import { generatePatcherKey } from './utils/key';
 import Patcher from './Patcher';
 import { UPDATE_TYPE, InjectedObserverProps } from './types';
+import { loggerWhy } from './utils/logger';
+
 const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
 
 let count = 0;
@@ -222,24 +224,26 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
         if (prevProps[key] !== nextProps[key]) {
-          falsy = false;
-          console.groupCollapsed(
-            `%c[relinx, why did you update ${NextComponent.displayName} component]`,
-            'color: #b37feb'
-          );
-          console.group(`%cupdated key '${key}'`, 'color: #95de64');
-          console.log(
-            '%cprev value',
-            'color: #ff4d4f; font-weight: bold',
-            prevProps[key]
-          );
-          console.log(
-            '%cnext value',
-            'color: #ff4d4f; font-weight: bold',
-            nextProps[key]
-          );
-          console.groupEnd();
-          console.groupEnd();
+          if (loggerWhy.getCurrent()) {
+            console.groupCollapsed(
+              `%c[relinx, why did you update ${NextComponent.displayName} component]`,
+              'color: #b37feb'
+            );
+            console.group(`%cupdated key '${key}'`, 'color: #95de64');
+            console.log(
+              '%cprev value',
+              'color: #ff4d4f; font-weight: bold',
+              prevProps[key]
+            );
+            console.log(
+              '%cnext value',
+              'color: #ff4d4f; font-weight: bold',
+              nextProps[key]
+            );
+            console.groupEnd();
+            console.groupEnd();
+          }
+          return falsy;
         }
       }
 
