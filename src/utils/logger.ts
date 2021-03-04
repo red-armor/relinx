@@ -93,13 +93,33 @@ const error = (code: number, ...args: Array<any>) => {
 };
 
 const warn = (code: number, ...args: Array<any>) => {
+  if (NODE_ENV === 'production') {
+    return;
+  }
   const e = warnings[code];
   const message = typeof e === 'function' ? e.apply(null, args) : e;
   const err = `[relinx warning] ${message}`;
 
-  if (NODE_ENV !== 'production') {
-    console.warn(err);
-  }
+  console.warn(err);
 };
 
-export { error, warn };
+class LoggerWhy {
+  private _queue: Array<boolean> = [];
+
+  addCurrent(falsy: boolean) {
+    this._queue.push(falsy);
+  }
+
+  getCurrent() {
+    const len = this._queue.length;
+    return this._queue[len - 1];
+  }
+
+  pop() {
+    this._queue.pop();
+  }
+}
+
+const loggerWhy = new LoggerWhy();
+
+export { error, warn, loggerWhy };

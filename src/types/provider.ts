@@ -13,4 +13,5 @@ export interface ProviderProps<
   useRelinkMode?: boolean;
   strictMode?: boolean;
   children?: React.ReactNode;
+  useWhy?: boolean;
 }
