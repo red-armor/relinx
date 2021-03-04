@@ -243,7 +243,7 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
             console.groupEnd();
             console.groupEnd();
           }
-          return falsy;
+          return false;
         }
       }
 
