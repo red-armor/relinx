@@ -421,7 +421,8 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   initializeAutoRun(
     autoRunFn: Function,
     key: string,
-    autoRunKey: string
+    autoRunKey: string,
+    isRetry?: boolean
   ): -1 | undefined {
     const initialActions = autoRun<T, MODEL_KEY>(
       autoRunFn,
@@ -433,13 +434,18 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       if (!this._initializationErrorAutoRunList.has(autoRunFn)) {
         warn(20006, key, autoRunKey);
         this._initializationErrorAutoRunList.set(autoRunFn, () => {
-          return this.initializeAutoRun(autoRunFn, key, autoRunKey);
+          return this.initializeAutoRun(autoRunFn, key, autoRunKey, true);
         });
       }
       return -1;
     } else {
       const changedValues = this.resolveActions(initialActions);
-      changedValues.forEach(value => this._application?.updateBase(value));
+      // update will trigger trigger component re-render!
+      if (isRetry) {
+        this._application?.update(changedValues);
+      } else {
+        changedValues.forEach(value => this._application?.updateBase(value));
+      }
     }
     return;
   }
