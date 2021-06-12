@@ -16,5 +16,8 @@ Breaking Changes?
 - [ ] no
 
 List any relevant issue numbers:
+- closes #1
+- fixes #1
+- resolve #1
 
 ### Description
