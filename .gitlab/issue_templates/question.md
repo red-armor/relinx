@@ -1,8 +1,8 @@
 ## 🙋‍♂ Question
 
-## Link to repro
+### Link to repro
 
-## Environment
+### Environment
 
 We only accept questions against the latest Immer version.
 
