@@ -2,7 +2,7 @@
 
 Documentation Is:
 
-<!-- Please place an x (no spaces!) in all [ ] that apply -->
+<!-- Please place an x in all [ ] -->
 
 - [ ] Missing
 - [ ] Needed
