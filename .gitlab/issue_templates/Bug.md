@@ -1,10 +1,10 @@
 ## 🐛 Bug Report
 
-## To Reproduce
+### To Reproduce
 
 Steps to reproduce the behavior
 
-### screenshot
+#### screenshot
 
 ### Expected Behavior
 
