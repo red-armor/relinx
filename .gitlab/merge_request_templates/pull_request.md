@@ -17,6 +17,7 @@ Breaking Changes?
 
 List any relevant issue numbers:
 - closes #1
+- closed #1
 - fixes #1
 - resolve #1
 <!-- remove before rewrite this part -->
