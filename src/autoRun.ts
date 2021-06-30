@@ -4,13 +4,20 @@ import Application from './Application';
 import AutoRunner from './AutoRunner';
 import { Action, BasicModelType } from './types';
 
+// 如果说是一个unhandled的话，这个时候直接清空就行了，因为我们不考虑model没有注入的情况进行依赖收集；
+// 所以直接清空防止污染后续的组件依赖收集
 const safeFnCall = (fn: Function, cleanup: Function) => {
   try {
-    return fn.call(null);
+    const value = fn.call(null);
+    if (value === 'unhandled') {
+      cleanup();
+      return -1;
+    }
+
+    return value;
   } catch (err) {
     cleanup();
-    return -1;
-    // err
+    return -1; // err
   }
 };
 
