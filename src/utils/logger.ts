@@ -82,10 +82,11 @@ const error = (code: number, ...args: Array<any>) => {
 
   if (args[0] instanceof Error) {
     err.name = args[0].name;
+    err.stack = args[0].stack;
   }
 
   if (NODE_ENV !== 'production') {
-    console.log(err);
+    console.error(err);
     return;
   }
 

@@ -208,48 +208,45 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
     WrappedComponent.name ||
     'ObservedComponent';
 
-  if (NODE_ENV !== 'development') {
-    return React.memo((props: Omit<P, keyof InjectedObserverProps>) => (
-      <NextComponent {...props} />
-    ));
-  }
-
-  return React.memo(
-    (props: Omit<P, keyof InjectedObserverProps>) => (
-      <NextComponent {...props} />
-    ),
-    (prevProps: any, nextProps: any) => {
-      const keys = Object.keys(prevProps);
-      let falsy = true;
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        if (prevProps[key] !== nextProps[key]) {
-          if (loggerWhy.getCurrent()) {
-            console.groupCollapsed(
-              `%c[relinx, why did you update ${NextComponent.displayName} component]`,
-              'color: #b37feb'
-            );
-            console.group(`%cupdated key '${key}'`, 'color: #95de64');
-            console.log(
-              '%cprev value',
-              'color: #ff4d4f; font-weight: bold',
-              prevProps[key]
-            );
-            console.log(
-              '%cnext value',
-              'color: #ff4d4f; font-weight: bold',
-              nextProps[key]
-            );
-            console.groupEnd();
-            console.groupEnd();
-          }
-          return false;
-        }
-      }
-
-      return falsy;
-    }
+  const Next = (props: Omit<P, keyof InjectedObserverProps>) => (
+    <NextComponent {...props} />
   );
+
+  Next.displayName = NextComponent.displayName;
+
+  const dependency = (prevProps: any, nextProps: any) => {
+    const keys = Object.keys(prevProps);
+    let falsy = true;
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (prevProps[key] !== nextProps[key]) {
+        if (loggerWhy.getCurrent() && NODE_ENV === 'development') {
+          console.groupCollapsed(
+            `%c[relinx, why did you update ${NextComponent.displayName} component]`,
+            'color: #b37feb'
+          );
+          console.group(`%cupdated key '${key}'`, 'color: #95de64');
+          console.log(
+            '%cprev value',
+            'color: #ff4d4f; font-weight: bold',
+            prevProps[key]
+          );
+          console.log(
+            '%cnext value',
+            'color: #ff4d4f; font-weight: bold',
+            nextProps[key]
+          );
+          console.groupEnd();
+          console.groupEnd();
+        }
+        return false;
+      }
+    }
+
+    return falsy;
+  };
+
+  return React.memo(Next, dependency);
 };
 
 export default observe;
