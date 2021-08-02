@@ -208,6 +208,18 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
     WrappedComponent.name ||
     'ObservedComponent';
 
+  if (
+    NextComponent.displayName === 'ObservedComponent' &&
+    NODE_ENV === 'development'
+  ) {
+    console.warn(
+      "[relinx warning]: In order to build more useful logger info, it'd better" +
+        ' to wrap `observe` with named function\n' +
+        'for example: \n' +
+        'const ObservedApp = observe(App)'
+    );
+  }
+
   const Next = (props: Omit<P, keyof InjectedObserverProps>) => (
     <NextComponent {...props} />
   );
@@ -246,7 +258,11 @@ const observe = <P extends {}>(WrappedComponent: FC<P>) => {
     return falsy;
   };
 
-  return React.memo(Next, dependency);
+  // wrapped component should has displayName
+  const MemoedNext = React.memo(Next, dependency);
+  MemoedNext.displayName = Next.displayName;
+
+  return MemoedNext;
 };
 
 export default observe;
