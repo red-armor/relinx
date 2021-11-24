@@ -15,8 +15,9 @@ export const isTypeEqual = (o1: any, o2: any) => toString(o1) === toString(o2);
 export const isStrictEmptyObject = (obj: any) => {
   if (!isObject(obj)) return false;
 
-  for (const prop in obj) { // eslint-disable-line
-    if (obj.hasOwnProperty(prop)) return false // eslint-disable-line
+  for (const prop in obj) {
+    // eslint-disable-line
+    if (obj.hasOwnProperty(prop)) return false; // eslint-disable-line
   }
   return true;
 };

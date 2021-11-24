@@ -257,29 +257,29 @@ export type CreateTuple<R> = {
   // 1. if reducers not exist, then it will be unknown.
   [key in keyof R]: keyof R[key] extends string
     ? {
-      /**
-       * https://devblogs.microsoft.com/typescript/announcing-typescript-4-1/#template-literal-types
-       * https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
-       * https://dev.to/phenomnominal/i-need-to-learn-about-typescript-template-literal-types-51po
-       * template literal types is introduced in TS4.1
-       *
-       * However, tsdx will cause build error, Because it used typescript 3.x version.
-       * https://github.com/formium/tsdx/issues/952#issuecomment-754120955
-       * The solution could be resolved with `resolutions` option in package.json
-       * https://github.com/formium/tsdx/issues/926#issuecomment-751936109
-       *
-       * However, `resolutions` is only supported in yarn, npm not works.
-       * https://classic.yarnpkg.com/en/docs/selective-version-resolutions/
-       * https://stackoverflow.com/questions/52416312/npm-equivalent-of-yarn-resolutions
-       *
-       * for tsdx, ts4.x will be supported in v0.16.0  https://github.com/formium/tsdx/milestone/4
-       *
-       * For recently, the solution is to use yarn instead !!! waiting for tsdx 0.16.0 release..
-       *
-       * Prettier support !!!
-       * https://prettier.io/blog/2020/11/20/2.2.0.html maybe there is still some issues when using with tsdx
-       * So it is disabled hear.
-       */
+        /**
+         * https://devblogs.microsoft.com/typescript/announcing-typescript-4-1/#template-literal-types
+         * https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
+         * https://dev.to/phenomnominal/i-need-to-learn-about-typescript-template-literal-types-51po
+         * template literal types is introduced in TS4.1
+         *
+         * However, tsdx will cause build error, Because it used typescript 3.x version.
+         * https://github.com/formium/tsdx/issues/952#issuecomment-754120955
+         * The solution could be resolved with `resolutions` option in package.json
+         * https://github.com/formium/tsdx/issues/926#issuecomment-751936109
+         *
+         * However, `resolutions` is only supported in yarn, npm not works.
+         * https://classic.yarnpkg.com/en/docs/selective-version-resolutions/
+         * https://stackoverflow.com/questions/52416312/npm-equivalent-of-yarn-resolutions
+         *
+         * for tsdx, ts4.x will be supported in v0.16.0  https://github.com/formium/tsdx/milestone/4
+         *
+         * For recently, the solution is to use yarn instead !!! waiting for tsdx 0.16.0 release..
+         *
+         * Prettier support !!!
+         * https://prettier.io/blog/2020/11/20/2.2.0.html maybe there is still some issues when using with tsdx
+         * So it is disabled hear.
+         */
         [k in keyof R[key]]: key extends string ? [`${key}/${k}`, k] : [key, k]; // eslint-disable-line
       }[keyof R[key]]
     : never;
@@ -288,12 +288,12 @@ export type CreateTuple<R> = {
 export type Mapping<
   T,
   R extends ExtractReducersTypeOnlyModels<T> = ExtractReducersTypeOnlyModels<T>,
-  E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>,
+  E extends ExtractEffectsTypeOnlyModels<T> = ExtractEffectsTypeOnlyModels<T>
   // RT extends CreateTuple<R | E> = CreateTuple<R | E>,
   // ET extends CreateTuple<E> = CreateTuple<E>,
   // RM extends KeyValueTupleToObject<RT> = KeyValueTupleToObject<RT>,
   // EM extends KeyValueTupleToObject<ET> = KeyValueTupleToObject<ET>,
-> = KeyValueTupleToObject<CreateTuple<R|E>>
+> = KeyValueTupleToObject<CreateTuple<R | E>>;
 
 export type Dispatch<
   T,
@@ -739,7 +739,6 @@ export type Dispatch<
 //     : never;
 // };
 
-
 // type Model = {
 //   app: {
 //     state: {
@@ -787,8 +786,6 @@ export type Dispatch<
 // //   RK extends keyof R = keyof R
 // // > = RK extends keyof T[modelKey]['reducers'] ? T[modelKey]['reducers'][RK] : string
 
-
-
 // // export type CreateTuple<R> = {
 // //   // In order to avoid return `unknown` type. unknown will cause MergedPayload to be unknown
 // //   // 1. if reducers not exist, then it will be unknown.
@@ -798,7 +795,6 @@ export type Dispatch<
 // //       }[keyof R[key]]
 // //     : never;
 // // }[keyof R];
-
 
 // // type Mapping<
 // //   T,
@@ -810,13 +806,11 @@ export type Dispatch<
 // //   EM extends KeyValueTupleToObject<ET> = KeyValueTupleToObject<ET>,
 // // > = EM | RM
 
-
 // type RedNext = KeyValueTupleToObject<Red>
 
 // type m = Mapping<Model>
 
 // type x = keyof m
-
 
 // type TU<
 //   T,

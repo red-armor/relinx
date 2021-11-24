@@ -1,268 +1,218 @@
 import React, {
   useContext,
+  useMemo,
+  FC,
   useState,
   useRef,
   useEffect,
-  useCallback,
-  FC,
 } from 'react';
-import { StateTrackerUtil } from 'state-tracker';
+import { warn, infoChangedValue } from './utils/logger';
+import { bailBooleanValue } from './utils/commons';
+import { ActivityToken, Reaction } from 'state-tracker';
 import context from './context';
-import { generatePatcherKey } from './utils/key';
-import Patcher from './Patcher';
-import { UPDATE_TYPE, InjectedObserverProps } from './types';
-import { loggerWhy } from './utils/logger';
+import { InjectedObserverProps } from './types';
+import { logActivity } from './utils/logger';
 
-const isObject = (o: any) => o ? (typeof o === 'object' || typeof o === 'function') : false // eslint-disable-line
-
-let count = 0;
 const NODE_ENV = process.env.NODE_ENV;
 
-const Helper = ({ addListener }: { addListener: Function }) => {
-  addListener();
-  return null;
-};
+const observeNext = <P extends {}>(
+  WrappedComponent: FC<P>,
+  options: {
+    shallowEqual?: boolean;
+    shouldLogActivity?: boolean;
+    shouldLogRerender?: boolean;
+    shouldLogChangedValue?: boolean;
+  } = {}
+) => {
+  const {
+    shouldLogActivity: componentShouldLogActivity,
+    shouldLogRerender: componentShouldLogRerender,
+    shouldLogChangedValue: componentShouldChangedValue,
+    ...restOptions
+  } = options;
 
-// https://medium.com/@jrwebdev/react-higher-order-component-patterns-in-typescript-42278f7590fb
-const observe = <P extends {}>(WrappedComponent: FC<P>) => {
-  const NextComponent = (
-    props: Omit<P, keyof InjectedObserverProps> & InjectedObserverProps
-  ) => {
-    const shadowState = useRef(0);
-    // @ts-ignore
-    const [_, setState] = useState(0); // eslint-disable-line
-    const patcherUpdated = useRef(0);
-
-    // default as true, it will cause collection fail when component is dynamic
-    // injected. use case: ProfitBanner in goodsDetail
-    // After mount component, then trigger autoRun, `isMounted` is false actually.
-    const isMounted = useRef(true);
-    const { $_modelKey, ...restProps } = props;
-    const originRef = useRef(Object.create(null));
-    const observablesRef = useRef(Object.create(null));
-
-    const {
-      useProxy,
-      useScope,
-      namespace,
-      application,
-      useRelinkMode,
-      patcher: parentPatcher,
-      ...rest
-    } = useContext(context);
-    const patcher = useRef<undefined | Patcher>();
-
-    useEffect(() => {
-      isMounted.current = true;
-      return () => {
-        isMounted.current = false;
-      };
-    }, []);
-
-    for (let key in restProps) {
-      if (restProps.hasOwnProperty(key)) {
-        const value = (restProps as any)[key];
-
-        if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
-          if (
-            typeof originRef.current[key] === 'undefined' ||
-            originRef.current[key] !== value
-          ) {
-            // update is triggered by parent
-            originRef.current[key] = value;
-            observablesRef.current[key] = value;
-          } else {
-            // update is triggered by itself
-            const pathTracker = StateTrackerUtil.getPathTracker(value);
-            const paths = pathTracker.getPath();
-            const first = application?.store.getModelKey(paths[0])!;
-            const nextPaths = ([] as Array<string>).concat(
-              first,
-              paths.slice(1)
-            );
-
-            const nextValue = StateTrackerUtil.peek(
-              application!.proxyState,
-              nextPaths
-            );
-
-            if (nextValue !== observablesRef.current[key]) {
-              observablesRef.current[key] = nextValue;
-            }
-          }
-        }
-      }
-    }
-
-    // for (let key in restProps) {
-    //   if (restProps.hasOwnProperty(key)) {
-    //     const value = (restProps as any)[key];
-    //     if (isObject(value) && StateTrackerUtil.hasTracker(value)) {
-    //       if (typeof originRef.current[key] === 'undefined') {
-    //         originRef.current[key] = value;
-    //         observablesRef.current[key] = value;
-    //       } else if (originRef.current[key] === value) {
-    //         const pathTracker = StateTrackerUtil.getPathTracker(value)
-    //         const paths = pathTracker.getPath();
-    //         observablesRef.current[key] = StateTrackerUtil.peek(
-    //           application!.proxyState,
-    //           paths
-    //         );
-    //       } else {
-    //         const originRefTracker = StateTrackerUtil.getTracker(originRef.current[key] as any)
-    //         const observableTracker = StateTrackerUtil.getTracker(value)
-
-    //         if (originRefTracker._base !== observableTracker._base) {
-    //           const pathTracker = StateTrackerUtil.getPathTracker(value)
-    //           const paths = pathTracker.getPath();
-    //           observablesRef.current[key] = StateTrackerUtil.peek(
-    //             application!.proxyState,
-    //             paths
-    //           );
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-
-    const incrementCount = useRef(count++)  // eslint-disable-line
-    const componentName = `${NextComponent.displayName}-${incrementCount.current}`;
-
-    shadowState.current += 1;
-
-    const autoRunFn = () => {
-      if (isMounted.current) setState(state => state + 1);
-    };
-
-    if (!patcher.current) {
-      patcher.current = new Patcher({
-        paths: [],
-        autoRunFn,
-        parent: parentPatcher,
-        key: generatePatcherKey({
-          namespace: namespace as string,
-          componentName,
-        }),
-        displayName: NextComponent.displayName,
-      });
-    }
-
-    // !!! enter must followed by an leave, or may cause path collection issue.
-    StateTrackerUtil.enter(application!.proxyState, componentName);
-
-    useEffect(
-      () => () => {
-        if (patcher.current) patcher.current.destroyPatcher();
-      },
-      [] // eslint-disable-line
-    );
-
-    const addListener = useCallback(() => {
-      // @ts-ignore
-      const paths = StateTrackerUtil.getContext(application?.proxyState)
-        .getCurrent()
-        .getRemarkable();
-      patcher.current?.appendTo(parentPatcher); // maybe not needs
-      if (
-        application?.getUpdateType() === UPDATE_TYPE.ARRAY_LENGTH_CHANGE &&
-        !paths.length
-      ) {
-        // !!! leave must follow an enter. or it may cause path collection error
-        StateTrackerUtil.leave(application!.proxyState);
-        return;
-      }
-      patcher.current?.update({ paths: paths! });
-      // take care, this may cause patcher teardown.
-      if (patcher.current) application?.addPatcher(patcher.current);
-      patcherUpdated.current += 1;
-      StateTrackerUtil.leave(application!.proxyState);
-    }, []); // eslint-disable-line
-
-    const contextValue = {
-      ...rest,
-      application,
-      useProxy,
-      useScope,
-      namespace,
-      useRelinkMode,
-      patcher: patcher.current,
-      componentName: componentName,
-    };
-
-    if ($_modelKey) {
-      contextValue.$_modelKey = $_modelKey;
-    }
-
-    return (
-      <context.Provider value={contextValue}>
-        <React.Fragment>
-          <WrappedComponent {...restProps} {...observablesRef.current} />
-          <Helper addListener={addListener} />
-        </React.Fragment>
-      </context.Provider>
-    );
-  };
-
-  NextComponent.displayName =
+  const componentName =
     WrappedComponent.displayName ||
     WrappedComponent.name ||
     'ObservedComponent';
 
-  if (
-    NextComponent.displayName === 'ObservedComponent' &&
-    NODE_ENV === 'development'
-  ) {
-    console.warn(
-      "[relinx warning]: In order to build more useful logger info, it'd better" +
-        ' to wrap `observe` with named function\n' +
-        'for example: \n' +
-        'const ObservedApp = observe(App)'
-    );
-  }
+  const MemoedComponent = React.memo(
+    (props: any) => {
+      const { v, isPropsEqual, ...rest } = props;
 
-  const Next = (props: Omit<P, keyof InjectedObserverProps>) => (
-    <NextComponent {...props} />
+      // _$v should be passing, to fix WrappedComponent is a
+      // MemoedComponent. If it is a MemoedComponent, MemoedComponent will not rerender
+      // on state caused update.
+      return <WrappedComponent _$v={v} {...rest} />;
+    },
+    (props, nextProps) => props.v === nextProps.v && nextProps.isPropsEqual
   );
 
-  Next.displayName = NextComponent.displayName;
+  const EnterHelper = (props: any) => {
+    const { reaction, shouldLogActivity } = props;
+    if (shouldLogActivity) {
+      logActivity({
+        name: componentName,
+        activity: 'trackDepsStart',
+      });
+    }
+    reaction.enter();
+    return null;
+  };
+  const LeaveHelper = (props: any) => {
+    const { reaction, shouldLogActivity } = props;
+    const stn = reaction.getStateTrackerNode();
 
-  const dependency = (prevProps: any, nextProps: any) => {
-    const keys = Object.keys(prevProps);
-    let falsy = true;
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      if (prevProps[key] !== nextProps[key]) {
-        if (loggerWhy.getCurrent() && NODE_ENV === 'development') {
-          console.groupCollapsed(
-            `%c[relinx, why did you update ${NextComponent.displayName} component]`,
-            'color: #b37feb'
-          );
-          console.group(`%cupdated key '${key}'`, 'color: #95de64');
-          console.log(
-            '%cprev value',
-            'color: #ff4d4f; font-weight: bold',
-            prevProps[key]
-          );
-          console.log(
-            '%cnext value',
-            'color: #ff4d4f; font-weight: bold',
-            nextProps[key]
-          );
-          console.groupEnd();
-          console.groupEnd();
-        }
-        return false;
+    if (shouldLogActivity) {
+      logActivity({
+        name: componentName,
+        activity: 'trackDepsEnd',
+        payload: {
+          stateGraphMap: stn.stateGraphMap,
+          propsGraphMap: stn.propsGraphMap,
+        },
+      });
+    }
+    reaction.leave();
+    return null;
+  };
+
+  const NextComponent = (
+    props: Omit<P, keyof InjectedObserverProps> & InjectedObserverProps
+  ) => {
+    const contextValue = useContext(context);
+    const {
+      store,
+      shouldLogRerender,
+      shouldLogActivity,
+      shouldLogChangedValue,
+    } = contextValue;
+    const stateRef = useRef(0);
+    const [v, setV] = useState(stateRef.current);
+    const { $_modelKey, ...restProps } = props;
+    const contextValueRef = useRef({ ...contextValue });
+    const fn: any = useMemo(() => function() {}, []);
+    const initialRef = useRef(true);
+
+    // Should be default as `true` or reaction scheduler will not be trigger
+    const mountedRef = useRef(true);
+
+    const changedValueRef = useRef({});
+
+    const changedValue = useMemo(() => {
+      if (NODE_ENV === 'production') return;
+      if (
+        bailBooleanValue(!!componentShouldChangedValue, shouldLogChangedValue)
+      ) {
+        return changedValueRef.current;
+      }
+      return;
+    }, [shouldLogChangedValue]);
+    fn.displayName = componentName;
+
+    const activityListener = useMemo(() => {
+      if (NODE_ENV === 'production') return;
+      const booleanValue = bailBooleanValue(
+        !!componentShouldLogActivity,
+        shouldLogActivity
+      );
+      if (booleanValue)
+        return (activity: ActivityToken) => logActivity(activity);
+      return;
+    }, [componentShouldLogActivity, shouldLogActivity]);
+
+    const reaction = useMemo(() => {
+      return new Reaction({
+        fn,
+        state: store.getState(),
+        scheduler: () => {
+          // Even though, reaction.dispose is called on unmounted.
+          // but, if component detect values change first. then current
+          // forceUpdate may cause `memory leak` issue.
+          if (initialRef.current || !mountedRef.current) return;
+          setV(v => v + 1);
+        },
+        changedValue,
+        activityListener,
+        ...restOptions,
+      });
+    }, [store, fn]);
+
+    let isPropsEqual = true;
+
+    if (initialRef.current) {
+      // props should be initialized first. or isPropsEqual will make error.
+      reaction.initializeObserverProps(props);
+      initialRef.current = false;
+    } else {
+      isPropsEqual = reaction.isPropsEqual(props);
+    }
+
+    const isPropsEqualRef = useRef(isPropsEqual);
+
+    useEffect(
+      () => () => {
+        mountedRef.current = false;
+        reaction.dispose();
+      },
+      [reaction]
+    );
+
+    useEffect(() => {
+      isPropsEqualRef.current = isPropsEqual;
+      stateRef.current = v;
+    }, [v, isPropsEqual]);
+
+    if ($_modelKey) {
+      contextValueRef.current.$_modelKey = $_modelKey;
+    }
+
+    const nextShouldLogRerender =
+      typeof componentShouldLogRerender === 'boolean'
+        ? componentShouldLogRerender
+        : !!shouldLogRerender;
+
+    const rerenderDueToPropsChanged =
+      isPropsEqualRef.current !== isPropsEqual && !isPropsEqual;
+    const rerenderDueToStateChanged = stateRef.current !== v;
+
+    if (changedValue) {
+      if (rerenderDueToPropsChanged || rerenderDueToStateChanged) {
+        changedValueRef.current = {};
+        infoChangedValue(30001, componentName, changedValue);
       }
     }
 
-    return falsy;
+    if (nextShouldLogRerender) {
+      if (rerenderDueToStateChanged && !rerenderDueToPropsChanged) {
+        warn(20009, componentName, 'state');
+      }
+
+      if (rerenderDueToPropsChanged && !rerenderDueToStateChanged) {
+        warn(20009, componentName, 'props');
+      }
+
+      if (rerenderDueToPropsChanged && rerenderDueToStateChanged) {
+        warn(20009, componentName, 'props && state');
+      }
+    }
+
+    return (
+      <context.Provider value={contextValueRef.current}>
+        <EnterHelper
+          reaction={reaction}
+          shouldLogActivity={!!activityListener}
+        />
+        <MemoedComponent {...restProps} v={v} isPropsEqual={isPropsEqual} />
+        <LeaveHelper
+          reaction={reaction}
+          shouldLogActivity={!!activityListener}
+        />
+      </context.Provider>
+    );
   };
 
-  // wrapped component should has displayName
-  const MemoedNext = React.memo(Next, dependency);
-  MemoedNext.displayName = Next.displayName;
-
-  return MemoedNext;
+  return NextComponent;
 };
 
-export default observe;
+export default observeNext;

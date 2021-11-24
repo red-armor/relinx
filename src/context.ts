@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 import { ContextDefaultValue } from './types';
+import Store from './Store';
 
 const calculateChangeBits = () => 0b00;
 const noop = () => {};
@@ -13,7 +14,7 @@ export const defaultValue = {
   patcher: null,
   trackerNode: null,
   useRelinkMode: true,
-  application: null,
+  store: Store,
 };
 
 // @ts-ignore
