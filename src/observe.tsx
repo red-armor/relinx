@@ -102,7 +102,7 @@ const observeNext = <P extends {}>(
     const changedValue = useMemo(() => {
       if (NODE_ENV === 'production') return;
       if (
-        bailBooleanValue(!!componentShouldChangedValue, shouldLogChangedValue)
+        bailBooleanValue(componentShouldChangedValue, shouldLogChangedValue)
       ) {
         return changedValueRef.current;
       }
@@ -113,7 +113,7 @@ const observeNext = <P extends {}>(
     const activityListener = useMemo(() => {
       if (NODE_ENV === 'production') return;
       const booleanValue = bailBooleanValue(
-        !!componentShouldLogActivity,
+        componentShouldLogActivity,
         shouldLogActivity
       );
       if (booleanValue)

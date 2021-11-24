@@ -15,7 +15,7 @@ const store = createStore({
 }, applyMiddleware(thunk))
 
 const Basic = () => (
-  <Provider store={store}>
+  <Provider store={store} shouldLogRerender shouldLogActivity shouldLogChangedValue>
     <App />
   </Provider>
 )
