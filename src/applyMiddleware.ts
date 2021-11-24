@@ -8,6 +8,7 @@ import {
 } from './types';
 
 export default function applyMiddleware(...middleware: Array<Middleware>) {
+  // @ts-ignore
   const nextMiddleware = [...middleware];
   return <T extends BasicModelType<T>>(
     createStore: CreateStoreFn<T>

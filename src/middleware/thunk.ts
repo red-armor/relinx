@@ -42,7 +42,11 @@ export default <T extends BasicModelType<T>>({
         .filter(v => !!v) as Array<Action>;
       if (actions.length) dispatch && (dispatch as InternalDispatch)(actions);
     };
-    return actions(nextDispatch, getState);
+    // effect should be put in nextTick. or getState will not return the latest
+    // value (when actions has reducer and effects the same).
+    // TODO: It may better to put in TaskQueue nextTick
+    Promise.resolve().then(() => actions(nextDispatch, getState));
+    return;
   }
 
   const nextActions = ([] as Array<Action>).concat(actions);
@@ -66,7 +70,7 @@ export default <T extends BasicModelType<T>>({
         const actionType = parts[1] as keyof ExtractEffectsTypeOnlyModels<
           T
         >[typeof storeKey];
-        const modelKey = store.getModelKey(storeKey);
+        const modelKey = store.getModelKey(storeKey) as any;
         const currentEffects = store.getEffects()[modelKey as keyof T];
 
         if (currentEffects && currentEffects[actionType]) {

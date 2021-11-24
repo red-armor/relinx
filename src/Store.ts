@@ -1,24 +1,42 @@
-import Application from './Application';
 import {
   Action,
   InternalDispatch,
   Subscription,
   BasicModelType,
-  AutoRunSubscriptions,
   ChangedValueGroup,
   CreateStoreOnlyModels,
   ExtractStateTypeOnlyModels,
   ExtractEffectsTypeOnlyModels,
   ExtractReducersTypeOnlyModels,
-  PendingAutoRunInitialization,
   ModelKey,
 } from './types';
-import autoRun from './autoRun';
-import SyntheticModelKeyManager from './SyntheticModelKeyManager';
-import { error, warn } from './utils/logger';
+import SyntheticKeyModelManager, {
+  SyntheticKeyModel,
+} from './SyntheticKeyModelManager';
+import {
+  errorWarning,
+  error,
+  warn,
+  infoChangedValue,
+  logActivity,
+} from './utils/logger';
+import {
+  produce,
+  IStateTracker,
+  Reaction,
+  StateTrackerUtil,
+  ActivityToken,
+} from 'state-tracker';
+import isPlainObject from './utils/isPlainObject';
+import { bailBooleanValue } from './utils/commons';
+import TaskQueue from './TaskQueue';
+
+let subscriptionCount = 0;
+
+const NODE_ENV = process.env.NODE_ENV;
 
 class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
-  private _application: Application<T, MODEL_KEY> | null = null;
+  private _models: CreateStoreOnlyModels<T, ExtractStateTypeOnlyModels<T>>;
   private _count: number = 0;
   private _initialValue: {
     [key in MODEL_KEY]: object;
@@ -33,17 +51,48 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   private _effects: ExtractEffectsTypeOnlyModels<
     T
   > = {} as ExtractEffectsTypeOnlyModels<T>;
-  private _pendingAutoRunInitializations: Array<
-    PendingAutoRunInitialization
-  > = [];
-  private _syntheticModelKeyManager: SyntheticModelKeyManager;
+  private _syntheticKeyModelManager: SyntheticKeyModelManager;
+
+  private _shouldLogChangedValue: boolean = false;
+  private _shouldLogRerender: boolean = false;
+  private _shouldLogActivity: boolean = false;
+
+  // To temp save actions dispatched before model is injected
   private _pendingActions: Array<Action> = [];
+
   public initialState: any;
   public subscriptions: {
     [key: string]: Subscription<ExtractStateTypeOnlyModels<T>>;
   } = {};
-  private _initializationErrorAutoRunList: Map<Function, Function> = new Map();
-  private _unsafeDispatch: Function;
+
+  private _queue: TaskQueue = new TaskQueue({
+    after: (changedValues: Array<ChangedValueGroup<MODEL_KEY>>) => {
+      const proxyState = this.getState() as IStateTracker;
+      const nextState = { ...proxyState };
+
+      if (changedValues.length) {
+        changedValues.forEach(value => {
+          const { storeKey, changedValue } = value;
+          const modelKey = this.getModelKey(storeKey)!;
+          const currentState = nextState[modelKey];
+          nextState[modelKey] = {
+            ...currentState,
+            ...changedValue,
+          };
+        });
+      }
+
+      StateTrackerUtil.perform(proxyState, nextState, {
+        afterCallback: () => {
+          const keys = Object.keys(proxyState);
+          keys.forEach(key => {
+            proxyState[key] = nextState[key];
+          });
+        },
+        stateCompareLevel: 1,
+      });
+    },
+  });
 
   constructor(configs: {
     models: CreateStoreOnlyModels<T>;
@@ -51,26 +100,42 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
       [key in MODEL_KEY]?: any;
     };
   }) {
-    const models = configs.models;
+    // const models = configs.models;
     this._initialValue = configs.initialValue || ({} as any);
-    this._syntheticModelKeyManager = new SyntheticModelKeyManager({
+    this._syntheticKeyModelManager = new SyntheticKeyModelManager({
       store: this,
     });
-
-    const keys = Object.keys(models) as Array<MODEL_KEY>;
+    this._models = configs.models;
+    this._state = produce({}) as ExtractStateTypeOnlyModels<T>;
+    const keys = Object.keys(this._models) as Array<MODEL_KEY>;
 
     keys.forEach(key => {
       this.injectModel({
         key,
-        model: models[key],
+        model: this._models[key],
       });
     });
+  }
 
-    this._unsafeDispatch = this.unsafeDispatch.bind(this);
+  updateLogConfig(config: {
+    shouldLogActivity?: boolean;
+    shouldLogRerender?: boolean;
+    shouldLogChangedValue?: boolean;
+  }) {
+    const {
+      shouldLogRerender,
+      shouldLogChangedValue,
+      shouldLogActivity,
+    } = config;
+
+    this._shouldLogRerender = !!shouldLogRerender;
+    this._shouldLogChangedValue = !!shouldLogChangedValue;
+
+    this._shouldLogActivity = !!shouldLogActivity;
   }
 
   getState(): ExtractStateTypeOnlyModels<T> {
-    return this._state;
+    return this._state as ExtractStateTypeOnlyModels<T>;
   }
 
   getReducers(): ExtractReducersTypeOnlyModels<T> {
@@ -81,56 +146,52 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     return this._effects;
   }
 
-  clearPendingActions(key: string) {
-    this._pendingActions = this._pendingActions.filter(action => {
-      const { type } = action;
-      const [storeKey] = type.split('/');
-      return storeKey !== key;
-    });
-  }
-
   unsafeDispatch(actions: Action) {
     warn(20008, actions);
     this.dispatch(actions);
+  }
+
+  decorateDispatch(chainedMiddleware: Function) {
+    this.dispatch = chainedMiddleware(this.setValue.bind(this));
+  }
+
+  rebuildActions(keyModel: SyntheticKeyModel, actions: Array<Action>) {
+    const modelKey = keyModel.getCurrent();
+    let nextActions = actions;
+
+    if (isPlainObject(nextActions)) {
+      nextActions = ([] as Array<Action>).concat(nextActions);
+    }
+
+    if (Array.isArray(nextActions)) {
+      nextActions = nextActions
+        .map(action => {
+          if (isPlainObject(action)) {
+            const { type, payload } = action;
+            // if type is not in `namespace/type` format, then add modelKey as default namespace.
+            if (!/\//.test(type)) {
+              return {
+                type: `${modelKey}/${type}`,
+                payload,
+              };
+            }
+          }
+          return null as any;
+        })
+        .filter(v => v);
+    }
+    return nextActions;
   }
 
   resolveActions(actions: Array<Action>) {
     try {
       return actions.reduce<Array<ChangedValueGroup<MODEL_KEY>>>(
         (changedValueGroup, action) => {
-          if (!this._application) return [];
           const { type, payload } = action;
           const [storeKey, actionType] = type.split('/') as [
             MODEL_KEY,
             keyof ExtractReducersTypeOnlyModels<T>
           ];
-
-          const syntheticModelKeyManager = this._syntheticModelKeyManager.get(
-            storeKey as string
-          );
-
-          // It means storeKey is in synthetic mode and not committed.
-          // The incoming action should update model with `targetKey` is key
-          if (!syntheticModelKeyManager) {
-            const list = this._syntheticModelKeyManager.getByTargetKey(
-              storeKey as string
-            );
-            list.forEach(manager => {
-              const originalKey = manager.getOriginal() as MODEL_KEY;
-              const currentState = this.getModel(originalKey, true);
-              const usedReducer = this._reducers[originalKey];
-              if (usedReducer) {
-                const changedValue = usedReducer[actionType](
-                  currentState,
-                  payload
-                );
-                changedValueGroup.push({
-                  storeKey: originalKey,
-                  changedValue,
-                });
-              }
-            });
-          }
 
           const modelKey = this.getModelKey(storeKey) as MODEL_KEY;
 
@@ -141,11 +202,25 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           if (!usedReducer) {
             this._pendingActions.push(action);
           } else if (usedReducer[actionType]) {
-            const currentState = this.getModel(modelKey);
-            const changedValue = usedReducer[actionType](currentState, payload);
-            changedValueGroup.push({
-              storeKey: modelKey,
-              changedValue,
+            const keyModels = this._syntheticKeyModelManager.getByTargetKey(
+              modelKey as string
+            );
+
+            keyModels.forEach(keyModel => {
+              const originalKey = keyModel.getOriginal() as MODEL_KEY;
+              const currentState = this.getModel(originalKey, true);
+              const usedReducer = this._reducers[originalKey];
+              const changedValue = usedReducer[actionType](
+                currentState,
+                payload
+              );
+              // partial value, will make aggregation.
+              changedValueGroup.push({
+                storeKey: originalKey,
+                changedValue: {
+                  ...changedValue,
+                },
+              });
             });
           } else {
             warn(20004, type);
@@ -162,116 +237,19 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
   }
 
   setValue(actions: Array<Action>) {
-    const nextActions = ([] as Array<Action>).concat(actions);
-    const changedValues = this.resolveActions(nextActions);
-
-    if (changedValues.length) {
-      // updateDryRun do two things
-      // 1. resolve pendingPatchers
-      // 2. assign application.base with new value.
-      // Note: on this step, pendingPatchers do not execute
-      const derivedActions =
-        this._application?.updateDryRun(changedValues) || [];
-
-      this._application?.processSubscriptionOneMoreDeep(
-        this.resolveActions(derivedActions)
-      );
-
-      // model.subscriptions may cause new value update..
-      const derivedChangedValue = this.resolveActions(derivedActions);
-
-      const furtherMoreActions =
-        this._application?.preUpdate(derivedChangedValue) || [];
-      const furtherMoreChangedValues = this.resolveActions(furtherMoreActions);
-      this._application?.update(furtherMoreChangedValues);
-
-      const storeSubscriptionsKeys = Object.keys(this.subscriptions);
-      const storeSubscriptionsKeysLength = storeSubscriptionsKeys.length;
-      // Only if there are store subscriptions. it requires to calculate old and new value..
-      if (storeSubscriptionsKeysLength) {
-        const toObject = changedValues.reduce<
-          {
-            [key in MODEL_KEY]: object;
-          }
-        >(
-          (acc, cur) => {
-            const { storeKey, changedValue } = cur;
-            acc[storeKey] = {
-              ...acc[storeKey],
-              ...changedValue,
-            };
-            return acc;
-          },
-          {} as {
-            [key in MODEL_KEY]: object;
-          }
-        );
-        const oldState = {
-          // ...this._application?.base,
-          ...this.getState(),
-        } as ExtractStateTypeOnlyModels<T>;
-        const newState = {
-          // ...this._application?.base,
-          ...this.getState(),
-          ...toObject,
-        } as ExtractStateTypeOnlyModels<T>;
-        for (let i = 0; i < storeSubscriptionsKeysLength; i++) {
-          const key = storeSubscriptionsKeys[i];
-          const subscription = this.subscriptions[key];
-          subscription({
-            oldState,
-            newState,
-            diff: toObject as Partial<ExtractStateTypeOnlyModels<T>>,
-          });
-        }
-      }
-    }
-  }
-
-  bindApplication(application: Application<T, MODEL_KEY>) {
-    this._application = application;
-    this.runPendingAutoRunInitialization();
-  }
-
-  runPendingAutoRunInitialization() {
-    let actions = [] as Array<Action>;
-
-    if (this._pendingAutoRunInitializations.length) {
-      this._pendingAutoRunInitializations.forEach(initialization => {
-        const { autoRunFn, modelKey } = initialization;
-        const initialActions = autoRun(
-          autoRunFn,
-          this._application!,
-          modelKey,
-          this._unsafeDispatch
-        );
-        if (initialActions !== -1) actions = actions.concat(initialActions);
-      });
-      this._pendingAutoRunInitializations = [];
-    }
-
-    const changeValues = this.resolveActions(actions);
-    changeValues.forEach(value => this._application?.updateBase(value));
-  }
-
-  decorateDispatch(chainedMiddleware: Function) {
-    this.dispatch = chainedMiddleware(this.setValue.bind(this));
+    this._queue.nextTick(() => {
+      const nextActions = ([] as Array<Action>).concat(actions);
+      const changedValues = this.resolveActions(nextActions);
+      return changedValues;
+    });
   }
 
   generateSubscriptionKey(): string {
     return `store_${this._count++}`;
   }
 
-  subscribe(
-    subscription: Subscription<ExtractStateTypeOnlyModels<T>>
-  ): Function {
-    const key = this.generateSubscriptionKey();
-    this.subscriptions[key] = subscription;
-    return () => delete this.subscriptions[key];
-  }
-
   getModelKey(key: MODEL_KEY) {
-    return this._syntheticModelKeyManager.getDelegationKey(key as string);
+    return this._syntheticKeyModelManager.getCurrentKey(key as string);
   }
 
   /**
@@ -281,17 +259,19 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
    */
   getModel(key: MODEL_KEY, falsy?: boolean) {
     const modelKey = falsy ? key : this.getModelKey(key);
-    return this._state[modelKey as MODEL_KEY];
+    const state = this.getState();
+    return state[modelKey as MODEL_KEY];
   }
 
   transfer(key: ModelKey) {
-    this._syntheticModelKeyManager.transfer(key);
+    this._syntheticKeyModelManager.transfer(key);
   }
 
   transferModel(from: MODEL_KEY, to: MODEL_KEY) {
     if (from !== to) {
       warn(20001, to, from);
-      if (this._state[from]) this._state[to] = this._state[from];
+      const state = this.getState();
+      if (state[from]) state[to] = { ...state[from] };
       if (this._reducers[from]) this._reducers[to] = this._reducers[from];
       if (this._effects[from]) this._effects[to] = this._effects[from];
 
@@ -299,6 +279,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         [key: string]: Action;
       };
 
+      // consume pending effects
       this._pendingActions = this._pendingActions.filter(action => {
         const { type } = action;
         const [storeKey, actionType] = type.split('/') as [
@@ -307,11 +288,17 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         ];
         const effects = this._effects[to];
 
-        if (storeKey === to && effects && effects[actionType]) {
-          actionsObject[actionType as any] = effects[actionType];
-          warn(20005, type);
+        // clean up all pending actions with `${targetKey}` prefix.
+        // But, effects should be consumed..
+        if (storeKey === to) {
+          if (effects && effects[actionType]) {
+            actionsObject[actionType as any] = effects[actionType];
+            warn(20005, type);
+          }
+
           return false;
         }
+
         return true;
       });
 
@@ -319,10 +306,37 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     }
   }
 
+  subscriptionScheduler(
+    keyModel: SyntheticKeyModel,
+    displayName: string,
+    getReaction: () => Reaction | null
+  ) {
+    return (fn: Function) => {
+      const reaction = getReaction();
+      if (reaction && reaction.getChangedValue()) {
+        infoChangedValue(30002, displayName, reaction.getChangedValue());
+      }
+
+      if (this._shouldLogRerender) {
+        warn(20010, displayName, 'state');
+      }
+
+      const actions = fn({
+        getState: () => this.getState(),
+        dispatch: this.dispatch.bind(this),
+      });
+
+      const nextActions = this.rebuildActions(keyModel, actions);
+
+      if (Array.isArray(nextActions)) {
+        this.dispatch(nextActions);
+      }
+    };
+  }
+
   injectModel({
     key,
     model,
-    initialValue = {},
     targetKey,
   }: {
     key: MODEL_KEY;
@@ -330,61 +344,60 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     initialValue?: any;
     targetKey?: MODEL_KEY;
   }) {
-    const syntheticManager = this._syntheticModelKeyManager.add({
+    const syntheticKeyModel = this._syntheticKeyModelManager.add({
+      // originalKey should be unique, targetKey could be the same !!!
       originalKey: key as string,
       // target should not be set with default value!!
       targetKey: targetKey as string,
     });
-    const { state, reducers = {}, effects = {} } = model;
+    const { state, reducers = {}, effects = {}, subscriptions = {} } = model;
 
+    // initial value should be used used, no matter model is committed or not.
     const _internalInitialValue =
-      this._initialValue[syntheticManager!.getTarget() as MODEL_KEY] || {};
-    const subscriptions = model.subscriptions || ({} as AutoRunSubscriptions);
+      this._initialValue[syntheticKeyModel!.getTarget() as MODEL_KEY] || {};
+
     // consume all the pending actions.
-    let base = this.getModel(key) || {
+    let modelBase = this.getModel(key) || {
       ...state,
       ..._internalInitialValue,
-      ...initialValue,
     };
 
     if (reducers) this._reducers[key] = reducers as any;
     if (effects) this._effects[key] = effects as any;
 
+    // consume the pending actions in current injecting model
     const nextPendingActions = this._pendingActions.filter(action => {
       const { type, payload } = action;
       const [storeKey, actionType] = type.split('/') as [
         MODEL_KEY,
         keyof ExtractReducersTypeOnlyModels<T>
       ];
-
-      // const manager = this._syntheticModelKeyManager.get(storeKey as string);
-
       // only process action with current injected model's tag
-      // if (storeKey === key) {
-      // if (this.getModelKey(storeKey) === key) {
-      if (syntheticManager!.getTarget() === storeKey) {
+      if (syntheticKeyModel!.getTarget() === storeKey) {
         const reducer = reducers[actionType];
         const effect = effects[actionType];
 
-        let nextState = base;
+        let nextState = modelBase;
 
         if (typeof reducer === 'function') {
-          nextState = reducer(base, payload);
-          base = { ...base, ...nextState };
+          nextState = reducer(modelBase, payload);
+          modelBase = { ...modelBase, ...nextState };
           // what if pending action is an effect. call dispatch again to re-run...
           // But, there is still a condition, effects followed by normal reducer...
           // The result may override by effect...
         } else if (typeof effect === 'function') {
           // Pending effect only be trigger directly on `un-synthetic mode`.
-          if (!syntheticManager?.isSyntheticMode()) this.dispatch(action);
+          if (syntheticKeyModel && !syntheticKeyModel.isSyntheticMode())
+            this.dispatch(action);
           warn(20002, type);
         } else {
           warn(20003, type);
         }
 
+        // only if model is committed, the pending actions could be cleared.
         if (
-          !syntheticManager?.isSyntheticMode() ||
-          syntheticManager.getCommitted()
+          !syntheticKeyModel.isSyntheticMode() ||
+          syntheticKeyModel.getCommitted()
         ) {
           return false;
         }
@@ -392,69 +405,92 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
       return true;
     });
-
     this._pendingActions = nextPendingActions;
-    this._state[key] = base;
 
-    this._application?.updateBase({
-      storeKey: key,
-      changedValue: base,
-    });
+    const applicationState = this.getState() as IStateTracker;
 
-    this.processErrorAutoRunList();
-    const subscriptionsKeys = Object.keys(subscriptions);
-    subscriptionsKeys.forEach(autoRunKey => {
-      const autoRunFn = subscriptions[autoRunKey];
-
-      if (!this._application) {
-        this._pendingAutoRunInitializations.push({
-          modelKey: key as string,
-          autoRunKey,
-          autoRunFn,
-        });
-      } else {
-        this.initializeAutoRun(autoRunFn, key as string, autoRunKey);
+    StateTrackerUtil.perform(
+      applicationState,
+      {
+        ...applicationState,
+        [key]: modelBase,
+      },
+      {
+        afterCallback: () => {
+          applicationState[key as string] = modelBase;
+        },
+        stateCompareLevel: 1,
       }
-    });
-  }
-
-  initializeAutoRun(
-    autoRunFn: Function,
-    key: string,
-    autoRunKey: string,
-    isRetry?: boolean
-  ): -1 | undefined {
-    const initialActions = autoRun<T, MODEL_KEY>(
-      autoRunFn,
-      this._application!,
-      key as string,
-      this._unsafeDispatch
     );
-    if (initialActions === -1) {
-      if (!this._initializationErrorAutoRunList.has(autoRunFn)) {
-        warn(20006, key, autoRunKey);
-        this._initializationErrorAutoRunList.set(autoRunFn, () => {
-          return this.initializeAutoRun(autoRunFn, key, autoRunKey, true);
-        });
-      }
-      return -1;
-    } else {
-      const changedValues = this.resolveActions(initialActions);
-      // update will trigger trigger component re-render!
-      if (isRetry) {
-        this._application?.update(changedValues);
-      } else {
-        changedValues.forEach(value => this._application?.updateBase(value));
-      }
-    }
-    return;
-  }
 
-  processErrorAutoRunList() {
-    this._initializationErrorAutoRunList.forEach((autoRun, key) => {
-      const value = autoRun.call(this);
-      if (value !== -1) this._initializationErrorAutoRunList.delete(key);
-    });
+    const modelKey = this.getModelKey(key)!;
+
+    for (let key in subscriptions) {
+      const subscription = subscriptions[key];
+      let func = subscription;
+      let options = {};
+
+      let nextShouldLogChangedValue = false;
+      let nextShouldLogActivity = false;
+
+      if (isPlainObject(subscription)) {
+        const {
+          fn,
+          shouldLogChangedValue,
+          shouldLogActivity,
+          ...restSubscription
+        } = subscription;
+        func = fn;
+        nextShouldLogChangedValue =
+          NODE_ENV !== 'production' &&
+          bailBooleanValue(shouldLogChangedValue, this._shouldLogChangedValue);
+        nextShouldLogActivity =
+          NODE_ENV !== 'production' &&
+          bailBooleanValue(shouldLogActivity, this._shouldLogActivity);
+        options = { ...restSubscription };
+      }
+
+      const nextFunc = function(this: Reaction, ...args: Array<any>) {
+        try {
+          const result = func.apply(this, args);
+          if (result === -1 || result === 'unhandled') {
+            this.setStateCompareLevel(0);
+            return null;
+          }
+
+          this.setStateCompareLevel(1);
+          return result;
+        } catch (err) {
+          this.setStateCompareLevel(0);
+          errorWarning(10004, err, func.displayName);
+        }
+      };
+      nextFunc.displayName = `subscription_${modelKey}_${subscriptionCount++}`;
+
+      let reaction: null | Reaction = null;
+      const getReaction = () => reaction;
+      const reactionOptions: any = {
+        fn: nextFunc,
+        state: applicationState,
+        scheduler: this.subscriptionScheduler(
+          syntheticKeyModel,
+          nextFunc.displayName,
+          getReaction
+        ),
+        ...options,
+      };
+
+      if (nextShouldLogActivity) {
+        reactionOptions.activityListener = (activity: ActivityToken) =>
+          logActivity(activity);
+      }
+
+      if (nextShouldLogChangedValue) reactionOptions.changedValue = {};
+
+      // TODO: in synthetic mode, not used model reaction should be destroyed
+      reaction = new Reaction(reactionOptions);
+      syntheticKeyModel.addDisposers(reaction.dispose);
+    }
   }
 }
 

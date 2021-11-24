@@ -9,7 +9,7 @@ const C = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown",
 const N = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse",
   "keyboard"];
 
-const random = (max) => Math.round(Math.random() * 1000) % max;
+const random = (max) => Math.round(Math.random() * 10) % max;
 
 let nextId = 1;
 function buildData(count) {
@@ -31,13 +31,13 @@ const bench = () => ({
   },
   reducers: {
     "RUN": () => {
-      return { data: buildData(1000), selected: 0 };
+      return { data: buildData(10), selected: 0 };
     },
     "RUN_LOTS": () => {
-      return { data: buildData(10000), selected: 0 };
+      return { data: buildData(100), selected: 0 };
     },
     "ADD": (state) => {
-      return { data: state.data.concat(buildData(1000)), selected: state.selected };
+      return { data: state.data.concat(buildData(10)), selected: state.selected };
     },
     "UPDATE": (state) => {
       const newData = state.data.slice();
@@ -59,9 +59,10 @@ const bench = () => ({
     },
     "SWAP_ROWS": (state) => {
       const newData = state.data.slice();
+      const len = newData.length
       const tmp = newData[1];
-      newData[1] = newData[998];
-      newData[998] = tmp;
+      newData[1] = newData[len - 1];
+      newData[len - 1] = tmp;
       return { data: newData, selected: state.selected };
     },
     setProps: (_, payload) => ({ ...payload })
@@ -83,13 +84,16 @@ const store = createStore(
   applyMiddleware()
 )
 
-const GlyphIcon = <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>;
+const GlyphIcon = <span className="glyphicon glyphicon-remove" aria-hidden="true">x</span>;
 
+const itemScreenshot = {}
 const RowInner = ({ data, isSelected }) => {
   const [dispatch] = useDispatch()
   const select = () => {
     dispatch({ type: "BENCH/SELECT", payload: { id: data.id } })
   };
+
+  console.log('[rerender reason] ', itemScreenshot)
 
   const remove = () => { dispatch({ type: "BENCH/REMOVE", payload: { id: data.id } }); };
   return (
@@ -101,17 +105,29 @@ const RowInner = ({ data, isSelected }) => {
     </tr>
   )
 }
-const Row = observe(RowInner)
+const Row = observe(RowInner, {
+  falsyScreenShot: itemScreenshot
+})
+
+const listScreenshot = {}
 
 const RowListInner = () => {
   const [state] = useRelinx('BENCH')
   const { selected } = state
   const rows = state.data
+
+  console.log('[rerender reason] ', listScreenshot)
+
   return rows.map((data, index) => {
-    return <Row key={data.id} data={data} index={index} isSelected={selected === data.id}/>
+    return <Row key={data.id} data={data} isSelected={selected === data.id}/>
   });
 }
-const RowList = observe(RowListInner)
+const RowList = observe(RowListInner, {
+  falsyScreenShot: listScreenshot,
+  listener: token => {
+    console.log('[log rerender action] ', token)
+  }
+})
 
 const Button = React.memo(({ id, title, cb }) => (
   <div className="col-sm-6 smallpad">
@@ -151,6 +167,6 @@ const MainInner = () => {
 const Main = observe(MainInner)
 
 ReactDOM.render(
-  <Provider store={store}><Main /></Provider>,
+  <Provider store={store} shouldLogRerender><Main /></Provider>,
   document.getElementById("main")
 );

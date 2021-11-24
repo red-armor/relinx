@@ -8,10 +8,8 @@ export interface ProviderProps<
 > {
   store: Store<T, K>;
   namespace?: string;
-  useProxy?: boolean;
-  useScope?: boolean;
-  useRelinkMode?: boolean;
-  strictMode?: boolean;
   children?: React.ReactNode;
-  useWhy?: boolean;
+  shouldLogActivity?: boolean;
+  shouldLogRerender?: boolean;
+  shouldLogChangedValue?: boolean;
 }

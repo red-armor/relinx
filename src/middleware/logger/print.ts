@@ -2,9 +2,9 @@ import { Action } from '../../types';
 
 import { formatTime } from './utils';
 
-const colorLine = Function.apply.bind(console.log, null) // eslint-disable-line
-const colorGroupEnd = console.groupEnd // eslint-disable-line
-const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null) // eslint-disable-line
+const colorLine = Function.apply.bind(console.log, null); // eslint-disable-line
+const colorGroupEnd = console.groupEnd; // eslint-disable-line
+const colorGroupCollapsed = Function.apply.bind(console.groupCollapsed, null); // eslint-disable-line
 // const isEmptyObject = obj => !obj || Object.keys(obj).length === 0 && obj.constructor === Object
 
 const colorLog = (group: Array<Array<string>>) => {
