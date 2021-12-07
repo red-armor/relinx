@@ -71,6 +71,12 @@ class SyntheticKeyModelManager {
     return;
   }
 
+  getTargetKey(key: string) {
+    const value = this._collection.get(key);
+    if (value) return value.getTarget();
+    return;
+  }
+
   get(key: string) {
     return this._collection.get(key);
   }
@@ -104,7 +110,7 @@ export class SyntheticKeyModel {
     );
 
     this._syntheticMode = !!targetKey && targetKey !== originalKey;
-    this._targetKey = targetKey;
+    this._targetKey = targetKey || originalKey;
     this._originalKey = originalKey;
     this._currentKey = originalKey;
     this._committed = !targetKey;
@@ -141,7 +147,6 @@ export class SyntheticKeyModel {
   }
 
   getCurrent() {
-    if (!this.isSyntheticMode() && this._committed) return this._originalKey;
     return this._currentKey;
   }
 

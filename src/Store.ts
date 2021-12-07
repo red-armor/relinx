@@ -202,8 +202,9 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           if (!usedReducer) {
             this._pendingActions.push(action);
           } else if (usedReducer[actionType]) {
+            const targetKey = this.getModelTargetKey(storeKey);
             const keyModels = this._syntheticKeyModelManager.getByTargetKey(
-              modelKey as string
+              targetKey as string
             );
 
             keyModels.forEach(keyModel => {
@@ -250,6 +251,9 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
   getModelKey(key: MODEL_KEY) {
     return this._syntheticKeyModelManager.getCurrentKey(key as string);
+  }
+  getModelTargetKey(key: MODEL_KEY) {
+    return this._syntheticKeyModelManager.getTargetKey(key as string);
   }
 
   /**
