@@ -208,7 +208,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
             );
 
             keyModels.forEach(keyModel => {
-              const originalKey = keyModel.getOriginal() as MODEL_KEY;
+              // 对于reducer，state value需要从当前使用的model中拿值；originalKey是一个不再变化的key，
+              // 一旦modelKey被确定，
+              // 这个时候的key是targetKey；所以这里需要使用getCurrent
+              const originalKey = keyModel.getCurrent() as MODEL_KEY;
               const currentState = this.getModel(originalKey, true);
               const usedReducer = this._reducers[originalKey];
               const changedValue = usedReducer[actionType](
