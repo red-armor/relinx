@@ -13,13 +13,7 @@ import {
 import SyntheticKeyModelManager, {
   SyntheticKeyModel,
 } from './SyntheticKeyModelManager';
-import {
-  errorWarning,
-  error,
-  warn,
-  infoChangedValue,
-  logActivity,
-} from './utils/logger';
+import { error, warn, infoChangedValue, logActivity } from './utils/logger';
 import {
   produce,
   IStateTracker,
@@ -469,7 +463,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           return result;
         } catch (err) {
           this.setStateCompareLevel(0);
-          errorWarning(10004, err, func.displayName);
+          error(10004, err, func.displayName);
         }
       };
       nextFunc.displayName = `subscription_${modelKey}_${subscriptionCount++}`;
