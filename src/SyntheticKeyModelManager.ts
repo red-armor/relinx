@@ -133,10 +133,14 @@ export class SyntheticKeyModel {
   }
 
   commit() {
-    invariant(
-      !this.isSyntheticMode() || !this._committed,
-      `It is not allow to re-delegate ${this._originalKey} with ${this._targetKey}`
-    );
+    // TODO：微商详碰到了一个场景，比如同一个modelKey会被多个model文件映射到。因为它也可以被理解
+    // 为是一个业务场景，这个时候比如将a/model.js 对应到了a；同时b/model.js也对应到a；虽然这么做
+    // 没问题，但是还是要尽量避免，后续可以通过strictMode这种方式，来卡控下面的判断逻辑
+
+    // invariant(
+    //   !(this.isSyntheticMode() && this._committed),
+    //   `It is not allow to re-delegate ${this._originalKey} with ${this._targetKey}`
+    // );
     this._currentKey = this._targetKey!;
     this._committed = true;
     this._manager.cleanup(this.getTarget());
