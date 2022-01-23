@@ -433,12 +433,14 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
       let nextShouldLogChangedValue = false;
       let nextShouldLogActivity = false;
+      let ignoreSettingStateCompareLevel = false;
 
       if (isPlainObject(subscription)) {
         const {
           fn,
           shouldLogChangedValue,
           shouldLogActivity,
+          ignoreSettingStateCompareLevel: definedIgnoreSettingStateCompareLevel,
           ...restSubscription
         } = subscription;
         func = fn;
@@ -449,20 +451,21 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
           NODE_ENV !== 'production' &&
           bailBooleanValue(shouldLogActivity, this._shouldLogActivity);
         options = { ...restSubscription };
+        ignoreSettingStateCompareLevel = !!definedIgnoreSettingStateCompareLevel;
       }
 
       const nextFunc = function(this: Reaction, ...args: Array<any>) {
         try {
           const result = func.apply(this, args);
           if (result === -1 || result === 'unhandled') {
-            this.setStateCompareLevel(0);
+            !ignoreSettingStateCompareLevel && this.setStateCompareLevel(0);
             return null;
           }
 
-          this.setStateCompareLevel(1);
+          !ignoreSettingStateCompareLevel && this.setStateCompareLevel(1);
           return result;
         } catch (err) {
-          this.setStateCompareLevel(0);
+          !ignoreSettingStateCompareLevel && this.setStateCompareLevel(0);
           error(10004, err, func.displayName);
         }
       };
