@@ -23,27 +23,31 @@ export default class TaskQueue {
 
     if (!this._pending) {
       this._pending = true;
-      this.flush();
+      this.flushAsync();
     }
   }
 
   flush() {
+    let result: any = [];
+    const copy = this._task.slice(0);
+    this._task = [];
+
+    copy.forEach(task => {
+      const changedValues = task() || [];
+      result = result.concat(changedValues);
+    });
+
+    if (result.length && this._after) {
+      this._after(result);
+    }
+
+    if (this._task.length) this.flushAsync();
+    else this._pending = false;
+  }
+
+  flushAsync() {
     Promise.resolve().then(() => {
-      let result: any = [];
-      const copy = this._task.slice(0);
-      this._task = [];
-
-      copy.forEach(task => {
-        const changedValues = task() || [];
-        result = result.concat(changedValues);
-      });
-
-      if (result.length && this._after) {
-        this._after(result);
-      }
-
-      if (this._task.length) this.flush();
-      else this._pending = false;
+      this.flush();
     });
   }
 
@@ -52,7 +56,7 @@ export default class TaskQueue {
 
     if (this._pending) {
       this._pending = true;
-      this.flush();
+      this.flushAsync();
     }
 
     // if (this.getCurrent()) {

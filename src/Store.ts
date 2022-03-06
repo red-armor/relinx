@@ -128,6 +128,10 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     this._shouldLogActivity = !!shouldLogActivity;
   }
 
+  flush() {
+    this._queue.flush();
+  }
+
   getState(): ExtractStateTypeOnlyModels<T> {
     return this._state as ExtractStateTypeOnlyModels<T>;
   }
