@@ -37,3 +37,26 @@
 [data-theme='dark'] .docusaurus-highlight-code-line {
   background-color: rgba(0, 0, 0, 0.3);
 }
+
+code {
+  background-color: var(--ifm-color-emphasis-300);
+  border-radius: 0.2rem;
+}
+
+a code,
+code a {
+  background-color: var(--ifm-color-emphasis-200);
+  color: inherit;
+}
+
+a.contents__link > code {
+  color: inherit;
+}
+
+a.contents__link.contents__link--active {
+  font-weight: 600;
+}
+
+a:visited {
+  color: var(--ifm-color-primary);
+}
