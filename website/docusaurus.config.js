@@ -1,7 +1,7 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
+const lightCodeTheme = require('prism-react-renderer/themes/nightOwl');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
@@ -22,6 +22,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          // path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
@@ -76,7 +77,7 @@ const config = {
               href: 'https://fe-docs.devops.xiaohongshu.com/state-tracker/docs/introduction/getting-started',
             }],
           },
-          // { to: '/blog', label: 'Blog', position: 'left' },
+          { to: '/blog', label: 'Blog', position: 'left' },
           {
             href: 'https://code.devops.xiaohongshu.com/fe/infra/halation',
             label: 'GitLab',
