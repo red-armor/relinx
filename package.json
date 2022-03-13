@@ -39,7 +39,8 @@
     "flow-check": "flow check --show-all-errors",
     "test": "jest --clearCache && jest --collect-coverage --verbose",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "deploy-website": "cd website && yarn build && dockwalloper publish -d ./build -k 8jbodDcRP5QVYJphjTMN85Kvhwgu0WPRvxCrRJANWx7pLm1m"
   },
   "config": {
     "commitizen": {
