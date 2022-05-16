@@ -77,9 +77,8 @@ const observeNext = <P extends {}>(
     return null;
   };
 
-  const NextComponent = (
-    props: Omit<P, keyof InjectedObserverProps> & InjectedObserverProps
-  ) => {
+  const NextComponent: FC<Omit<P, keyof InjectedObserverProps> &
+    InjectedObserverProps> = props => {
     const contextValue = useContext(context);
     const {
       store,
