@@ -1,6 +1,6 @@
 {
   "name": "@xhs/relinx",
-  "version": "4.1.8",
+  "version": "4.1.9",
   "description": "Another redux state management using hooks",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
