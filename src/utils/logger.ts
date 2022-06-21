@@ -178,11 +178,9 @@ const error = (code: number, ...args: Array<any>) => {
   }
 
   if (NODE_ENV !== 'production') {
-    console.error(err);
-    return;
+    console.debug(err);
   }
-
-  throw err;
+  // throw err;
 };
 
 // const info = (code: number, ...args: Array<any>) => {
