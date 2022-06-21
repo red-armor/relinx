@@ -163,8 +163,7 @@ export const errorWarning = (code: number, ...args: Array<any>) => {
   }
 
   if (NODE_ENV !== 'production') {
-    console.log(err);
-    return;
+    console.warn(err);
   }
 };
 
