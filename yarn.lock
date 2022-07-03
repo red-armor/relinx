@@ -12215,10 +12215,10 @@ state-toggle@^1.0.0:
   resolved "http://npm.devops.xiaohongshu.com:7001/state-toggle/download/state-toggle-1.0.3.tgz#e123b16a88e143139b09c6852221bc9815917dfe"
   integrity sha1-4SOxaojhQxObCcaFIiG8mBWRff4=
 
-state-tracker@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/state-tracker/-/state-tracker-2.3.0.tgz#708db83f63ed2f4682ec8d10f7a539ebcaf07959"
-  integrity sha512-93P1jUFmWXxvFllr+ScmWwzjU3jlbajjab805FY1I9p2cemm4ZutVFrp7qYHdIdJJG+gyDq1ASHgpzPykf73dg==
+state-tracker@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/state-tracker/-/state-tracker-2.4.2.tgz#2b09a0a04337e6aa9d0c4529a3f30d71279fd329"
+  integrity sha512-nrdb0cCqsgakFk6HPNc45IjJZxuaiJlr49es/h4mL0NGEOFVYzW6qih7MGytlFln8MmuW+/UBq0Ru6yJwOTfIw==
   dependencies:
     invariant "^2.2.4"
 

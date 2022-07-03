@@ -32,9 +32,11 @@ const GoodsView = () => {
       ))}
 
       <CurrentItem />
-      {/* <CurrentItemV2 /> */}
+      <CurrentItemV2 />
     </div>
   )
 }
 
-export default observe(GoodsView)
+export default observe(GoodsView, {
+  shallowEqual: false,
+})

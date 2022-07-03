@@ -1,5 +1,8 @@
+import { getGoods } from '../../data-source/goods'
+
 export default () => ({
   state: {
+    page: 0,
     listData: [],
     bottomBarUpdateCount: 0,
     listLength: 0,
@@ -70,9 +73,41 @@ export default () => ({
         currentIndex: index,
       }
     },
-    setProps: (_, payload) => ({ ...payload })
+    setProps: (_, payload) => ({ ...payload }),
+    pumpData: state => {
+      const { listData } = state
+      return {
+        listData: listData.map(item => ({ ...item, c: Date.now() }))
+      }
+    }
   },
   effects: {
+    getGoodsList: () => (dispatch, getState) => {
+      const { goods: { page } } = getState()
+      getGoods({ page }).then(result => {
+        dispatch({
+          type: 'setProps',
+          payload: {
+            listData: result,
+            page: page + 1,
+          }
+        })
+      })
+    },
+
+    addMore: () => (dispatch, getState) => {
+      const { goods: { listData, page } } = getState()
+      getGoods({ page }).then(result => {
+        dispatch({
+          type: 'setProps',
+          payload: {
+            listData: listData.concat(result),
+            page: page + 1,
+          }
+        })
+      })
+    },
+
     increment: ({ id }) => dispatch => {
       dispatch([{
         type: 'incrementItemCount',
@@ -93,19 +128,14 @@ export default () => ({
   subscriptions: {
     setup({ getState }) {
       const state = getState()
-      const { bottomBar, goods } = state
+      const { bottomBar } = state
 
-      return [{
+      return {
         type: 'setProps',
         payload: {
           bottomBarUpdateCount: bottomBar.count,
         }
-      // }, {
-      //   type: 'setProps',
-      //   payload: {
-      //     listLength: goods.listData.length,
-      //   }
-      }]
+      }
     }
   }
 })

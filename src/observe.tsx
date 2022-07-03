@@ -147,8 +147,6 @@ const observeNext = <P extends {}>(
       isPropsEqual = reaction.isPropsEqual(props);
     }
 
-    const isPropsEqualRef = useRef(isPropsEqual);
-
     useEffect(
       () => () => {
         mountedRef.current = false;
@@ -158,7 +156,6 @@ const observeNext = <P extends {}>(
     );
 
     useEffect(() => {
-      isPropsEqualRef.current = isPropsEqual;
       stateRef.current = v;
     }, [v, isPropsEqual]);
 
@@ -171,8 +168,7 @@ const observeNext = <P extends {}>(
         ? componentShouldLogRerender
         : !!shouldLogRerender;
 
-    const rerenderDueToPropsChanged =
-      isPropsEqualRef.current !== isPropsEqual && !isPropsEqual;
+    const rerenderDueToPropsChanged = !isPropsEqual;
     const rerenderDueToStateChanged = stateRef.current !== v;
 
     if (changedValue) {
