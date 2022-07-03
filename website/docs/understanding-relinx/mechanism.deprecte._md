@@ -1,8 +1,3 @@
----
-title: Mechanism
-sidebar_position: 1
----
-
 Conceptually, Relinx is inspired by lots of open source library likes `React-Redux`, `dva` etc. It includes `action`,`reducers`, `dispatch` and `effects` as well.
 
 On handle side effect, In order to simplify learning curve and leverage usage complexity, Relinx do not apply any other library like `redux-saga` and use a variant of `redux-thunk`.

@@ -85,5 +85,9 @@ const GoodsItem = props => {
   )
 }
 
-export default observe(GoodsItem)
+// export default GoodsItem
+
+export default observe(GoodsItem, {
+  shallowEqual: false,
+})
 // export default observe(React.memo(props => <GoodsItem {...props} />))

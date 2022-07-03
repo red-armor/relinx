@@ -17,7 +17,9 @@
     "lint": "tsdx lint --fix src --ignore-pattern **/__test__/*.js",
     "prepare": "tsdx build",
     "examples:readme": "DIR=examples/readme EXT=js webpack-dev-server",
+    "examples:lib": "DIR=examples/lib EXT=js webpack-dev-server",
     "examples:basic": "DIR=examples/basic EXT=js webpack-dev-server",
+    "examples:basic-deep": "DIR=examples/basic-deep EXT=js webpack-dev-server",
     "examples:basic-initial-value": "DIR=examples/basic-initial-value EXT=js webpack-dev-server",
     "examples:basic-dynamic": "DIR=examples/basic-dynamic EXT=js webpack-dev-server",
     "examples:basic-class": "DIR=examples/basic-class EXT=js webpack-dev-server",
@@ -121,7 +123,7 @@
   },
   "dependencies": {
     "invariant": "^2.2.4",
-    "state-tracker": "^2.3.0"
+    "state-tracker": "^2.4.2"
   },
   "resolutions": {
     "**/@typescript-eslint/eslint-plugin": "^4.11.1",

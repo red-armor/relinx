@@ -76,13 +76,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
         });
       }
 
-      StateTrackerUtil.perform(proxyState, nextState, {
-        afterCallback: () => {
-          const keys = Object.keys(proxyState);
-          keys.forEach(key => {
-            proxyState[key] = nextState[key];
-          });
-        },
+      StateTrackerUtil.setValue(proxyState, nextState, {
         stateCompareLevel: 1,
       });
     },
@@ -212,6 +206,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
               const originalKey = keyModel.getCurrent() as MODEL_KEY;
               const currentState = this.getModel(originalKey, true);
               const usedReducer = this._reducers[originalKey];
+
               const changedValue = usedReducer[actionType](
                 currentState,
                 payload
@@ -238,6 +233,7 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
     }
   }
 
+  // log all actions
   setValue(actions: Array<Action>) {
     this._queue.nextTick(() => {
       const nextActions = ([] as Array<Action>).concat(actions);
@@ -414,16 +410,13 @@ class Store<T extends BasicModelType<T>, MODEL_KEY extends keyof T = keyof T> {
 
     const applicationState = this.getState() as IStateTracker;
 
-    StateTrackerUtil.perform(
+    StateTrackerUtil.setValue(
       applicationState,
       {
         ...applicationState,
         [key]: modelBase,
       },
       {
-        afterCallback: () => {
-          applicationState[key as string] = modelBase;
-        },
         stateCompareLevel: 1,
       }
     );
